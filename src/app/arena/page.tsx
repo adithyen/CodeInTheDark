@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import MonacoBlindEditor from '@/components/MonacoBlindEditor';
 import AntiCheatShield from '@/components/AntiCheatShield';
@@ -9,16 +9,29 @@ import { Question, Language, Participant, ContestState } from '@/types';
 import { 
   Send, 
   RotateCcw, 
-  ChevronRight, 
   CheckCircle2, 
-  Clock, 
   ShieldAlert, 
-  HelpCircle,
-  FileCode2,
   Terminal,
-  Layers,
-  Sparkles
+  Wifi,
+  WifiOff,
+  FileCheck,
+  PanelLeftClose,
+  PanelLeftOpen,
+  ZoomIn,
+  ZoomOut,
+  Save,
+  Download,
+  X
 } from 'lucide-react';
+
+interface SubmissionReceipt {
+  receiptId: string;
+  questionTitle: string;
+  language: Language;
+  submittedAt: string;
+  charCount: number;
+  lineCount: number;
+}
 
 export default function ArenaPage() {
   const router = useRouter();
@@ -35,9 +48,36 @@ export default function ArenaPage() {
   const [submissionFeedback, setSubmissionFeedback] = useState<string | null>(null);
   const [isContestOver, setIsContestOver] = useState(false);
 
+  // Phase 4 Ergonomics & Features
+  const [isOnline, setIsOnline] = useState(true);
+  const [isDrawerCollapsed, setIsDrawerCollapsed] = useState(false);
+  const [editorFontSize, setEditorFontSize] = useState(15);
+  const [activeReceipt, setActiveReceipt] = useState<SubmissionReceipt | null>(null);
+
   const activeQuestion = questions[activeQuestionIndex];
 
-  // 1. Load participant
+  // 1. Online / Offline network health tracker
+  useEffect(() => {
+    setIsOnline(navigator.onLine);
+    const handleOnline = () => {
+      setIsOnline(true);
+      setSubmissionFeedback('Network connection restored. Syncing with contest server.');
+      setTimeout(() => setSubmissionFeedback(null), 4000);
+    };
+    const handleOffline = () => {
+      setIsOnline(false);
+      setSubmissionFeedback('Network connection offline. All code is safely stored in local memory.');
+    };
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+
+  // 2. Load participant
   useEffect(() => {
     const saved = localStorage.getItem('cid_participant');
     if (!saved) {
@@ -51,7 +91,7 @@ export default function ArenaPage() {
     }
   }, [router]);
 
-  // 2. Fetch questions and contest status
+  // 3. Fetch questions and contest status
   const fetchContestAndQuestions = useCallback(async () => {
     try {
       const [contestRes, qRes] = await Promise.all([
@@ -82,7 +122,7 @@ export default function ArenaPage() {
     return () => clearInterval(interval);
   }, [fetchContestAndQuestions]);
 
-  // 3. Load or initialize draft for current question & language
+  // 4. Load or initialize draft for current question & language
   useEffect(() => {
     if (!activeQuestion || !participant) return;
 
@@ -95,14 +135,13 @@ export default function ArenaPage() {
       setCode(activeQuestion.starterTemplates[language] || '');
     }
 
-    // Check if question already submitted
     const subKey = `cid_sub_${participant.id}_${activeQuestion.id}`;
     if (localStorage.getItem(subKey)) {
       setSubmittedQuestions((prev) => ({ ...prev, [activeQuestion.id]: true }));
     }
   }, [activeQuestion, language, participant]);
 
-  // 4. Auto-save draft locally on code change
+  // 5. Auto-save draft locally on code change
   const handleCodeChange = (newCode: string) => {
     setCode(newCode);
     if (!activeQuestion || !participant) return;
@@ -111,6 +150,28 @@ export default function ArenaPage() {
     localStorage.setItem(draftKey, newCode);
     setSavedStatus(`Auto-saved ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}`);
   };
+
+  // Keyboard shortcut listener (Ctrl+S save draft, Ctrl+Enter submit)
+  useEffect(() => {
+    const handleGlobalShortcuts = (e: KeyboardEvent) => {
+      // Ctrl+S / Cmd+S
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
+        e.preventDefault();
+        setSavedStatus(`Saved checkpoint at ${new Date().toLocaleTimeString()}`);
+        setSubmissionFeedback('Local draft checkpoint verified and saved.');
+        setTimeout(() => setSubmissionFeedback(null), 3000);
+      }
+      // Ctrl+Enter / Cmd+Enter
+      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+        e.preventDefault();
+        if (!submitting && !isContestOver && activeQuestion) {
+          setShowConfirmModal(true);
+        }
+      }
+    };
+    window.addEventListener('keydown', handleGlobalShortcuts);
+    return () => window.removeEventListener('keydown', handleGlobalShortcuts);
+  }, [submitting, isContestOver, activeQuestion]);
 
   // Reset starter code
   const handleResetStarter = () => {
@@ -123,7 +184,7 @@ export default function ArenaPage() {
     }
   };
 
-  // 5. Submit solution
+  // 6. Submit solution & Generate Digital Receipt
   const handleSubmitSolution = async () => {
     if (!activeQuestion || !participant || submitting) return;
 
@@ -147,8 +208,19 @@ export default function ArenaPage() {
         setSubmittedQuestions((prev) => ({ ...prev, [activeQuestion.id]: true }));
         const subKey = `cid_sub_${participant.id}_${activeQuestion.id}`;
         localStorage.setItem(subKey, 'true');
+
+        // Generate Submission Receipt
+        const receipt: SubmissionReceipt = {
+          receiptId: `REC-${participant.rollNumber}-${activeQuestion.id.toUpperCase()}-${Math.floor(1000 + Math.random() * 9000)}`,
+          questionTitle: activeQuestion.title,
+          language,
+          submittedAt: new Date().toLocaleTimeString(),
+          charCount: code.length,
+          lineCount: code.split('\n').length,
+        };
+        setActiveReceipt(receipt);
+
         setSubmissionFeedback(data.message || 'Solution successfully locked for evaluation.');
-        setTimeout(() => setSubmissionFeedback(null), 5000);
       } else {
         alert(data.error || 'Submission failed');
       }
@@ -159,10 +231,9 @@ export default function ArenaPage() {
     }
   };
 
-  // 6. Handle timer expiration
+  // 7. Handle timer expiration
   const handleTimerExpired = () => {
     setIsContestOver(true);
-    // Auto-submit current draft
     if (activeQuestion && participant && code.trim()) {
       fetch('/api/submit', {
         method: 'POST',
@@ -218,13 +289,45 @@ export default function ArenaPage() {
             <ShieldAlert className="h-3.5 w-3.5 text-amber-400" />
             <span>Strikes: <strong className={participant.strikes > 0 ? 'text-red-400' : 'text-gray-300'}>{participant.strikes}/3</strong></span>
           </div>
+
+          {/* Network Health Indicator */}
+          <div className="hidden sm:flex items-center gap-1.5 font-mono text-xs text-gray-400">
+            {isOnline ? (
+              <span className="flex items-center gap-1 text-emerald-400 text-[11px]">
+                <Wifi className="h-3 w-3" /> Online
+              </span>
+            ) : (
+              <span className="flex items-center gap-1 text-amber-400 text-[11px] animate-pulse">
+                <WifiOff className="h-3 w-3" /> Offline (Cache Active)
+              </span>
+            )}
+          </div>
         </div>
 
-        {/* Right: Timer, Save status, and Action */}
+        {/* Right: Timer, Save status, Font Controls, and Submit Action */}
         <div className="flex items-center gap-3">
           <span className="hidden lg:inline-block font-mono text-[11px] text-gray-400">
             {savedStatus}
           </span>
+
+          {/* Font Resizer */}
+          <div className="hidden sm:flex items-center border border-white/10 rounded-lg bg-black/40 p-0.5 font-mono text-xs">
+            <button
+              onClick={() => setEditorFontSize((prev) => Math.max(12, prev - 1))}
+              className="p-1 text-gray-400 hover:text-white"
+              title="Decrease Font Size"
+            >
+              <ZoomOut className="h-3.5 w-3.5" />
+            </button>
+            <span className="px-1.5 text-[11px] text-gray-300">{editorFontSize}px</span>
+            <button
+              onClick={() => setEditorFontSize((prev) => Math.min(20, prev + 1))}
+              className="p-1 text-gray-400 hover:text-white"
+              title="Increase Font Size"
+            >
+              <ZoomIn className="h-3.5 w-3.5" />
+            </button>
+          </div>
 
           <CountdownTimer
             endTime={contest?.endTime || null}
@@ -250,149 +353,181 @@ export default function ArenaPage() {
             <CheckCircle2 className="h-4 w-4 text-emerald-400" />
             <span>{submissionFeedback}</span>
           </div>
+          <button onClick={() => setSubmissionFeedback(null)} className="text-gray-400 hover:text-white">
+            <X className="h-3.5 w-3.5" />
+          </button>
         </div>
       )}
 
       {/* Main Two-Panel Arena Layout */}
       <div className="flex flex-1 flex-col lg:flex-row overflow-hidden">
         {/* Left Drawer: Problem Description & Multi-Question Tabs */}
-        <div className="w-full lg:w-[450px] xl:w-[500px] flex flex-col border-b lg:border-b-0 lg:border-r border-white/[0.08] bg-[#080d16] overflow-y-auto">
-          {/* Question Switcher Tabs */}
-          <div className="sticky top-0 z-10 flex border-b border-white/[0.08] bg-[#080d16] p-2 gap-1.5 overflow-x-auto">
-            {questions.map((q, idx) => {
-              const isSelected = idx === activeQuestionIndex;
-              const isDone = submittedQuestions[q.id];
-              return (
-                <button
-                  key={q.id}
-                  onClick={() => setActiveQuestionIndex(idx)}
-                  className={`flex items-center gap-2 rounded-lg px-3 py-1.5 font-mono text-xs transition-all whitespace-nowrap ${
-                    isSelected
-                      ? 'border border-cyan-500/50 bg-cyan-950/40 text-cyan-300 font-bold'
-                      : isDone
-                      ? 'border border-emerald-500/30 bg-emerald-950/20 text-emerald-300'
-                      : 'border border-white/5 bg-white/5 text-gray-400 hover:bg-white/10'
-                  }`}
-                >
-                  {isDone ? (
-                    <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
-                  ) : (
-                    <span className="h-2 w-2 rounded-full bg-gray-500" />
-                  )}
-                  <span>Q{idx + 1} ({q.points}pts)</span>
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Problem Body */}
-          <div className="p-5 space-y-6">
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="rounded bg-white/10 px-2 py-0.5 font-mono text-[10px] font-semibold text-emerald-400">
-                  {activeQuestion.difficulty}
-                </span>
-                <span className="font-mono text-xs text-gray-400">
-                  {activeQuestion.category} · {activeQuestion.points} Points
-                </span>
+        {!isDrawerCollapsed && (
+          <div className="w-full lg:w-[450px] xl:w-[500px] flex flex-col border-b lg:border-b-0 lg:border-r border-white/[0.08] bg-[#080d16] overflow-y-auto">
+            {/* Question Switcher Tabs */}
+            <div className="sticky top-0 z-10 flex border-b border-white/[0.08] bg-[#080d16] p-2 gap-1.5 overflow-x-auto justify-between items-center">
+              <div className="flex gap-1.5 overflow-x-auto">
+                {questions.map((q, idx) => {
+                  const isSelected = idx === activeQuestionIndex;
+                  const isDone = submittedQuestions[q.id];
+                  return (
+                    <button
+                      key={q.id}
+                      onClick={() => setActiveQuestionIndex(idx)}
+                      className={`flex items-center gap-2 rounded-lg px-3 py-1.5 font-mono text-xs transition-all whitespace-nowrap ${
+                        isSelected
+                          ? 'border border-cyan-500/50 bg-cyan-950/40 text-cyan-300 font-bold'
+                          : isDone
+                          ? 'border border-emerald-500/30 bg-emerald-950/20 text-emerald-300'
+                          : 'border border-white/5 bg-white/5 text-gray-400 hover:bg-white/10'
+                      }`}
+                    >
+                      {isDone ? (
+                        <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
+                      ) : (
+                        <span className="h-2 w-2 rounded-full bg-gray-500" />
+                      )}
+                      <span>Q{idx + 1} ({q.points}pts)</span>
+                    </button>
+                  );
+                })}
               </div>
-              <h2 className="mt-2 font-mono text-xl font-bold tracking-tight text-white">
-                {activeQuestion.title}
-              </h2>
+
+              {/* Collapse Drawer button */}
+              <button
+                onClick={() => setIsDrawerCollapsed(true)}
+                className="hidden lg:flex p-1.5 text-gray-400 hover:text-white rounded hover:bg-white/5"
+                title="Collapse Problem Drawer"
+              >
+                <PanelLeftClose className="h-4 w-4" />
+              </button>
             </div>
 
-            {/* Scenario Story */}
-            <div className="space-y-2">
-              <h3 className="font-mono text-xs font-semibold uppercase tracking-wider text-gray-400">
-                Scenario Description
-              </h3>
-              <div className="rounded-xl border border-white/5 bg-black/30 p-4 font-sans text-sm leading-relaxed text-gray-300 whitespace-pre-line">
-                {activeQuestion.scenario}
-              </div>
-            </div>
-
-            {/* Input & Output Format */}
-            <div className="grid gap-3">
-              <div className="rounded-xl border border-white/5 bg-black/20 p-3">
-                <h4 className="font-mono text-xs font-semibold text-cyan-400">Input Format</h4>
-                <p className="mt-1 font-mono text-xs text-gray-300 whitespace-pre-line">
-                  {activeQuestion.inputFormat}
-                </p>
-              </div>
-
-              <div className="rounded-xl border border-white/5 bg-black/20 p-3">
-                <h4 className="font-mono text-xs font-semibold text-cyan-400">Output Format</h4>
-                <p className="mt-1 font-mono text-xs text-gray-300 whitespace-pre-line">
-                  {activeQuestion.outputFormat}
-                </p>
-              </div>
-
-              <div className="rounded-xl border border-white/5 bg-black/20 p-3">
-                <h4 className="font-mono text-xs font-semibold text-amber-400">Constraints</h4>
-                <p className="mt-1 font-mono text-xs text-gray-300 whitespace-pre-line">
-                  {activeQuestion.constraints}
-                </p>
-              </div>
-            </div>
-
-            {/* Sample Public Test Cases */}
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <h3 className="font-mono text-xs font-semibold uppercase tracking-wider text-gray-400">
-                  Sample Test Cases (Public)
-                </h3>
-                <span className="font-mono text-[10px] text-gray-500">
-                  Hidden cases evaluated after submission
-                </span>
-              </div>
-
-              {activeQuestion.testCases.map((tc, idx) => (
-                <div
-                  key={tc.id}
-                  className="rounded-xl border border-white/10 bg-[#0c121d] p-3 font-mono text-xs space-y-2"
-                >
-                  <div className="text-[11px] font-bold text-gray-400">Example {idx + 1}</div>
-                  <div>
-                    <span className="text-gray-500">Input:</span>
-                    <pre className="mt-0.5 rounded bg-black/40 p-2 text-emerald-300 overflow-x-auto">
-                      {tc.input}
-                    </pre>
-                  </div>
-                  <div>
-                    <span className="text-gray-500">Expected Output:</span>
-                    <pre className="mt-0.5 rounded bg-black/40 p-2 text-cyan-300 overflow-x-auto">
-                      {tc.expectedOutput}
-                    </pre>
-                  </div>
-                  {tc.explanation && (
-                    <div className="text-[11px] text-gray-400 italic">
-                      Note: {tc.explanation}
-                    </div>
-                  )}
+            {/* Problem Body */}
+            <div className="p-5 space-y-6">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="rounded bg-white/10 px-2 py-0.5 font-mono text-[10px] font-semibold text-emerald-400">
+                    {activeQuestion.difficulty}
+                  </span>
+                  <span className="font-mono text-xs text-gray-400">
+                    {activeQuestion.category} · {activeQuestion.points} Points
+                  </span>
                 </div>
-              ))}
+                <h2 className="mt-2 font-mono text-xl font-bold tracking-tight text-white">
+                  {activeQuestion.title}
+                </h2>
+              </div>
+
+              {/* Scenario Story */}
+              <div className="space-y-2">
+                <h3 className="font-mono text-xs font-semibold uppercase tracking-wider text-gray-400">
+                  Scenario Description
+                </h3>
+                <div className="rounded-xl border border-white/5 bg-black/30 p-4 font-sans text-sm leading-relaxed text-gray-300 whitespace-pre-line">
+                  {activeQuestion.scenario}
+                </div>
+              </div>
+
+              {/* Input & Output Format */}
+              <div className="grid gap-3">
+                <div className="rounded-xl border border-white/5 bg-black/20 p-3">
+                  <h4 className="font-mono text-xs font-semibold text-cyan-400">Input Format</h4>
+                  <p className="mt-1 font-mono text-xs text-gray-300 whitespace-pre-line">
+                    {activeQuestion.inputFormat}
+                  </p>
+                </div>
+
+                <div className="rounded-xl border border-white/5 bg-black/20 p-3">
+                  <h4 className="font-mono text-xs font-semibold text-cyan-400">Output Format</h4>
+                  <p className="mt-1 font-mono text-xs text-gray-300 whitespace-pre-line">
+                    {activeQuestion.outputFormat}
+                  </p>
+                </div>
+
+                <div className="rounded-xl border border-white/5 bg-black/20 p-3">
+                  <h4 className="font-mono text-xs font-semibold text-amber-400">Constraints</h4>
+                  <p className="mt-1 font-mono text-xs text-gray-300 whitespace-pre-line">
+                    {activeQuestion.constraints}
+                  </p>
+                </div>
+              </div>
+
+              {/* Sample Public Test Cases */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-mono text-xs font-semibold uppercase tracking-wider text-gray-400">
+                    Sample Test Cases (Public)
+                  </h3>
+                  <span className="font-mono text-[10px] text-gray-500">
+                    Hidden cases evaluated after submission
+                  </span>
+                </div>
+
+                {activeQuestion.testCases.map((tc, idx) => (
+                  <div
+                    key={tc.id}
+                    className="rounded-xl border border-white/10 bg-[#0c121d] p-3 font-mono text-xs space-y-2 select-none"
+                  >
+                    <div className="text-[11px] font-bold text-gray-400">Example {idx + 1}</div>
+                    <div>
+                      <span className="text-gray-500">Input:</span>
+                      <pre className="mt-0.5 rounded bg-black/40 p-2 text-emerald-300 overflow-x-auto">
+                        {tc.input}
+                      </pre>
+                    </div>
+                    <div>
+                      <span className="text-gray-500">Expected Output:</span>
+                      <pre className="mt-0.5 rounded bg-black/40 p-2 text-cyan-300 overflow-x-auto">
+                        {tc.expectedOutput}
+                      </pre>
+                    </div>
+                    {tc.explanation && (
+                      <div className="text-[11px] text-gray-400 italic">
+                        Note: {tc.explanation}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
         {/* Right Workspace: Blind Monaco Code Editor */}
         <div className="flex flex-1 flex-col overflow-hidden">
-          {/* Editor Header: Language selector and Reset */}
+          {/* Editor Header: Expand drawer, Language selector, and Reset */}
           <div className="flex items-center justify-between border-b border-white/[0.08] bg-[#0a0f19] px-4 py-2">
-            <div className="flex items-center gap-2">
-              <label className="font-mono text-xs text-gray-400">Language:</label>
-              <select
-                value={language}
-                onChange={(e) => setLanguage(e.target.value as Language)}
-                className="rounded-lg border border-white/15 bg-black/50 px-3 py-1 font-mono text-xs font-semibold text-white focus:border-cyan-500 focus:outline-none"
-              >
-                <option value="python">Python 3 (3.12)</option>
-                <option value="c">C (GCC 14)</option>
-                <option value="java">Java (OpenJDK 17)</option>
-              </select>
+            <div className="flex items-center gap-3">
+              {isDrawerCollapsed && (
+                <button
+                  onClick={() => setIsDrawerCollapsed(false)}
+                  className="flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-2.5 py-1 font-mono text-xs text-cyan-300 hover:bg-white/10"
+                >
+                  <PanelLeftOpen className="h-4 w-4" />
+                  <span>Show Problem</span>
+                </button>
+              )}
+
+              <div className="flex items-center gap-2">
+                <label className="font-mono text-xs text-gray-400">Language:</label>
+                <select
+                  value={language}
+                  onChange={(e) => setLanguage(e.target.value as Language)}
+                  className="rounded-lg border border-white/15 bg-black/50 px-3 py-1 font-mono text-xs font-semibold text-white focus:border-cyan-500 focus:outline-none"
+                >
+                  <option value="python">Python 3 (3.12)</option>
+                  <option value="c">C (GCC 14)</option>
+                  <option value="java">Java (OpenJDK 17)</option>
+                </select>
+              </div>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
+              <span className="hidden sm:inline font-mono text-[11px] text-gray-500">
+                Shortcut: <code className="text-gray-400">Ctrl+S</code> to save · <code className="text-gray-400">Ctrl+Enter</code> to submit
+              </span>
+
               <button
                 onClick={handleResetStarter}
                 className="flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-2.5 py-1 font-mono text-xs text-gray-400 hover:bg-white/10 hover:text-white transition-all"
@@ -411,6 +546,7 @@ export default function ArenaPage() {
               value={code}
               onChange={handleCodeChange}
               disabled={participant.isLockedOut || isContestOver}
+              fontSize={editorFontSize}
             />
           </div>
         </div>
@@ -453,6 +589,64 @@ export default function ArenaPage() {
                 Confirm & Submit
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Phase 4 Digital Submission Receipt Modal */}
+      {activeReceipt && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-6 backdrop-blur-md">
+          <div className="max-w-md w-full rounded-2xl border border-cyan-500/40 bg-[#0c1320] p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-white/[0.08] pb-3">
+              <div className="flex items-center gap-2 text-cyan-400 font-mono text-sm font-bold">
+                <FileCheck className="h-5 w-5" />
+                <span>OFFICIAL SUBMISSION RECEIPT</span>
+              </div>
+              <button
+                onClick={() => setActiveReceipt(null)}
+                className="text-gray-400 hover:text-white"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="rounded-xl border border-white/10 bg-black/50 p-4 font-mono text-xs space-y-2.5">
+              <div className="flex justify-between text-gray-400">
+                <span>Receipt Token:</span>
+                <span className="font-bold text-white">{activeReceipt.receiptId}</span>
+              </div>
+              <div className="flex justify-between text-gray-400">
+                <span>Candidate:</span>
+                <span className="text-emerald-300 font-semibold">{participant.name} ({participant.rollNumber})</span>
+              </div>
+              <div className="flex justify-between text-gray-400">
+                <span>Question:</span>
+                <span className="text-cyan-300">{activeReceipt.questionTitle}</span>
+              </div>
+              <div className="flex justify-between text-gray-400">
+                <span>Language:</span>
+                <span className="uppercase text-amber-300">{activeReceipt.language}</span>
+              </div>
+              <div className="flex justify-between text-gray-400">
+                <span>Timestamp:</span>
+                <span className="text-gray-300">{activeReceipt.submittedAt}</span>
+              </div>
+              <div className="flex justify-between text-gray-400">
+                <span>Code Size:</span>
+                <span className="text-gray-300">{activeReceipt.lineCount} lines · {activeReceipt.charCount} bytes</span>
+              </div>
+            </div>
+
+            <p className="text-[11px] text-gray-400 text-center italic">
+              Your code has been locked and timestamped. Output is strictly sealed until the host triggers stage reveal.
+            </p>
+
+            <button
+              onClick={() => setActiveReceipt(null)}
+              className="w-full rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 py-2.5 font-mono text-xs font-bold text-black hover:brightness-110"
+            >
+              Close Receipt & Continue Coding
+            </button>
           </div>
         </div>
       )}

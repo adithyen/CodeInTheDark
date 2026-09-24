@@ -9,6 +9,7 @@ interface MonacoBlindEditorProps {
   value: string;
   onChange: (val: string) => void;
   disabled?: boolean;
+  fontSize?: number;
 }
 
 const MONACO_LANG_MAP: Record<Language, string> = {
@@ -22,6 +23,7 @@ export default function MonacoBlindEditor({
   value,
   onChange,
   disabled = false,
+  fontSize = 15,
 }: MonacoBlindEditorProps) {
   const handleEditorDidMount: OnMount = (editor, monaco) => {
     // Define Cyberpunk Dark theme
@@ -79,7 +81,7 @@ export default function MonacoBlindEditor({
         options={{
           readOnly: disabled,
           minimap: { enabled: false },
-          fontSize: 15,
+          fontSize: fontSize,
           fontFamily: "'Fira Code', 'Courier New', monospace",
           lineNumbers: 'on',
           scrollBeyondLastLine: false,
