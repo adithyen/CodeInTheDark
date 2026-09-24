@@ -82,7 +82,7 @@ export interface Violation {
   id: string;
   participantId: string;
   participantName: string;
-  type: 'fullscreen_exit' | 'tab_blur' | 'devtools_attempt' | 'clipboard_attempt';
+  type: 'fullscreen_exit' | 'tab_blur' | 'window_leave' | 'devtools_attempt' | 'clipboard_attempt' | 'keystroke_anomaly';
   timestamp: number;
   strikeCount: number;
   details?: string;
