@@ -57,6 +57,16 @@ export default function RegisterPage() {
 
       // Persist in localStorage for local-first resilience
       localStorage.setItem('cid_participant', JSON.stringify(data.participant));
+
+      // Attempt fullscreen presentation mode immediately during user click gesture
+      try {
+        if (!document.fullscreenElement) {
+          await document.documentElement.requestFullscreen();
+        }
+      } catch {
+        // Pre-flight gateway on /arena will prompt if browser requires direct click
+      }
+
       router.push('/arena');
     } catch {
       setError('Network connection failed. Please check connection and try again.');

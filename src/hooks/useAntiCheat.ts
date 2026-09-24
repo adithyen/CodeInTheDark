@@ -12,6 +12,9 @@ export type ViolationType =
 
 interface UseAntiCheatOptions {
   participantId: string;
+  participantName?: string;
+  rollNumber?: string;
+  terminalId?: string;
   initialStrikes?: number;
   initialLockedOut?: boolean;
   maxStrikes?: number;
@@ -22,6 +25,9 @@ interface UseAntiCheatOptions {
 
 export function useAntiCheat({
   participantId,
+  participantName = 'Participant',
+  rollNumber = 'UNKNOWN',
+  terminalId = 'NODE-1',
   initialStrikes = 0,
   initialLockedOut = false,
   maxStrikes = 3,
@@ -29,16 +35,42 @@ export function useAntiCheat({
   onViolation,
   onStrikeUpdate,
 }: UseAntiCheatOptions) {
-  const [isFullscreen, setIsFullscreen] = useState(true);
+  const [isFullscreen, setIsFullscreen] = useState<boolean>(() => {
+    if (typeof document !== 'undefined') {
+      return !!document.fullscreenElement;
+    }
+    return false;
+  });
   const [strikes, setStrikes] = useState(initialStrikes);
   const [isLockedOut, setIsLockedOut] = useState(initialLockedOut);
   const [warningModalOpen, setWarningModalOpen] = useState(false);
   const [warningMessage, setWarningMessage] = useState('');
   const [countdown, setCountdown] = useState(10);
+  const [hudWarning, setHudWarning] = useState<string | null>(null);
 
   const audioCtxRef = useRef<AudioContext | null>(null);
   const lastKeyTimeRef = useRef<number>(Date.now());
   const keyBurstCountRef = useRef<number>(0);
+  const hudTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Sync initial strikes when props update
+  useEffect(() => {
+    if (initialStrikes > strikes) {
+      setStrikes(initialStrikes);
+    }
+    if (initialLockedOut) {
+      setIsLockedOut(true);
+    }
+  }, [initialStrikes, initialLockedOut, strikes]);
+
+  // Display ephemeral HUD warning banner on blocked keystroke
+  const showHudWarning = useCallback((message: string) => {
+    setHudWarning(message);
+    if (hudTimerRef.current) clearTimeout(hudTimerRef.current);
+    hudTimerRef.current = setTimeout(() => {
+      setHudWarning(null);
+    }, 2800);
+  }, []);
 
   // Synthesize alarm sound using Web Audio API
   const triggerAlarmSound = useCallback(() => {
@@ -61,7 +93,7 @@ export function useAntiCheat({
       osc2.frequency.setValueAtTime(640, ctx.currentTime);
 
       gain.gain.setValueAtTime(0.2, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
+      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.45);
 
       osc1.connect(gain);
       osc2.connect(gain);
@@ -69,14 +101,14 @@ export function useAntiCheat({
 
       osc1.start();
       osc2.start();
-      osc1.stop(ctx.currentTime + 0.4);
-      osc2.stop(ctx.currentTime + 0.4);
+      osc1.stop(ctx.currentTime + 0.45);
+      osc2.stop(ctx.currentTime + 0.45);
     } catch {
       // Audio autoplay policy fallback
     }
   }, []);
 
-  // Dispatch violation to backend
+  // Dispatch violation to backend with instant optimistic client update
   const logViolation = useCallback(
     async (type: ViolationType, details: string) => {
       if (!enabled || isLockedOut) return;
@@ -84,11 +116,42 @@ export function useAntiCheat({
       triggerAlarmSound();
       if (onViolation) onViolation(type, details);
 
+      // 1. Optimistic strike update (Instant UI feedback, zero network delay)
+      const nextStrikes = Math.min(strikes + 1, maxStrikes);
+      const nextLocked = nextStrikes >= maxStrikes;
+      setStrikes(nextStrikes);
+      setIsLockedOut(nextLocked);
+      if (onStrikeUpdate) {
+        onStrikeUpdate(nextStrikes, nextLocked);
+      }
+
+      // Persist in localStorage immediately
+      try {
+        const saved = localStorage.getItem('cid_participant');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          parsed.strikes = nextStrikes;
+          parsed.isLockedOut = nextLocked;
+          localStorage.setItem('cid_participant', JSON.stringify(parsed));
+        }
+      } catch {
+        // LocalStorage fallback
+      }
+
+      // 2. Dispatch to backend with full self-hydrating payload
       try {
         const res = await fetch('/api/violations', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ participantId, type, details }),
+          body: JSON.stringify({
+            participantId,
+            name: participantName,
+            rollNumber,
+            terminalId,
+            type,
+            details,
+            currentStrikes: nextStrikes,
+          }),
         });
 
         if (res.ok) {
@@ -100,27 +163,50 @@ export function useAntiCheat({
           }
         }
       } catch (err) {
-        console.error('Failed to log violation:', err);
+        console.error('Failed to log violation to server:', err);
       }
     },
-    [enabled, isLockedOut, participantId, triggerAlarmSound, onViolation, onStrikeUpdate]
+    [enabled, isLockedOut, strikes, maxStrikes, participantId, participantName, rollNumber, terminalId, triggerAlarmSound, onViolation, onStrikeUpdate]
   );
 
-  // Request Fullscreen
-  const requestFullscreen = useCallback(() => {
+  // Request Fullscreen & Engage Chrome Keyboard Lock API
+  const requestFullscreen = useCallback(async () => {
     try {
       if (!document.fullscreenElement) {
-        document.documentElement.requestFullscreen().catch(() => {});
+        await document.documentElement.requestFullscreen();
       }
+
+      // Engage modern Keyboard Lock API (supported in Chromium browsers)
+      if ('keyboard' in navigator && (navigator as any).keyboard?.lock) {
+        try {
+          await (navigator as any).keyboard.lock([
+            'Escape',
+            'F11',
+            'F1',
+            'F3',
+            'F5',
+            'F12',
+            'Tab',
+            'AltLeft',
+            'AltRight',
+          ]);
+        } catch {
+          // Keyboard Lock permission fallback
+        }
+      }
+
       setIsFullscreen(true);
       setWarningModalOpen(false);
-    } catch {
-      // Ignore
+    } catch (err) {
+      console.warn('Fullscreen entry rejected or cancelled:', err);
     }
   }, []);
 
   useEffect(() => {
     if (!enabled) return;
+
+    // Check initial fullscreen status
+    setIsFullscreen(!!document.fullscreenElement);
 
     // 1. Fullscreen Change Handler
     const onFullscreenChange = () => {
@@ -153,29 +239,69 @@ export function useAntiCheat({
       logViolation('tab_blur', 'Window blur event triggered');
     };
 
-    // 3. Mouse Leave Boundary Detection
+    // 3. Mouse Leave Screen Boundary
     const onMouseLeave = (e: MouseEvent) => {
       if (e.clientY <= 0 || e.clientX <= 0 || e.clientX >= window.innerWidth || e.clientY >= window.innerHeight) {
-        // Candidate cursor left screen (likely navigating to another monitor)
         logViolation('window_leave', 'Cursor left active screen boundary');
       }
     };
 
-    // 4. Prohibited Shortcut Trap
+    // 4. Pre-emptive Keystroke Lockdown in Capture Phase
     const onKeyDown = (e: KeyboardEvent) => {
-      // Devtools shortcuts
+      // A. Trap F11 (Browser Fullscreen Toggle)
+      if (e.key === 'F11' || e.code === 'F11') {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        showHudWarning('⚠️ F11 Fullscreen toggle is blocked. Presentation mode is locked.');
+        return false;
+      }
+
+      // B. Trap Escape Key
+      if (e.key === 'Escape' || e.code === 'Escape') {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        showHudWarning('⚠️ Escape key is blocked. Exiting fullscreen will trigger disqualification.');
+        return false;
+      }
+
+      // C. Trap All Function Keys F1 - F12
+      if (e.key.startsWith('F') && /^F([1-9]|1[0-2])$/.test(e.key)) {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        showHudWarning(`⚠️ Function key ${e.key} is disabled in the Arena.`);
+        logViolation('devtools_attempt', `Blocked function key: ${e.key}`);
+        return false;
+      }
+
+      // D. Trap Devtools shortcuts (Ctrl+Shift+I/J/C, Ctrl+U, Ctrl+R, Ctrl+T, Ctrl+W)
       if (
-        e.key === 'F12' ||
-        (e.ctrlKey && e.shiftKey && ['I', 'i', 'C', 'c', 'J', 'j'].includes(e.key)) ||
-        (e.metaKey && e.altKey && ['I', 'i', 'C', 'c', 'J', 'j'].includes(e.key)) ||
-        (e.ctrlKey && ['u', 'U', 's', 'S', 'p', 'P'].includes(e.key))
+        (e.ctrlKey && e.shiftKey && ['I', 'i', 'C', 'c', 'J', 'j', 'K', 'k'].includes(e.key)) ||
+        (e.metaKey && e.altKey && ['I', 'i', 'C', 'c', 'J', 'j', 'K', 'k'].includes(e.key)) ||
+        (e.ctrlKey && ['u', 'U', 'r', 'R', 'p', 'P', 't', 'T', 'n', 'N', 'w', 'W', 'q', 'Q', 'h', 'H'].includes(e.key)) ||
+        (e.altKey && ['ArrowLeft', 'ArrowRight', 'Home'].includes(e.key))
       ) {
         e.preventDefault();
         e.stopPropagation();
-        logViolation('devtools_attempt', `Blocked devtools shortcut: ${e.key}`);
+        e.stopImmediatePropagation();
+        showHudWarning(`⚠️ System shortcut (${e.ctrlKey ? 'Ctrl+' : ''}${e.key}) is prohibited.`);
+        logViolation('devtools_attempt', `Blocked browser shortcut attempt: ${e.key}`);
+        return false;
       }
 
-      // Keystroke velocity anomaly detection (detect macro burst pasting)
+      // E. Trap Clipboard Shortcuts (Ctrl+C, Ctrl+V, Ctrl+X)
+      if ((e.ctrlKey || e.metaKey) && ['c', 'C', 'v', 'V', 'x', 'X'].includes(e.key)) {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        showHudWarning(`⚠️ Clipboard shortcut (Ctrl+${e.key.toUpperCase()}) is disabled.`);
+        logViolation('clipboard_attempt', `Blocked clipboard key combination: Ctrl+${e.key.toUpperCase()}`);
+        return false;
+      }
+
+      // F. Keystroke velocity anomaly detection (detect macro burst insertion)
       const now = Date.now();
       const delta = now - lastKeyTimeRef.current;
       lastKeyTimeRef.current = now;
@@ -191,15 +317,25 @@ export function useAntiCheat({
       }
     };
 
-    // 5. Clipboard Trap
+    const onKeyUp = (e: KeyboardEvent) => {
+      if (e.key === 'F11' || e.key === 'Escape' || (e.key.startsWith('F') && /^F([1-9]|1[0-2])$/.test(e.key))) {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+      }
+    };
+
+    // 5. Native Clipboard Event Traps
     const onClipboard = (e: ClipboardEvent) => {
       e.preventDefault();
+      showHudWarning(`⚠️ Clipboard ${e.type} operation is prohibited.`);
       logViolation('clipboard_attempt', `Blocked ${e.type} operation`);
     };
 
     // 6. Context Menu Trap
     const onContextMenu = (e: MouseEvent) => {
       e.preventDefault();
+      showHudWarning('⚠️ Right-click context menu is disabled.');
     };
 
     // 7. Devtools Dimension Inspector
@@ -215,11 +351,14 @@ export function useAntiCheat({
     document.addEventListener('visibilitychange', onVisibilityChange);
     window.addEventListener('blur', onBlur);
     document.addEventListener('mouseleave', onMouseLeave);
-    window.addEventListener('keydown', onKeyDown);
-    document.addEventListener('copy', onClipboard);
-    document.addEventListener('cut', onClipboard);
-    document.addEventListener('paste', onClipboard);
-    document.addEventListener('contextmenu', onContextMenu);
+    
+    // CAPTURE PHASE for keydown and keyup to intercept BEFORE editor or browser handles them!
+    window.addEventListener('keydown', onKeyDown, { capture: true });
+    window.addEventListener('keyup', onKeyUp, { capture: true });
+    document.addEventListener('copy', onClipboard, { capture: true });
+    document.addEventListener('cut', onClipboard, { capture: true });
+    document.addEventListener('paste', onClipboard, { capture: true });
+    document.addEventListener('contextmenu', onContextMenu, { capture: true });
     window.addEventListener('resize', checkDevToolsDimensions);
 
     return () => {
@@ -227,14 +366,16 @@ export function useAntiCheat({
       document.removeEventListener('visibilitychange', onVisibilityChange);
       window.removeEventListener('blur', onBlur);
       document.removeEventListener('mouseleave', onMouseLeave);
-      window.removeEventListener('keydown', onKeyDown);
-      document.removeEventListener('copy', onClipboard);
-      document.removeEventListener('cut', onClipboard);
-      document.removeEventListener('paste', onClipboard);
-      document.removeEventListener('contextmenu', onContextMenu);
+      window.removeEventListener('keydown', onKeyDown, { capture: true });
+      window.removeEventListener('keyup', onKeyUp, { capture: true });
+      document.removeEventListener('copy', onClipboard, { capture: true });
+      document.removeEventListener('cut', onClipboard, { capture: true });
+      document.removeEventListener('paste', onClipboard, { capture: true });
+      document.removeEventListener('contextmenu', onContextMenu, { capture: true });
       window.removeEventListener('resize', checkDevToolsDimensions);
+      if (hudTimerRef.current) clearTimeout(hudTimerRef.current);
     };
-  }, [enabled, logViolation]);
+  }, [enabled, logViolation, showHudWarning]);
 
   // Countdown timer when warning modal is active
   useEffect(() => {
@@ -252,6 +393,7 @@ export function useAntiCheat({
     warningModalOpen,
     warningMessage,
     countdown,
+    hudWarning,
     requestFullscreen,
     dismissWarning: () => setWarningModalOpen(false),
   };

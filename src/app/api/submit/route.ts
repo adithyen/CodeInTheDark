@@ -6,15 +6,36 @@ import { Submission, Language } from '@/types';
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { participantId, questionId, language, code } = body;
+    const { 
+      participantId, 
+      participantName, 
+      rollNumber, 
+      terminalId, 
+      questionId, 
+      language, 
+      code,
+      strikes 
+    } = body;
 
     if (!participantId || !questionId || !language || !code) {
       return NextResponse.json({ error: 'Missing submission fields' }, { status: 400 });
     }
 
-    const participant = store.participants.get(participantId);
+    let participant = store.participants.get(participantId);
     if (!participant) {
-      return NextResponse.json({ error: 'Participant not registered' }, { status: 404 });
+      // Auto-hydrate participant state if hitting a fresh serverless container
+      const now = Date.now();
+      participant = {
+        id: participantId,
+        name: participantName || participantId,
+        rollNumber: rollNumber || 'UNKNOWN',
+        terminalId: terminalId || 'NODE-1',
+        registeredAt: now,
+        strikes: strikes || 0,
+        isLockedOut: strikes >= 3,
+        lastActiveAt: now,
+      };
+      store.participants.set(participantId, participant);
     }
 
     if (participant.isLockedOut) {

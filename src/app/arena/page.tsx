@@ -197,6 +197,10 @@ export default function ArenaPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           participantId: participant.id,
+          participantName: participant.name,
+          rollNumber: participant.rollNumber,
+          terminalId: participant.terminalId,
+          strikes: participant.strikes,
           questionId: activeQuestion.id,
           language,
           code,
@@ -240,6 +244,10 @@ export default function ArenaPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           participantId: participant.id,
+          participantName: participant.name,
+          rollNumber: participant.rollNumber,
+          terminalId: participant.terminalId,
+          strikes: participant.strikes,
           questionId: activeQuestion.id,
           language,
           code,

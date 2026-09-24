@@ -5,14 +5,35 @@ import { Violation } from '@/types';
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { participantId, type, details } = body;
+    const { participantId, name, rollNumber, terminalId, type, details, currentStrikes } = body;
 
-    const participant = store.participants.get(participantId);
-    if (!participant) {
-      return NextResponse.json({ error: 'Participant not found' }, { status: 404 });
+    if (!participantId) {
+      return NextResponse.json({ error: 'Participant ID is required' }, { status: 400 });
     }
 
-    participant.strikes += 1;
+    let participant = store.participants.get(participantId);
+    if (!participant) {
+      // Auto-hydrate in serverless runtime containers
+      const now = Date.now();
+      participant = {
+        id: participantId,
+        name: name || participantId,
+        rollNumber: rollNumber || 'UNKNOWN',
+        terminalId: terminalId || 'NODE-1',
+        registeredAt: now,
+        strikes: currentStrikes !== undefined ? Math.max(0, currentStrikes - 1) : 0,
+        isLockedOut: false,
+        lastActiveAt: now,
+      };
+      store.participants.set(participantId, participant);
+    }
+
+    if (currentStrikes !== undefined) {
+      participant.strikes = Math.max(participant.strikes + 1, currentStrikes);
+    } else {
+      participant.strikes += 1;
+    }
+
     if (participant.strikes >= 3) {
       participant.isLockedOut = true;
     }

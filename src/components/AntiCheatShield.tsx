@@ -1,8 +1,8 @@
 'use client';
 
 import React from 'react';
-import { useAntiCheat, ViolationType } from '@/hooks/useAntiCheat';
-import { ShieldAlert, Maximize2, Lock, AlertTriangle } from 'lucide-react';
+import { useAntiCheat } from '@/hooks/useAntiCheat';
+import { ShieldAlert, Maximize2, Lock, AlertTriangle, CheckCircle2, Shield, EyeOff } from 'lucide-react';
 
 interface AntiCheatShieldProps {
   participantId: string;
@@ -31,10 +31,13 @@ export default function AntiCheatShield({
     isLockedOut: hookLockedOut,
     warningModalOpen,
     warningMessage,
-    countdown,
+    hudWarning,
     requestFullscreen,
   } = useAntiCheat({
     participantId,
+    participantName,
+    rollNumber,
+    terminalId,
     initialStrikes: strikes,
     initialLockedOut: isLockedOut,
     enabled,
@@ -46,7 +49,7 @@ export default function AntiCheatShield({
 
   return (
     <>
-      {/* Dynamic Floating Watermark Matrix to Deter Smartphone Photos */}
+      {/* 1. Dynamic Floating Watermark Matrix to Deter Smartphone Photos */}
       <div
         className="pointer-events-none fixed inset-0 z-40 select-none overflow-hidden opacity-[0.06] mix-blend-screen"
         aria-hidden="true"
@@ -65,7 +68,17 @@ export default function AntiCheatShield({
         </div>
       </div>
 
-      {/* Strike 3 Lockout Screen */}
+      {/* 2. Real-time Prohibited Shortcut Intercept HUD Banner (Pre-emptive feedback) */}
+      {hudWarning && (
+        <div className="fixed top-5 left-1/2 -translate-x-1/2 z-[100] pointer-events-none animate-in fade-in slide-in-from-top-4 duration-200">
+          <div className="flex items-center gap-2.5 rounded-full border border-amber-500/60 bg-amber-950/95 px-5 py-2.5 font-mono text-xs font-semibold text-amber-200 shadow-2xl shadow-amber-500/30 backdrop-blur-xl">
+            <AlertTriangle className="h-4 w-4 text-amber-400 shrink-0 animate-pulse" />
+            <span>{hudWarning}</span>
+          </div>
+        </div>
+      )}
+
+      {/* 3. Strike 3 Terminal Lockout Screen */}
       {effectiveLockedOut && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 p-6 backdrop-blur-2xl">
           <div className="max-w-md w-full rounded-2xl border border-red-500/50 bg-red-950/40 p-8 text-center shadow-2xl shadow-red-500/20">
@@ -86,7 +99,7 @@ export default function AntiCheatShield({
         </div>
       )}
 
-      {/* Warning Alert Modal on Fullscreen Exit or Tab Switch */}
+      {/* 4. Fullscreen Warning Alert Modal (When Fullscreen was exited) */}
       {warningModalOpen && !effectiveLockedOut && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-6 backdrop-blur-md">
           <div className="max-w-md w-full rounded-2xl border border-amber-500/50 bg-[#121824] p-6 text-center shadow-2xl shadow-amber-500/20">
@@ -110,6 +123,71 @@ export default function AntiCheatShield({
               <Maximize2 className="h-4 w-4" />
               Re-Enter Fullscreen Arena
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* 5. Pre-Flight Locked Gateway Modal (Mandatory Fullscreen Entry Gesture) */}
+      {!isFullscreen && !warningModalOpen && !effectiveLockedOut && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-6 backdrop-blur-xl">
+          <div className="max-w-lg w-full rounded-2xl border border-emerald-500/40 bg-[#0c121d] p-8 shadow-2xl shadow-emerald-500/10">
+            <div className="flex items-center gap-3">
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-emerald-500/30 bg-emerald-500/10 text-emerald-400">
+                <Shield className="h-6 w-6" />
+              </div>
+              <div>
+                <h2 className="font-mono text-xl font-bold tracking-tight text-white">
+                  LOCKED EXAMINATION ARENA
+                </h2>
+                <p className="text-xs text-gray-400">11:11 Chapter 2 · Academic Integrity Gate</p>
+              </div>
+            </div>
+
+            {/* Candidate Identity Verification Badge */}
+            <div className="mt-5 rounded-xl border border-white/10 bg-black/50 p-3 font-mono text-xs text-gray-300">
+              <div className="flex justify-between border-b border-white/10 pb-2 mb-2">
+                <span className="text-gray-400">Candidate Name:</span>
+                <span className="font-bold text-white">{participantName}</span>
+              </div>
+              <div className="flex justify-between border-b border-white/10 pb-2 mb-2">
+                <span className="text-gray-400">Roll / Team ID:</span>
+                <span className="font-bold text-emerald-400">{rollNumber}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-400">Terminal Node:</span>
+                <span className="text-gray-200">{terminalId}</span>
+              </div>
+            </div>
+
+            {/* Integrity Checklist */}
+            <div className="mt-5 space-y-2 font-mono text-xs text-gray-400">
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+                <span>Presentation Fullscreen Mode required throughout contest</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+                <span>Clipboard copy/paste & devtools keyboard traps active</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+                <span>Zero output blind compiler mode armed (No run button)</span>
+              </div>
+            </div>
+
+            {/* Explicit Launch Action */}
+            <div className="mt-6 pt-2">
+              <button
+                onClick={requestFullscreen}
+                className="w-full flex items-center justify-center gap-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 px-6 py-4 font-mono text-sm font-bold text-black shadow-xl shadow-emerald-500/20 transition-all hover:brightness-110 active:scale-95 cursor-pointer"
+              >
+                <Maximize2 className="h-5 w-5" />
+                <span>Launch Blind Arena & Enter Fullscreen</span>
+              </button>
+              <p className="mt-2 text-center font-mono text-[11px] text-gray-500">
+                Clicking activates secure presentation mode and keyboard lockdown.
+              </p>
+            </div>
           </div>
         </div>
       )}
