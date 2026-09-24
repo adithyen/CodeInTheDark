@@ -898,14 +898,104 @@ export default function AdminPage() {
               </div>
             </div>
 
+            {/* Test Cases Studio */}
+            <div className="space-y-2 border-t border-white/[0.08] pt-3">
+              <div className="flex items-center justify-between">
+                <label className="font-mono text-xs font-bold text-cyan-400">
+                  Test Cases ({editingQuestion.testCases?.length || 0})
+                </label>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const current = editingQuestion.testCases || [];
+                    setEditingQuestion({
+                      ...editingQuestion,
+                      testCases: [
+                        ...current,
+                        {
+                          id: `tc-${Date.now()}`,
+                          input: '',
+                          expectedOutput: '',
+                          isHidden: current.length >= 2,
+                        },
+                      ],
+                    });
+                  }}
+                  className="rounded bg-white/5 border border-white/10 px-2 py-0.5 font-mono text-[11px] text-cyan-300 hover:bg-white/10"
+                >
+                  + Add Test Case
+                </button>
+              </div>
+
+              <div className="max-h-48 overflow-y-auto space-y-2 pr-1">
+                {(editingQuestion.testCases || []).map((tc, idx) => (
+                  <div key={tc.id || idx} className="rounded-lg border border-white/10 bg-black/40 p-2 text-xs space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <span className="font-mono text-gray-400 font-bold">Case #{idx + 1}</span>
+                      <div className="flex items-center gap-2">
+                        <label className="flex items-center gap-1 font-mono text-[11px] text-gray-400">
+                          <input
+                            type="checkbox"
+                            checked={tc.isHidden}
+                            onChange={(e) => {
+                              const updated = [...(editingQuestion.testCases || [])];
+                              updated[idx].isHidden = e.target.checked;
+                              setEditingQuestion({ ...editingQuestion, testCases: updated });
+                            }}
+                          />
+                          Hidden Case
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const updated = (editingQuestion.testCases || []).filter((_, i) => i !== idx);
+                            setEditingQuestion({ ...editingQuestion, testCases: updated });
+                          }}
+                          className="text-red-400 hover:text-red-300"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <textarea
+                        value={tc.input}
+                        onChange={(e) => {
+                          const updated = [...(editingQuestion.testCases || [])];
+                          updated[idx].input = e.target.value;
+                          setEditingQuestion({ ...editingQuestion, testCases: updated });
+                        }}
+                        placeholder="Stdin input..."
+                        rows={2}
+                        className="w-full rounded border border-white/10 bg-black/60 p-1.5 font-mono text-[11px] text-emerald-300"
+                      />
+                      <textarea
+                        value={tc.expectedOutput}
+                        onChange={(e) => {
+                          const updated = [...(editingQuestion.testCases || [])];
+                          updated[idx].expectedOutput = e.target.value;
+                          setEditingQuestion({ ...editingQuestion, testCases: updated });
+                        }}
+                        placeholder="Expected stdout..."
+                        rows={2}
+                        className="w-full rounded border border-white/10 bg-black/60 p-1.5 font-mono text-[11px] text-cyan-300"
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
             <div className="flex justify-end gap-3 pt-3 border-t border-white/[0.08]">
               <button
+                type="button"
                 onClick={() => setShowQuestionModal(false)}
                 className="rounded-xl border border-white/10 px-4 py-2 font-mono text-xs text-gray-400 hover:text-white"
               >
                 Cancel
               </button>
               <button
+                type="button"
                 onClick={handleSaveQuestion}
                 className="rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 px-5 py-2 font-mono text-xs font-bold text-black hover:brightness-110 active:scale-95"
               >
