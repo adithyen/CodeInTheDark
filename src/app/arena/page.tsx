@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import MonacoBlindEditor from '@/components/MonacoBlindEditor';
 import AntiCheatShield from '@/components/AntiCheatShield';
 import CountdownTimer from '@/components/CountdownTimer';
+import { useAntiCheat } from '@/hooks/useAntiCheat';
 import { Question, Language, Participant, ContestState } from '@/types';
 import { 
   Send, 
@@ -55,6 +56,28 @@ export default function ArenaPage() {
   const [activeReceipt, setActiveReceipt] = useState<SubmissionReceipt | null>(null);
 
   const activeQuestion = questions[activeQuestionIndex];
+
+  // Anti-Cheat Engine strictly controlling fullscreen, strikes, and input freeze
+  const {
+    isFullscreen,
+    strikes,
+    isLockedOut,
+    warningModalOpen,
+    warningMessage,
+    hudWarning,
+    requestFullscreen,
+  } = useAntiCheat({
+    participantId: participant?.id || '',
+    participantName: participant?.name || 'Participant',
+    rollNumber: participant?.rollNumber || 'UNKNOWN',
+    terminalId: participant?.terminalId || 'NODE-1',
+    initialStrikes: participant?.strikes || 0,
+    initialLockedOut: participant?.isLockedOut || false,
+    enabled: !!participant,
+    onStrikeUpdate: (newStrikes, locked) => {
+      setParticipant((prev) => prev ? { ...prev, strikes: newStrikes, isLockedOut: locked } : null);
+    },
+  });
 
   // 1. Online / Offline network health tracker
   useEffect(() => {
@@ -154,6 +177,9 @@ export default function ArenaPage() {
   // Keyboard shortcut listener (Ctrl+S save draft, Ctrl+Enter submit)
   useEffect(() => {
     const handleGlobalShortcuts = (e: KeyboardEvent) => {
+      // Strictly ignore shortcuts if not in fullscreen or locked out
+      if (!isFullscreen || isLockedOut) return;
+
       // Ctrl+S / Cmd+S
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
         e.preventDefault();
@@ -171,7 +197,7 @@ export default function ArenaPage() {
     };
     window.addEventListener('keydown', handleGlobalShortcuts);
     return () => window.removeEventListener('keydown', handleGlobalShortcuts);
-  }, [submitting, isContestOver, activeQuestion]);
+  }, [submitting, isContestOver, activeQuestion, isFullscreen, isLockedOut]);
 
   // Reset starter code
   const handleResetStarter = () => {
@@ -271,15 +297,16 @@ export default function ArenaPage() {
     <div className="relative flex flex-1 flex-col overflow-hidden bg-[#06090e]">
       {/* Anti-Cheat Shield with Fullscreen & Watermark Matrix */}
       <AntiCheatShield
-        participantId={participant.id}
         participantName={participant.name}
         rollNumber={participant.rollNumber}
         terminalId={participant.terminalId}
-        strikes={participant.strikes}
-        isLockedOut={participant.isLockedOut}
-        onStrikeRecorded={(newStrikes, isLockedOut) => {
-          setParticipant((prev) => prev ? { ...prev, strikes: newStrikes, isLockedOut } : null);
-        }}
+        strikes={strikes}
+        isLockedOut={isLockedOut}
+        isFullscreen={isFullscreen}
+        warningModalOpen={warningModalOpen}
+        warningMessage={warningMessage}
+        hudWarning={hudWarning}
+        onRequestFullscreen={requestFullscreen}
       />
 
       {/* Global Arena Top Bar */}
@@ -295,7 +322,7 @@ export default function ArenaPage() {
 
           <div className="hidden md:flex items-center gap-1.5 font-mono text-xs text-gray-400">
             <ShieldAlert className="h-3.5 w-3.5 text-amber-400" />
-            <span>Strikes: <strong className={participant.strikes > 0 ? 'text-red-400' : 'text-gray-300'}>{participant.strikes}/3</strong></span>
+            <span>Strikes: <strong className={strikes > 0 ? 'text-red-400' : 'text-gray-300'}>{strikes}/3</strong></span>
           </div>
 
           {/* Network Health Indicator */}
@@ -345,7 +372,7 @@ export default function ArenaPage() {
 
           <button
             onClick={() => setShowConfirmModal(true)}
-            disabled={submitting || participant.isLockedOut || isContestOver}
+            disabled={submitting || isLockedOut || isContestOver || !isFullscreen}
             className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 px-4 py-1.5 font-mono text-xs font-bold text-black shadow-lg shadow-emerald-500/20 transition-all hover:brightness-110 active:scale-95 disabled:opacity-50"
           >
             <Send className="h-3.5 w-3.5" />
@@ -548,12 +575,21 @@ export default function ArenaPage() {
           </div>
 
           {/* Monaco Editor Container */}
-          <div className="flex-1 p-2 bg-[#06090e]">
+          <div className="relative flex-1 p-2 bg-[#06090e]">
+            {!isFullscreen && (
+              <div className="absolute inset-0 z-30 flex items-center justify-center bg-[#070b12]/95 backdrop-blur-md select-none pointer-events-auto">
+                <div className="flex flex-col items-center gap-2 p-6 text-center font-mono text-xs text-amber-400">
+                  <ShieldAlert className="h-8 w-8 animate-pulse text-amber-400" />
+                  <span className="font-bold text-sm">TERMINAL LOCKED: FULLSCREEN REQUIRED</span>
+                  <span className="text-gray-400 max-w-xs">All code editing and input is strictly disabled outside of presentation fullscreen mode.</span>
+                </div>
+              </div>
+            )}
             <MonacoBlindEditor
               language={language}
               value={code}
               onChange={handleCodeChange}
-              disabled={participant.isLockedOut || isContestOver}
+              disabled={!isFullscreen || isLockedOut || isContestOver}
               fontSize={editorFontSize}
             />
           </div>

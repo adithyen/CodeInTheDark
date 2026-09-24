@@ -195,10 +195,15 @@ export function useAntiCheat({
         }
       }
 
-      setIsFullscreen(true);
-      setWarningModalOpen(false);
+      // STRICT CHECK: Only mark fullscreen if document.fullscreenElement is actually present!
+      const active = !!document.fullscreenElement;
+      setIsFullscreen(active);
+      if (active) {
+        setWarningModalOpen(false);
+      }
     } catch (err) {
       console.warn('Fullscreen entry rejected or cancelled:', err);
+      setIsFullscreen(false);
     }
   }, []);
 
@@ -214,7 +219,7 @@ export function useAntiCheat({
       setIsFullscreen(active);
       if (!active) {
         setWarningModalOpen(true);
-        setWarningMessage('Fullscreen presentation mode was exited. Return immediately to avoid disqualification.');
+        setWarningMessage('Fullscreen presentation mode was exited. Arena is frozen. Re-enter fullscreen to continue.');
         setCountdown(10);
         logViolation('fullscreen_exit', 'Participant exited fullscreen mode');
       } else {
@@ -248,6 +253,15 @@ export function useAntiCheat({
 
     // 4. Pre-emptive Keystroke Lockdown in Capture Phase
     const onKeyDown = (e: KeyboardEvent) => {
+      // 0. ABSOLUTE TYPING FREEZE: If NOT in fullscreen, block all keystrokes completely!
+      if (!document.fullscreenElement) {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        showHudWarning('⛔ All typing is frozen. You must be in Fullscreen Presentation Mode to code.');
+        return false;
+      }
+
       // A. Trap F11 (Browser Fullscreen Toggle)
       if (e.key === 'F11' || e.code === 'F11') {
         e.preventDefault();
@@ -318,7 +332,7 @@ export function useAntiCheat({
     };
 
     const onKeyUp = (e: KeyboardEvent) => {
-      if (e.key === 'F11' || e.key === 'Escape' || (e.key.startsWith('F') && /^F([1-9]|1[0-2])$/.test(e.key))) {
+      if (!document.fullscreenElement || e.key === 'F11' || e.key === 'Escape' || (e.key.startsWith('F') && /^F([1-9]|1[0-2])$/.test(e.key))) {
         e.preventDefault();
         e.stopPropagation();
         e.stopImmediatePropagation();
@@ -359,9 +373,14 @@ export function useAntiCheat({
     document.addEventListener('cut', onClipboard, { capture: true });
     document.addEventListener('paste', onClipboard, { capture: true });
     document.addEventListener('contextmenu', onContextMenu, { capture: true });
-    window.addEventListener('resize', checkDevToolsDimensions);
+    // Continuous synchronization to guarantee isFullscreen is 100% accurate to document.fullscreenElement
+    const syncInterval = setInterval(() => {
+      const active = !!document.fullscreenElement;
+      setIsFullscreen(active);
+    }, 250);
 
     return () => {
+      clearInterval(syncInterval);
       document.removeEventListener('fullscreenchange', onFullscreenChange);
       document.removeEventListener('visibilitychange', onVisibilityChange);
       window.removeEventListener('blur', onBlur);
