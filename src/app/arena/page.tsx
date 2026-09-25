@@ -6,7 +6,7 @@ import MonacoBlindEditor from '@/components/MonacoBlindEditor';
 import AntiCheatShield from '@/components/AntiCheatShield';
 import CountdownTimer from '@/components/CountdownTimer';
 import { useAntiCheat } from '@/hooks/useAntiCheat';
-import { Question, Language, Participant, ContestState } from '@/types';
+import { Question, Language, Participant, ContestState, ContestPhase } from '@/types';
 import { 
   Send, 
   RotateCcw, 
@@ -37,6 +37,7 @@ interface SubmissionReceipt {
 export default function ArenaPage() {
   const router = useRouter();
   const [participant, setParticipant] = useState<Participant | null>(null);
+  const [sessionId, setSessionId] = useState<string | null>(null);
   const [contest, setContest] = useState<ContestState | null>(null);
   const [questions, setQuestions] = useState<Question[]>([]);
   const [activeQuestionIndex, setActiveQuestionIndex] = useState(0);
@@ -100,7 +101,7 @@ export default function ArenaPage() {
     };
   }, []);
 
-  // 2. Load participant
+  // 2. Load participant (session-aware)
   useEffect(() => {
     const saved = localStorage.getItem('cid_participant');
     if (!saved) {
@@ -108,25 +109,36 @@ export default function ArenaPage() {
       return;
     }
     try {
-      setParticipant(JSON.parse(saved));
+      const parsed = JSON.parse(saved);
+      setParticipant(parsed);
+      if (parsed.sessionId) setSessionId(parsed.sessionId);
     } catch {
       router.push('/register');
     }
   }, [router]);
 
-  // 3. Fetch questions and contest status
+  // 3. Fetch questions and contest status (session-aware)
   const fetchContestAndQuestions = useCallback(async () => {
     try {
+      const sidParam = sessionId ? `?sessionId=${sessionId}` : '';
       const [contestRes, qRes] = await Promise.all([
-        fetch('/api/contest'),
-        fetch('/api/questions'),
+        fetch(`/api/contest${sidParam}`),
+        fetch(`/api/questions${sidParam}`),
       ]);
 
       if (contestRes.ok) {
         const cData = await contestRes.json();
         setContest(cData.contest);
-        if (cData.contest?.endTime && Date.now() >= cData.contest.endTime) {
+        const phase: ContestPhase = cData.session?.phase;
+        if (
+          (cData.contest?.endTime && Date.now() >= cData.contest.endTime) ||
+          phase === 'ended' || phase === 'reveal'
+        ) {
           setIsContestOver(true);
+        }
+        // Redirect away if session no longer active
+        if (phase === 'setup' || phase === 'registration') {
+          router.push('/register');
         }
       }
 
@@ -137,7 +149,7 @@ export default function ArenaPage() {
     } catch (err) {
       console.error('Error fetching arena data:', err);
     }
-  }, []);
+  }, [sessionId, router]);
 
   useEffect(() => {
     fetchContestAndQuestions();
@@ -224,12 +236,14 @@ export default function ArenaPage() {
         body: JSON.stringify({
           participantId: participant.id,
           participantName: participant.name,
-          rollNumber: participant.rollNumber,
+          participantRoll: participant.rollNumber,
           terminalId: participant.terminalId,
           strikes: participant.strikes,
           questionId: activeQuestion.id,
           language,
           code,
+          sessionId,
+          isAutoSubmit: false,
         }),
       });
 
@@ -261,9 +275,10 @@ export default function ArenaPage() {
     }
   };
 
-  // 7. Handle timer expiration
+  // 7. Handle timer expiration — auto-submit current code for ALL questions
   const handleTimerExpired = () => {
     setIsContestOver(true);
+    // Auto-submit current question's code
     if (activeQuestion && participant && code.trim()) {
       fetch('/api/submit', {
         method: 'POST',
@@ -271,12 +286,14 @@ export default function ArenaPage() {
         body: JSON.stringify({
           participantId: participant.id,
           participantName: participant.name,
-          rollNumber: participant.rollNumber,
+          participantRoll: participant.rollNumber,
           terminalId: participant.terminalId,
           strikes: participant.strikes,
           questionId: activeQuestion.id,
           language,
           code,
+          sessionId,
+          isAutoSubmit: true,
         }),
       }).catch(() => {});
     }

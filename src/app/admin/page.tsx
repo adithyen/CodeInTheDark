@@ -1,98 +1,131 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import Editor from '@monaco-editor/react';
-import { 
-  ShieldCheck, 
-  Play, 
-  Pause, 
-  Plus, 
-  RotateCcw, 
-  Clock, 
-  Megaphone, 
-  Sparkles, 
-  Users, 
-  FileCode, 
-  Download, 
-  Trash2, 
-  ExternalLink, 
-  AlertTriangle,
-  Code2,
-  CheckCircle2,
-  Eye,
-  Lock,
-  GitCompare,
-  FileSpreadsheet,
-  Layers,
-  Upload,
-  RefreshCw,
-  ShieldAlert,
-  UserCheck,
-  UserX,
-  Undo2,
-  Search
+import {
+  ShieldCheck, Play, Pause, Plus, RotateCcw, Clock, Megaphone, Sparkles,
+  Users, FileCode, Download, Trash2, ExternalLink, AlertTriangle, Code2,
+  CheckCircle2, Eye, Lock, GitCompare, FileSpreadsheet, Layers, Upload,
+  RefreshCw, ShieldAlert, Undo2, Search, ChevronDown, PlusCircle,
+  Calendar, History, BarChart3, Settings, Radio, Zap, StopCircle,
+  Timer, Send, X, Copy, Check, Loader2,
 } from 'lucide-react';
-import { Question, ContestState, Participant, Submission, Violation, TestCase } from '@/types';
+import { Question, ContestSession, ContestPhase, Participant, Submission, Violation, TestCase } from '@/types';
 import { calculateCodeSimilarity, SimilarityResult } from '@/lib/plagiarism';
 import { ROUND_PRESETS, RoundPreset } from '@/lib/presets';
 
+// ──────────────────────────────────────────────────────────────────────────────
+// Helpers
+// ──────────────────────────────────────────────────────────────────────────────
+
+const PHASE_LABELS: Record<ContestPhase, string> = {
+  setup: 'Setup',
+  registration: 'Registration Open',
+  active: 'Active',
+  paused: 'Paused',
+  ended: 'Ended',
+  reveal: 'Stage Reveal',
+};
+
+const PHASE_COLORS: Record<ContestPhase, string> = {
+  setup:        'text-gray-400 border-gray-500/40 bg-gray-900/40',
+  registration: 'text-amber-300 border-amber-500/40 bg-amber-950/30',
+  active:       'text-emerald-300 border-emerald-500/40 bg-emerald-950/30',
+  paused:       'text-amber-400 border-amber-400/50 bg-amber-950/40',
+  ended:        'text-gray-400 border-gray-600/40 bg-gray-900/30',
+  reveal:       'text-purple-300 border-purple-500/40 bg-purple-950/30',
+};
+
+function PhaseBadge({ phase }: { phase: ContestPhase }) {
+  return (
+    <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 font-mono text-[10px] font-semibold ${PHASE_COLORS[phase]}`}>
+      {(phase === 'active') && <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-ping" />}
+      {(phase === 'registration') && <span className="h-1.5 w-1.5 rounded-full bg-amber-400 animate-pulse" />}
+      {PHASE_LABELS[phase]}
+    </span>
+  );
+}
+
+function fmtCountdown(ms: number) {
+  if (ms <= 0) return '00:00';
+  const totalSec = Math.floor(ms / 1000);
+  const h = Math.floor(totalSec / 3600);
+  const m = Math.floor((totalSec % 3600) / 60);
+  const s = totalSec % 60;
+  if (h > 0) return `${h}:${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
+  return `${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Main Admin Component
+// ──────────────────────────────────────────────────────────────────────────────
 export default function AdminPage() {
   const [passkey, setPasskey] = useState('');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [authError, setAuthError] = useState('');
 
-  const [contest, setContest] = useState<ContestState | null>(null);
+  // Sessions
+  const [sessions, setSessions] = useState<ContestSession[]>([]);
+  const [currentSession, setCurrentSession] = useState<ContestSession | null>(null);
+  const [viewingSessionId, setViewingSessionId] = useState<string | null>(null); // Which session is shown in tabs
+
+  // New Session Modal
+  const [showNewSessionModal, setShowNewSessionModal] = useState(false);
+  const [newSessionLabel, setNewSessionLabel] = useState('');
+  const [newSessionNotes, setNewSessionNotes] = useState('');
+  const [newSessionScheduled, setNewSessionScheduled] = useState('');
+  const [newSessionCopyFrom, setNewSessionCopyFrom] = useState<string | null>(null);
+  const [newSessionCreating, setNewSessionCreating] = useState(false);
+
+  // Per-session data
   const [questions, setQuestions] = useState<Question[]>([]);
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [violations, setViolations] = useState<Violation[]>([]);
 
-  // Navigation tabs
-  const [activeTab, setActiveTab] = useState<'control' | 'questions' | 'participants' | 'submissions' | 'plagiarism' | 'violations'>('control');
+  // Active tab
+  const [activeTab, setActiveTab] = useState<'setup' | 'registration' | 'live' | 'participants' | 'submissions' | 'history' | 'plagiarism'>('setup');
 
   // Control inputs
   const [announcementText, setAnnouncementText] = useState('');
-  const [durationInput, setDurationInput] = useState('50');
+  const [regDurationMin, setRegDurationMin] = useState(3);
+  const [autoStartReg, setAutoStartReg] = useState(true);
+  const [challengeDurationMin, setChallengeDurationMin] = useState(50);
+  const [maxParticipants, setMaxParticipants] = useState(200);
 
-  // LeetCode Importer state
-  const [leetcodeSlug, setLeetcodeSlug] = useState('');
-  const [importLoading, setImportLoading] = useState(false);
-  const [importResult, setImportResult] = useState<Partial<Question> | null>(null);
+  // Countdown ticks
+  const [regCountdown, setRegCountdown] = useState('');
+  const [challengeCountdown, setChallengeCountdown] = useState('');
+  const [serverTimeOffset, setServerTimeOffset] = useState(0);
 
-  // Plagiarism Inspector state
-  const [plagQuestionId, setPlagQuestionId] = useState('');
-  const [candidateAId, setCandidateAId] = useState('');
-  const [candidateBId, setCandidateBId] = useState('');
-  const [suspectPairs, setSuspectPairs] = useState<{ subA: Submission; subB: Submission; similarity: SimilarityResult }[]>([]);
-
-  // Bulk JSON Import state
+  // Questions editor
+  const [showQuestionModal, setShowQuestionModal] = useState(false);
+  const [editingQuestion, setEditingQuestion] = useState<Partial<Question>>({});
   const [showImportJsonModal, setShowImportJsonModal] = useState(false);
   const [importJsonText, setImportJsonText] = useState('');
+  const [leetcodeSlug, setLeetcodeSlug] = useState('');
+  const [importLoading, setImportLoading] = useState(false);
 
-  // Manual Question Creator modal/form
-  const [showQuestionModal, setShowQuestionModal] = useState(false);
-  const [editingQuestion, setEditingQuestion] = useState<Partial<Question>>({
-    title: '',
-    category: 'Algorithms',
-    difficulty: 'Medium',
-    points: 400,
-    scenario: '',
-    inputFormat: '',
-    outputFormat: '',
-    constraints: '',
-    testCases: [],
-  });
-
-  // Code Inspector Modal
+  // Submissions inspector
   const [inspectedSubmission, setInspectedSubmission] = useState<Submission | null>(null);
+  const [rejudging, setRejudging] = useState<string | null>(null);
 
-  // Check saved passkey on mount
+  // Plagiarism
+  const [plagQuestionId, setPlagQuestionId] = useState('');
+  const [suspectPairs, setSuspectPairs] = useState<{ subA: Submission; subB: Submission; similarity: SimilarityResult }[]>([]);
+
+  // Session selector dropdown
+  const [selectorOpen, setSelectorOpen] = useState(false);
+
+  const viewingSession = sessions.find(s => s.id === viewingSessionId) ?? currentSession;
+
+  // ────────────────────────────────────────────────────────────────────────────
+  // Auth
+  // ────────────────────────────────────────────────────────────────────────────
   useEffect(() => {
     const saved = sessionStorage.getItem('cid_admin_passkey');
-    if (saved) {
-      setPasskey(saved);
-      verifyPasskey(saved);
-    }
+    if (saved) { setPasskey(saved); verifyPasskey(saved); }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const verifyPasskey = async (key: string) => {
@@ -101,91 +134,211 @@ export default function AdminPage() {
       if (res.ok) {
         setIsAuthenticated(true);
         sessionStorage.setItem('cid_admin_passkey', key);
-        fetchAdminData(key);
+        fetchAllData(key);
       } else {
-        setAuthError('Invalid Admin Passkey. Default: admin1111');
+        setAuthError('Invalid Admin Passkey');
       }
-    } catch {
-      setAuthError('Connection error verifying admin');
-    }
+    } catch { setAuthError('Connection error'); }
   };
 
-  const handleLogin = (e: React.FormEvent) => {
-    e.preventDefault();
-    setAuthError('');
-    verifyPasskey(passkey);
-  };
+  const handleLogin = (e: React.FormEvent) => { e.preventDefault(); setAuthError(''); verifyPasskey(passkey); };
 
-  const fetchAdminData = useCallback(async (key: string) => {
+  // ────────────────────────────────────────────────────────────────────────────
+  // Data fetching
+  // ────────────────────────────────────────────────────────────────────────────
+  const fetchAllData = useCallback(async (key: string, sid?: string | null) => {
     try {
-      const [contestRes, qRes, pRes, sRes, vRes] = await Promise.all([
-        fetch('/api/contest'),
-        fetch(`/api/questions?admin=true&passkey=${key}`),
-        fetch(`/api/participants?passkey=${key}`),
-        fetch(`/api/admin/submissions?passkey=${key}`),
-        fetch(`/api/violations?passkey=${key}`),
+      // 1. Get all sessions
+      const sessRes = await fetch('/api/contest', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'getSessions', passkey: key }) });
+      let liveSessions: ContestSession[] = [];
+      if (sessRes.ok) {
+        const d = await sessRes.json();
+        liveSessions = d.sessions ?? [];
+        setSessions(liveSessions);
+      }
+
+      // 2. Get current active session
+      const contestRes = await fetch('/api/contest');
+      let activeSession: ContestSession | null = null;
+      if (contestRes.ok) {
+        const d = await contestRes.json();
+        activeSession = d.session;
+        setCurrentSession(d.session);
+        setServerTimeOffset((d.serverTime ?? Date.now()) - Date.now());
+        if (!viewingSessionId && d.session?.id) setViewingSessionId(d.session.id);
+      }
+
+      // 3. Session-scoped data for the viewed session
+      const targetId = sid ?? viewingSessionId ?? activeSession?.id;
+      if (!targetId) return;
+
+      const [qRes, pRes, sRes, vRes] = await Promise.all([
+        fetch(`/api/questions?admin=true&passkey=${key}&sessionId=${targetId}`),
+        fetch(`/api/participants?passkey=${key}&sessionId=${targetId}`),
+        fetch(`/api/admin/submissions?passkey=${key}&sessionId=${targetId}`),
+        fetch(`/api/violations?passkey=${key}&sessionId=${targetId}`),
       ]);
 
-      if (contestRes.ok) {
-        const cData = await contestRes.json();
-        setContest(cData.contest);
-      }
-      if (qRes.ok) {
-        const qData = await qRes.json();
-        setQuestions(qData.questions || []);
-      }
-      if (pRes.ok) {
-        const pData = await pRes.json();
-        setParticipants(pData.participants || []);
-      }
-      if (sRes.ok) {
-        const sData = await sRes.json();
-        setSubmissions(sData.submissions || []);
-      }
-      if (vRes.ok) {
-        const vData = await vRes.json();
-        setViolations(vData.violations || []);
-      }
+      if (qRes.ok) setQuestions((await qRes.json()).questions ?? []);
+      if (pRes.ok) setParticipants((await pRes.json()).participants ?? []);
+      if (sRes.ok) setSubmissions((await sRes.json()).submissions ?? []);
+      if (vRes.ok) setViolations((await vRes.json()).violations ?? []);
     } catch (err) {
-      console.error('Failed fetching admin data:', err);
+      console.error('Admin data fetch error:', err);
     }
-  }, []);
+  }, [viewingSessionId]);
 
+  // Auto-refresh every 5 seconds
   useEffect(() => {
     if (!isAuthenticated) return;
-    const interval = setInterval(() => fetchAdminData(passkey), 5000);
+    const interval = setInterval(() => fetchAllData(passkey), 5000);
     return () => clearInterval(interval);
-  }, [isAuthenticated, passkey, fetchAdminData]);
+  }, [isAuthenticated, passkey, fetchAllData]);
 
-  // Contest Actions
-  const handleContestAction = async (action: string, payload: any = {}) => {
+  // Refetch when viewed session changes
+  useEffect(() => {
+    if (isAuthenticated && viewingSessionId) fetchAllData(passkey, viewingSessionId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [viewingSessionId]);
+
+  // ────────────────────────────────────────────────────────────────────────────
+  // Countdown tickers
+  // ────────────────────────────────────────────────────────────────────────────
+  useEffect(() => {
+    const tick = () => {
+      const now = Date.now() + serverTimeOffset;
+      if (currentSession?.phase === 'registration' && currentSession.registration_ends_at) {
+        setRegCountdown(fmtCountdown(currentSession.registration_ends_at - now));
+      }
+      if ((currentSession?.phase === 'active' || currentSession?.phase === 'paused') && currentSession.challenge_ends_at) {
+        setChallengeCountdown(fmtCountdown(currentSession.challenge_ends_at - now));
+      }
+    };
+    tick();
+    const t = setInterval(tick, 1000);
+    return () => clearInterval(t);
+  }, [currentSession, serverTimeOffset]);
+
+  // ────────────────────────────────────────────────────────────────────────────
+  // Contest actions (on the current active session)
+  // ────────────────────────────────────────────────────────────────────────────
+  const contestAction = async (action: string, extra: any = {}) => {
+    const sessionId = currentSession?.id;
+    if (!sessionId && action !== 'createSession' && action !== 'getSessions') return;
     try {
       const res = await fetch('/api/contest', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action, passkey, ...payload }),
+        body: JSON.stringify({ action, passkey, sessionId, ...extra }),
       });
-      if (res.ok) {
-        fetchAdminData(passkey);
+      if (res.ok) await fetchAllData(passkey);
+      else {
+        const d = await res.json();
+        alert(d.error || 'Action failed');
       }
-    } catch {
-      alert('Contest action failed');
-    }
+    } catch { alert('Network error'); }
   };
 
-  // LeetCode Importer trigger
+  // ────────────────────────────────────────────────────────────────────────────
+  // New session creation
+  // ────────────────────────────────────────────────────────────────────────────
+  const handleCreateSession = async () => {
+    if (!newSessionLabel.trim()) return alert('Session label is required');
+    setNewSessionCreating(true);
+    try {
+      const res = await fetch('/api/contest', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'createSession',
+          passkey,
+          label: newSessionLabel.trim(),
+          notes: newSessionNotes.trim(),
+          scheduledAt: newSessionScheduled || undefined,
+          copyFromSessionId: newSessionCopyFrom || undefined,
+        }),
+      });
+      const d = await res.json();
+      if (res.ok && d.session) {
+        setShowNewSessionModal(false);
+        setNewSessionLabel(''); setNewSessionNotes(''); setNewSessionScheduled(''); setNewSessionCopyFrom(null);
+        await fetchAllData(passkey, d.session.id);
+        setViewingSessionId(d.session.id);
+        setActiveTab('setup');
+      } else {
+        alert(d.error || 'Failed to create session');
+      }
+    } catch { alert('Network error'); }
+    setNewSessionCreating(false);
+  };
+
+  // ────────────────────────────────────────────────────────────────────────────
+  // Question actions
+  // ────────────────────────────────────────────────────────────────────────────
+  const handleSaveQuestion = async () => {
+    if (!editingQuestion.title) return alert('Title is required');
+    const targetId = viewingSessionId ?? currentSession?.id;
+    if (!targetId) return alert('No session selected');
+    try {
+      const res = await fetch('/api/questions', {
+        method: editingQuestion.id ? 'PUT' : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ passkey, question: editingQuestion, sessionId: targetId }),
+      });
+      if (res.ok) { setShowQuestionModal(false); fetchAllData(passkey); }
+      else alert('Failed saving question');
+    } catch { alert('Network error'); }
+  };
+
+  const handleDeleteQuestion = async (id: string) => {
+    if (!confirm('Delete this question?')) return;
+    try {
+      const res = await fetch(`/api/questions?id=${id}&passkey=${passkey}`, { method: 'DELETE' });
+      if (res.ok) fetchAllData(passkey);
+    } catch { alert('Failed deleting question'); }
+  };
+
+  const handleImportQuestionsJSON = async () => {
+    const targetId = viewingSessionId ?? currentSession?.id;
+    if (!targetId) return alert('No session selected');
+    try {
+      const parsed = JSON.parse(importJsonText);
+      const qList = Array.isArray(parsed) ? parsed : parsed.questions;
+      if (!Array.isArray(qList) || qList.length === 0) return alert('Invalid format');
+      const res = await fetch('/api/questions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ passkey, action: 'bulk_import', questions: qList, sessionId: targetId }),
+      });
+      if (res.ok) {
+        alert(`Imported ${qList.length} questions!`);
+        setShowImportJsonModal(false); setImportJsonText(''); fetchAllData(passkey);
+      } else alert('Import failed');
+    } catch (err: any) { alert(`JSON error: ${err.message}`); }
+  };
+
+  const handleLoadPreset = async (preset: RoundPreset) => {
+    const targetId = viewingSessionId ?? currentSession?.id;
+    if (!targetId) return alert('No session selected');
+    if (!confirm(`Load "${preset.name}"? This replaces all current questions.`)) return;
+    const res = await fetch('/api/questions', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ passkey, action: 'bulk_import', questions: preset.questions, sessionId: targetId }),
+    });
+    if (res.ok) { alert(`Loaded ${preset.name}!`); fetchAllData(passkey); }
+    else alert('Failed loading preset');
+  };
+
   const handleImportLeetCode = async () => {
     if (!leetcodeSlug.trim()) return;
     setImportLoading(true);
     try {
       const res = await fetch('/api/import-leetcode', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ slug: leetcodeSlug.trim(), passkey }),
       });
       const data = await res.json();
       if (res.ok && data.question) {
-        setImportResult(data.question);
         setEditingQuestion({
           ...data.question,
           starterTemplates: {
@@ -195,1519 +348,1070 @@ export default function AdminPage() {
           },
         });
         setShowQuestionModal(true);
-      } else {
-        alert(data.error || 'Failed to import problem from LeetCode');
-      }
-    } catch {
-      alert('Error fetching from LeetCode');
-    } finally {
-      setImportLoading(false);
-    }
+      } else alert(data.error || 'Import failed');
+    } catch { alert('Error fetching from LeetCode'); }
+    setImportLoading(false);
   };
 
-  // Save manual question
-  const handleSaveQuestion = async () => {
-    if (!editingQuestion.title) {
-      alert('Title is required');
-      return;
-    }
-
-    try {
-      const isEdit = !!editingQuestion.id;
-      const res = await fetch('/api/questions', {
-        method: isEdit ? 'PUT' : 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ passkey, question: editingQuestion }),
-      });
-
-      if (res.ok) {
-        setShowQuestionModal(false);
-        fetchAdminData(passkey);
-      } else {
-        alert('Failed saving question');
-      }
-    } catch {
-      alert('Network error saving question');
-    }
-  };
-
-  // Delete question
-  const handleDeleteQuestion = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this question?')) return;
-    try {
-      const res = await fetch(`/api/questions?id=${id}&passkey=${passkey}`, { method: 'DELETE' });
-      if (res.ok) {
-        fetchAdminData(passkey);
-      }
-    } catch {
-      alert('Failed deleting question');
-    }
-  };
-
-  // Participant proctor actions (Strike Reset, +1 Strike, Lockout Toggle, Remove)
-  const handleParticipantAction = async (participantId: string, action: string) => {
+  // ────────────────────────────────────────────────────────────────────────────
+  // Participant actions
+  // ────────────────────────────────────────────────────────────────────────────
+  const participantAction = async (participantId: string, action: string) => {
     try {
       const res = await fetch('/api/participants', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ passkey, participantId, action }),
       });
-      if (res.ok) {
-        fetchAdminData(passkey);
-      } else {
-        const d = await res.json();
-        alert(d.error || 'Participant action failed');
-      }
-    } catch {
-      alert('Network error modifying participant');
-    }
+      if (res.ok) fetchAllData(passkey);
+      else { const d = await res.json(); alert(d.error || 'Action failed'); }
+    } catch { alert('Network error'); }
   };
 
-  // Export Results CSV
-  const handleExportCSV = () => {
-    if (participants.length === 0) {
-      alert('No participant records to export');
-      return;
-    }
+  // ────────────────────────────────────────────────────────────────────────────
+  // Submission re-judge
+  // ────────────────────────────────────────────────────────────────────────────
+  const handleRejudge = async (submissionId: string) => {
+    const targetId = viewingSessionId ?? currentSession?.id;
+    if (!targetId) return;
+    setRejudging(submissionId);
+    try {
+      const res = await fetch('/api/admin/submissions', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ passkey, submissionId, sessionId: targetId }),
+      });
+      const d = await res.json();
+      if (res.ok) { alert(`Re-judged: ${d.testCasesPassed}/${d.totalTestCases} passed. Score: ${d.score}`); fetchAllData(passkey); }
+      else alert(d.error || 'Re-judge failed');
+    } catch { alert('Error re-judging'); }
+    setRejudging(null);
+  };
+
+  // ────────────────────────────────────────────────────────────────────────────
+  // Export helpers
+  // ────────────────────────────────────────────────────────────────────────────
+  const exportCSV = () => {
+    if (!participants.length) return alert('No participants');
     const headers = ['Roll Number', 'Name', 'Terminal ID', 'Total Score', 'Questions Solved', 'Strikes', 'Status', 'Registered At'];
     const rows = participants.map((p) => {
-      const userSubs = submissions.filter((s) => s.participantId === p.id);
-      const totalScore = userSubs.reduce((acc, s) => acc + (s.score || 0), 0);
-      const solvedCount = userSubs.filter((s) => s.testCasesPassed === s.totalTestCases).length;
-      return [
-        `"${p.rollNumber}"`,
-        `"${p.name}"`,
-        `"${p.terminalId}"`,
-        totalScore,
-        solvedCount,
-        p.strikes,
-        p.isLockedOut ? 'LOCKED_OUT' : 'ACTIVE',
-        `"${new Date(p.registeredAt).toLocaleString()}"`,
-      ].join(',');
+      const userSubs = submissions.filter(s => s.participantId === p.id);
+      const totalScore = userSubs.reduce((a, s) => a + (s.score || 0), 0);
+      const solved = userSubs.filter(s => s.testCasesPassed === s.totalTestCases).length;
+      return [`"${p.rollNumber}"`, `"${p.name}"`, `"${p.terminalId}"`, totalScore, solved, p.strikes, p.isLockedOut ? 'LOCKED' : 'ACTIVE', `"${new Date(p.registeredAt).toLocaleString()}"`].join(',');
     });
-    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows].join('\n');
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement('a');
-    link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `CodeInTheDark_Results_${new Date().toISOString().slice(0, 10)}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    const csv = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows].join('\n');
+    const a = document.createElement('a'); a.href = encodeURI(csv); a.download = `CodeInTheDark_${viewingSession?.label}_${new Date().toISOString().slice(0,10)}.csv`; a.click();
   };
 
-  // Export Complete Audit JSON
-  const handleExportAuditJSON = () => {
-    const auditData = {
-      exportedAt: new Date().toISOString(),
-      contest,
-      questions,
-      participants,
-      submissions,
-      violations,
-    };
-    const blob = new Blob([JSON.stringify(auditData, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `CodeInTheDark_Audit_${Date.now()}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
+  const exportAuditJSON = () => {
+    const blob = new Blob([JSON.stringify({ exportedAt: new Date().toISOString(), session: viewingSession, questions, participants, submissions, violations }, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `Audit_${Date.now()}.json`; a.click(); URL.revokeObjectURL(a.href);
   };
 
-  // Export Questions JSON
-  const handleExportQuestionsJSON = () => {
+  const exportQuestionsJSON = () => {
     const blob = new Blob([JSON.stringify(questions, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `CodeInTheDark_ProblemSet_${Date.now()}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `Questions_${Date.now()}.json`; a.click(); URL.revokeObjectURL(a.href);
   };
 
-  // Import Questions JSON
-  const handleImportQuestionsJSON = async () => {
-    try {
-      const parsed = JSON.parse(importJsonText);
-      const qList = Array.isArray(parsed) ? parsed : parsed.questions;
-      if (!Array.isArray(qList) || qList.length === 0) {
-        alert('Invalid format: JSON must be an array of questions or an object with a "questions" array.');
-        return;
-      }
-      const res = await fetch('/api/questions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ passkey, action: 'bulk_import', questions: qList }),
-      });
-      if (res.ok) {
-        alert(`Successfully imported ${qList.length} challenge questions!`);
-        setShowImportJsonModal(false);
-        setImportJsonText('');
-        fetchAdminData(passkey);
-      } else {
-        const d = await res.json();
-        alert(d.error || 'Import failed');
-      }
-    } catch (err: any) {
-      alert(`JSON parsing error: ${err.message}`);
-    }
-  };
-
-  // Load Round Preset
-  const handleLoadPreset = async (preset: RoundPreset) => {
-    if (!confirm(`Switch to "${preset.name}"? This will set active challenge set to ${preset.questions.length} problems.`)) return;
-    try {
-      const res = await fetch('/api/questions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ passkey, action: 'bulk_import', questions: preset.questions }),
-      });
-      if (res.ok) {
-        alert(`Successfully loaded ${preset.name}!`);
-        fetchAdminData(passkey);
-      } else {
-        alert('Failed loading preset');
-      }
-    } catch {
-      alert('Error loading preset');
-    }
-  };
-
-  // Scan all pairs for plagiarism on a question
-  const handleScanAllPlagiarism = (questionId: string) => {
-    if (!questionId) return;
-    const subsForQ = submissions.filter((s) => s.questionId === questionId);
-    if (subsForQ.length < 2) {
-      alert('Need at least 2 submissions for this question to calculate similarity.');
-      return;
-    }
-
-    const pairs: { subA: Submission; subB: Submission; similarity: SimilarityResult }[] = [];
-    for (let i = 0; i < subsForQ.length; i++) {
-      for (let j = i + 1; j < subsForQ.length; j++) {
-        if (subsForQ[i].participantId === subsForQ[j].participantId) continue;
-        const sim = calculateCodeSimilarity(subsForQ[i].code, subsForQ[j].code);
-        pairs.push({ subA: subsForQ[i], subB: subsForQ[j], similarity: sim });
+  // ────────────────────────────────────────────────────────────────────────────
+  // Plagiarism
+  // ────────────────────────────────────────────────────────────────────────────
+  const scanPlagiarism = (questionId: string) => {
+    const subs = submissions.filter(s => s.questionId === questionId);
+    if (subs.length < 2) return alert('Need at least 2 submissions');
+    const pairs: any[] = [];
+    for (let i = 0; i < subs.length; i++) {
+      for (let j = i + 1; j < subs.length; j++) {
+        if (subs[i].participantId === subs[j].participantId) continue;
+        pairs.push({ subA: subs[i], subB: subs[j], similarity: calculateCodeSimilarity(subs[i].code, subs[j].code) });
       }
     }
-
     pairs.sort((a, b) => b.similarity.similarityScore - a.similarity.similarityScore);
     setSuspectPairs(pairs);
   };
 
+  // ────────────────────────────────────────────────────────────────────────────
+  // LOGIN GATE
+  // ────────────────────────────────────────────────────────────────────────────
   if (!isAuthenticated) {
     return (
       <div className="flex flex-1 items-center justify-center p-4 bg-grid-cyber">
         <div className="w-full max-w-sm rounded-2xl border border-white/10 bg-[#0c121d]/90 p-8 backdrop-blur-2xl shadow-2xl">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-400">
-              <Lock className="h-5 w-5" />
-            </div>
-            <div>
-              <h2 className="font-mono text-lg font-bold text-white">ADMIN COMMAND</h2>
-              <p className="text-xs text-gray-400">11:11 Chapter 2 Organizer Portal</p>
-            </div>
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-400"><Lock className="h-5 w-5" /></div>
+            <div><h2 className="font-mono text-lg font-bold text-white">ADMIN COMMAND</h2><p className="text-xs text-gray-400">11:11 Chapter 2 Organizer Portal</p></div>
           </div>
-
-          {authError && (
-            <div className="mt-4 rounded-lg border border-red-500/40 bg-red-950/20 p-2.5 font-mono text-xs text-red-300">
-              {authError}
-            </div>
-          )}
-
+          {authError && <div className="mt-4 rounded-lg border border-red-500/40 bg-red-950/20 p-2.5 font-mono text-xs text-red-300">{authError}</div>}
           <form onSubmit={handleLogin} className="mt-6 space-y-4">
             <div>
               <label className="block font-mono text-xs text-gray-400 mb-1">Master Organizer Passkey</label>
-              <input
-                type="password"
-                value={passkey}
-                onChange={(e) => setPasskey(e.target.value)}
-                placeholder="Enter passkey (e.g. admin1111)"
-                required
-                className="w-full rounded-xl border border-white/10 bg-black/40 px-3 py-2 font-mono text-sm text-white focus:border-amber-500 focus:outline-none"
-              />
+              <input type="password" value={passkey} onChange={(e) => setPasskey(e.target.value)} placeholder="admin1111" required className="w-full rounded-xl border border-white/10 bg-black/40 px-3 py-2 font-mono text-sm text-white focus:border-amber-500 focus:outline-none" />
             </div>
-
-            <button
-              type="submit"
-              className="w-full rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 py-2.5 font-mono text-sm font-bold text-black shadow-lg shadow-amber-500/20 hover:brightness-110 active:scale-95"
-            >
-              Authenticate Center
-            </button>
+            <button type="submit" className="w-full rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 py-2.5 font-mono text-sm font-bold text-black hover:brightness-110">Authenticate Command Center</button>
           </form>
         </div>
       </div>
     );
   }
 
+  // ────────────────────────────────────────────────────────────────────────────
+  // MAIN ADMIN LAYOUT
+  // ────────────────────────────────────────────────────────────────────────────
+  const phase = currentSession?.phase ?? 'setup';
+  const isLive = phase === 'active' || phase === 'paused';
+
   return (
-    <div className="flex flex-1 flex-col bg-[#06090e] p-4 sm:p-6 lg:p-8">
-      {/* Admin Top Header */}
-      <div className="mx-auto flex w-full max-w-7xl flex-wrap items-center justify-between gap-4 border-b border-white/[0.08] pb-6">
-        <div>
-          <div className="inline-flex items-center gap-2 rounded-full border border-amber-500/30 bg-amber-950/20 px-3 py-1 font-mono text-xs font-semibold text-amber-400">
-            <ShieldCheck className="h-3.5 w-3.5" />
-            ADMIN COMMAND CENTER · 11:11 CHAPTER 2
+    <div className="flex flex-1 flex-col bg-[#06090e]">
+      {/* ── Sticky Header ── */}
+      <div className="sticky top-0 z-40 border-b border-white/[0.08] bg-[#08090e]/95 backdrop-blur-xl">
+        <div className="mx-auto flex w-full max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
+          {/* Logo */}
+          <div className="flex items-center gap-3">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-500/10 border border-amber-500/30">
+              <ShieldCheck className="h-4 w-4 text-amber-400" />
+            </div>
+            <span className="font-mono text-sm font-bold text-white hidden sm:inline">ADMIN COMMAND CENTER</span>
           </div>
-          <h1 className="mt-2 font-mono text-3xl font-extrabold text-white">
-            Live Contest Operations
-          </h1>
+
+          {/* Session Selector */}
+          <div className="relative flex-1 max-w-xs">
+            <button
+              onClick={() => setSelectorOpen(o => !o)}
+              className="flex w-full items-center justify-between gap-2 rounded-xl border border-white/10 bg-black/40 px-3 py-2 font-mono text-xs text-white hover:border-white/20 transition-all"
+            >
+              <div className="flex items-center gap-2 truncate">
+                <span className="truncate">{viewingSession?.label ?? 'No Session'}</span>
+                {viewingSession && <PhaseBadge phase={viewingSession.phase} />}
+              </div>
+              <ChevronDown className={`h-3.5 w-3.5 text-gray-400 shrink-0 transition-transform ${selectorOpen ? 'rotate-180' : ''}`} />
+            </button>
+
+            {selectorOpen && (
+              <div className="absolute left-0 top-full mt-1 z-50 w-full min-w-[280px] rounded-xl border border-white/10 bg-[#0c121d] shadow-2xl overflow-hidden">
+                <div className="py-1">
+                  {sessions.map(s => (
+                    <button
+                      key={s.id}
+                      onClick={() => { setViewingSessionId(s.id); setSelectorOpen(false); }}
+                      className={`flex w-full items-center justify-between px-3 py-2.5 text-left transition-colors hover:bg-white/5 ${viewingSessionId === s.id ? 'bg-white/5' : ''}`}
+                    >
+                      <div>
+                        <div className="font-mono text-xs font-semibold text-white">{s.label}</div>
+                        {s.scheduled_at && (
+                          <div className="font-mono text-[10px] text-gray-500">
+                            {new Date(s.scheduled_at).toLocaleString()}
+                          </div>
+                        )}
+                      </div>
+                      <PhaseBadge phase={s.phase} />
+                    </button>
+                  ))}
+                  <div className="border-t border-white/[0.08] p-1.5">
+                    <button
+                      onClick={() => { setShowNewSessionModal(true); setSelectorOpen(false); }}
+                      className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 font-mono text-xs text-emerald-400 hover:bg-emerald-950/30"
+                    >
+                      <PlusCircle className="h-3.5 w-3.5" />
+                      New Contest Session
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Status Pills */}
+          <div className="flex items-center gap-2">
+            {currentSession && <PhaseBadge phase={currentSession.phase} />}
+            {isLive && (
+              <button
+                onClick={() => contestAction('toggleReveal')}
+                className={`flex items-center gap-1.5 rounded-xl border px-3 py-1.5 font-mono text-[11px] font-semibold transition-all ${currentSession?.is_reveal_mode ? 'border-purple-400 bg-purple-400 text-black shadow-lg shadow-purple-400/30' : 'border-white/15 bg-white/5 text-purple-300 hover:bg-white/10'}`}
+              >
+                <Sparkles className="h-3.5 w-3.5" />
+                {currentSession?.is_reveal_mode ? 'Reveal Active' : 'Stage Reveal'}
+              </button>
+            )}
+            <button onClick={() => fetchAllData(passkey)} className="rounded-lg border border-white/10 bg-white/5 p-1.5 text-gray-400 hover:text-white" title="Refresh data">
+              <RefreshCw className="h-3.5 w-3.5" />
+            </button>
+          </div>
         </div>
 
-        {/* Global Live Contest Pills */}
-        <div className="flex items-center gap-3">
-          <div className={`flex items-center gap-2 rounded-xl border px-3.5 py-1.5 font-mono text-xs ${
-            contest?.isActive
-              ? 'border-emerald-500/40 bg-emerald-950/30 text-emerald-400'
-              : 'border-white/10 bg-white/5 text-gray-400'
-          }`}>
-            <span className={`h-2 w-2 rounded-full ${contest?.isActive ? 'bg-emerald-400 animate-ping' : 'bg-gray-500'}`} />
-            <span>{contest?.isActive ? (contest.isPaused ? 'Contest Paused' : 'Contest Active') : 'Contest Standby'}</span>
-          </div>
-
-          <button
-            onClick={() => handleContestAction('toggleReveal')}
-            className={`flex items-center gap-1.5 rounded-xl border px-3.5 py-1.5 font-mono text-xs font-semibold transition-all ${
-              contest?.isRevealMode
-                ? 'border-amber-400 bg-amber-400 text-black shadow-lg shadow-amber-400/30'
-                : 'border-white/15 bg-white/5 text-amber-300 hover:bg-white/10'
-            }`}
-          >
-            <Sparkles className="h-4 w-4" />
-            <span>{contest?.isRevealMode ? 'Stage Reveal Active' : 'Trigger Stage Reveal'}</span>
-          </button>
+        {/* Tabs */}
+        <div className="mx-auto flex w-full max-w-7xl overflow-x-auto border-t border-white/[0.06] px-4 sm:px-6">
+          {(([
+            { id: 'setup',        icon: Settings,      label: 'Challenge Setup',     color: 'amber',   badge: '' },
+            { id: 'registration', icon: Radio,          label: 'Registration',        color: 'orange',  badge: '' },
+            { id: 'live',         icon: Zap,            label: 'Live Controls',       color: 'emerald', badge: isLive ? '●' : '' },
+            { id: 'participants', icon: Users,          label: `Participants (${participants.length})`, color: 'cyan',    badge: '' },
+            { id: 'submissions',  icon: Code2,          label: `Submissions (${submissions.length})`,  color: 'indigo',  badge: '' },
+            { id: 'history',      icon: History,        label: 'History',             color: 'violet',  badge: '' },
+            { id: 'plagiarism',   icon: GitCompare,     label: 'Plagiarism',          color: 'red',     badge: '' },
+          ] as Array<{ id: typeof activeTab; icon: React.ComponentType<{className?: string}>; label: string; color: string; badge: string }>)).map(({ id, icon: Icon, label, color, badge }) => (
+            <button
+              key={id}
+              onClick={() => setActiveTab(id)}
+              className={`flex shrink-0 items-center gap-1.5 border-b-2 px-3 py-2.5 font-mono text-xs font-medium transition-all ${
+                activeTab === id
+                  ? `border-${color}-400 text-${color}-400 font-bold`
+                  : 'border-transparent text-gray-400 hover:text-white'
+              }`}
+            >
+              <Icon className="h-3.5 w-3.5" />
+              <span>{label}</span>
+              {badge && <span className="animate-pulse text-emerald-400">{badge}</span>}
+            </button>
+          ))}
         </div>
       </div>
 
-      {/* Admin Navigation Tabs */}
-      <div className="mx-auto mt-6 flex w-full max-w-7xl border-b border-white/[0.08] gap-2 overflow-x-auto">
-        <button
-          onClick={() => setActiveTab('control')}
-          className={`flex items-center gap-2 border-b-2 px-4 py-3 font-mono text-xs font-medium transition-all ${
-            activeTab === 'control' ? 'border-amber-400 text-amber-400 font-bold' : 'border-transparent text-gray-400 hover:text-white'
-          }`}
-        >
-          <Clock className="h-4 w-4" />
-          <span>Contest Controls</span>
-        </button>
+      {/* ── Tab Content ── */}
+      <div className="mx-auto w-full max-w-7xl flex-1 p-4 sm:p-6 lg:p-8">
 
-        <button
-          onClick={() => setActiveTab('questions')}
-          className={`flex items-center gap-2 border-b-2 px-4 py-3 font-mono text-xs font-medium transition-all ${
-            activeTab === 'questions' ? 'border-cyan-400 text-cyan-400 font-bold' : 'border-transparent text-gray-400 hover:text-white'
-          }`}
-        >
-          <FileCode className="h-4 w-4" />
-          <span>Questions & LeetCode ({questions.length})</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab('participants')}
-          className={`flex items-center gap-2 border-b-2 px-4 py-3 font-mono text-xs font-medium transition-all ${
-            activeTab === 'participants' ? 'border-emerald-400 text-emerald-400 font-bold' : 'border-transparent text-gray-400 hover:text-white'
-          }`}
-        >
-          <Users className="h-4 w-4" />
-          <span>Participants ({participants.length})</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab('submissions')}
-          className={`flex items-center gap-2 border-b-2 px-4 py-3 font-mono text-xs font-medium transition-all ${
-            activeTab === 'submissions' ? 'border-indigo-400 text-indigo-400 font-bold' : 'border-transparent text-gray-400 hover:text-white'
-          }`}
-        >
-          <Code2 className="h-4 w-4" />
-          <span>Submissions & Code ({submissions.length})</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab('plagiarism')}
-          className={`flex items-center gap-2 border-b-2 px-4 py-3 font-mono text-xs font-medium transition-all ${
-            activeTab === 'plagiarism' ? 'border-purple-400 text-purple-400 font-bold' : 'border-transparent text-gray-400 hover:text-white'
-          }`}
-        >
-          <GitCompare className="h-4 w-4" />
-          <span>Plagiarism & Code Diff</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab('violations')}
-          className={`flex items-center gap-2 border-b-2 px-4 py-3 font-mono text-xs font-medium transition-all ${
-            activeTab === 'violations' ? 'border-red-400 text-red-400 font-bold' : 'border-transparent text-gray-400 hover:text-white'
-          }`}
-        >
-          <AlertTriangle className="h-4 w-4" />
-          <span>Anti-Cheat Log ({violations.length})</span>
-        </button>
-      </div>
-
-      {/* Main Tab Panels */}
-      <div className="mx-auto mt-6 w-full max-w-7xl flex-1">
-        {/* TAB 1: CONTEST CONTROLS */}
-        {activeTab === 'control' && (
-          <div className="grid gap-6 md:grid-cols-2">
-            {/* Contest Timer & State Card */}
-            <div className="rounded-2xl border border-white/10 bg-[#0a0f18] p-6 backdrop-blur-xl">
-              <h3 className="font-mono text-sm font-bold uppercase tracking-wider text-amber-400">
-                1. Contest Timer & State
+        {/* ═══════════════════════════════════════════════════════════════════
+            TAB 1: CHALLENGE SETUP
+        ═══════════════════════════════════════════════════════════════════ */}
+        {activeTab === 'setup' && (
+          <div className="space-y-6">
+            {/* Session config card */}
+            <div className="rounded-2xl border border-white/10 bg-[#0a0f18] p-6">
+              <h3 className="font-mono text-sm font-bold text-amber-400 flex items-center gap-2">
+                <Settings className="h-4 w-4" /> Session Configuration
+                {viewingSession && <PhaseBadge phase={viewingSession.phase} />}
               </h3>
-
-              <div className="mt-4 flex flex-wrap gap-3">
-                {!contest?.isActive ? (
-                  <button
-                    onClick={() => handleContestAction('start')}
-                    className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 px-5 py-3 font-mono text-sm font-bold text-black shadow-lg shadow-emerald-500/20 hover:brightness-110 active:scale-95"
-                  >
-                    <Play className="h-4 w-4 fill-black" />
-                    <span>Start 50-Min Contest</span>
-                  </button>
-                ) : (
-                  <>
-                    <button
-                      onClick={() => handleContestAction('pause')}
-                      className="flex items-center gap-2 rounded-xl border border-amber-500/40 bg-amber-950/30 px-4 py-2.5 font-mono text-xs font-semibold text-amber-300 hover:bg-amber-900/40"
-                    >
-                      <Pause className="h-4 w-4" />
-                      <span>{contest.isPaused ? 'Resume Contest' : 'Pause Contest'}</span>
-                    </button>
-
-                    <button
-                      onClick={() => handleContestAction('extend', { extraMinutes: 1 })}
-                      className="flex items-center gap-1.5 rounded-xl border border-white/10 bg-white/5 px-3 py-2 font-mono text-xs text-gray-300 hover:bg-white/10"
-                    >
-                      <span>+1 Min</span>
-                    </button>
-
-                    <button
-                      onClick={() => handleContestAction('extend', { extraMinutes: 5 })}
-                      className="flex items-center gap-1.5 rounded-xl border border-white/10 bg-white/5 px-3 py-2 font-mono text-xs text-gray-300 hover:bg-white/10"
-                    >
-                      <span>+5 Mins</span>
-                    </button>
-
-                    <button
-                      onClick={() => handleContestAction('stop')}
-                      className="flex items-center gap-2 rounded-xl border border-red-500/40 bg-red-950/30 px-4 py-2.5 font-mono text-xs font-semibold text-red-300 hover:bg-red-900/40"
-                    >
-                      <span>Stop Contest</span>
-                    </button>
-                  </>
-                )}
-              </div>
-
-              <div className="mt-6 border-t border-white/[0.08] pt-4">
-                <label className="block font-mono text-xs text-gray-400 mb-1">Set Default Duration (Minutes)</label>
-                <div className="flex gap-2">
-                  <input
-                    type="number"
-                    value={durationInput}
-                    onChange={(e) => setDurationInput(e.target.value)}
-                    className="w-24 rounded-lg border border-white/10 bg-black/40 px-3 py-1.5 font-mono text-xs text-white"
-                  />
-                  <button
-                    onClick={() => handleContestAction('setDuration', { durationMinutes: Number(durationInput) })}
-                    className="rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 font-mono text-xs text-gray-300 hover:bg-white/10"
-                  >
-                    Save Duration
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            {/* Stage Broadcast Card */}
-            <div className="rounded-2xl border border-white/10 bg-[#0a0f18] p-6 backdrop-blur-xl">
-              <h3 className="font-mono text-sm font-bold uppercase tracking-wider text-cyan-400">
-                2. Live Flash Broadcast
-              </h3>
-              <p className="mt-1 text-xs text-gray-400">
-                Send an immediate announcement across all contestant terminals.
-              </p>
-
-              <div className="mt-4 space-y-3">
-                <textarea
-                  value={announcementText}
-                  onChange={(e) => setAnnouncementText(e.target.value)}
-                  placeholder="e.g. 'ATTENTION: 10 minutes left! Make sure to save your solution drafts.'"
-                  rows={3}
-                  className="w-full rounded-xl border border-white/10 bg-black/40 p-3 font-mono text-xs text-white placeholder-gray-500 focus:border-cyan-500 focus:outline-none"
-                />
-
-                <div className="flex justify-between items-center">
-                  <button
-                    onClick={() => handleContestAction('announcement', { announcement: announcementText })}
-                    className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 px-4 py-2 font-mono text-xs font-bold text-black hover:brightness-110"
-                  >
-                    <Megaphone className="h-4 w-4" />
-                    <span>Broadcast Message</span>
-                  </button>
-
-                  <button
-                    onClick={() => {
-                      if (confirm('Are you sure you want to RESET all submissions and contest timers?')) {
-                        handleContestAction('reset');
-                      }
-                    }}
-                    className="flex items-center gap-1.5 font-mono text-xs text-red-400 hover:text-red-300"
-                  >
-                    <RotateCcw className="h-3.5 w-3.5" />
-                    <span>Reset Contest Data</span>
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            {/* Official Contest Results & Audit Export Card */}
-            <div className="rounded-2xl border border-white/10 bg-[#0a0f18] p-6 backdrop-blur-xl md:col-span-2">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 <div>
-                  <h3 className="font-mono text-sm font-bold uppercase tracking-wider text-emerald-400 flex items-center gap-2">
-                    <FileSpreadsheet className="h-4 w-4" />
-                    <span>3. Official Contest Results & Audit Export</span>
-                  </h3>
-                  <p className="mt-1 text-xs text-gray-400">
-                    Download verified contestant scorecards, strike tallies, and comprehensive JSON event logs.
-                  </p>
+                  <label className="block font-mono text-xs text-gray-400 mb-1">Challenge Duration (min)</label>
+                  <div className="flex gap-2">
+                    <input type="number" value={challengeDurationMin} onChange={e => setChallengeDurationMin(+e.target.value)} min={1} max={180}
+                      className="w-full rounded-lg border border-white/10 bg-black/40 px-3 py-1.5 font-mono text-xs text-white focus:border-amber-500 focus:outline-none" />
+                    <button onClick={() => contestAction('updateConfig', { durationMinutes: challengeDurationMin })}
+                      className="rounded-lg bg-amber-500/20 border border-amber-500/40 px-3 py-1.5 font-mono text-xs text-amber-300 hover:bg-amber-500/30">Save</button>
+                  </div>
                 </div>
-
-                <div className="flex flex-wrap gap-3">
-                  <button
-                    onClick={handleExportCSV}
-                    className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 px-4 py-2.5 font-mono text-xs font-bold text-black shadow-lg shadow-emerald-500/20 hover:brightness-110 active:scale-95 cursor-pointer"
-                  >
-                    <FileSpreadsheet className="h-4 w-4" />
-                    <span>Download Results CSV</span>
-                  </button>
-
-                  <button
-                    onClick={handleExportAuditJSON}
-                    className="flex items-center gap-2 rounded-xl border border-white/15 bg-white/5 px-4 py-2.5 font-mono text-xs font-semibold text-gray-300 hover:bg-white/10 hover:text-white active:scale-95 cursor-pointer"
-                  >
-                    <Download className="h-4 w-4" />
-                    <span>Full Audit JSON</span>
-                  </button>
+                <div>
+                  <label className="block font-mono text-xs text-gray-400 mb-1">Max Participants</label>
+                  <div className="flex gap-2">
+                    <input type="number" value={maxParticipants} onChange={e => setMaxParticipants(+e.target.value)} min={1}
+                      className="w-full rounded-lg border border-white/10 bg-black/40 px-3 py-1.5 font-mono text-xs text-white focus:border-amber-500 focus:outline-none" />
+                    <button onClick={() => contestAction('updateConfig', { maxParticipants })}
+                      className="rounded-lg bg-amber-500/20 border border-amber-500/40 px-3 py-1.5 font-mono text-xs text-amber-300 hover:bg-amber-500/30">Save</button>
+                  </div>
                 </div>
-              </div>
-
-              {/* Quick Summary KPIs */}
-              <div className="mt-6 grid grid-cols-2 sm:grid-cols-4 gap-4 border-t border-white/[0.08] pt-4">
-                <div className="rounded-xl border border-white/5 bg-black/30 p-3">
-                  <div className="text-[11px] font-mono text-gray-400">Total Enrolled</div>
-                  <div className="text-xl font-mono font-bold text-white mt-1">{participants.length}</div>
-                </div>
-                <div className="rounded-xl border border-white/5 bg-black/30 p-3">
-                  <div className="text-[11px] font-mono text-gray-400">Submissions</div>
-                  <div className="text-xl font-mono font-bold text-cyan-400 mt-1">{submissions.length}</div>
-                </div>
-                <div className="rounded-xl border border-white/5 bg-black/30 p-3">
-                  <div className="text-[11px] font-mono text-gray-400">Strikes Logged</div>
-                  <div className="text-xl font-mono font-bold text-amber-400 mt-1">{violations.length}</div>
-                </div>
-                <div className="rounded-xl border border-white/5 bg-black/30 p-3">
-                  <div className="text-[11px] font-mono text-gray-400">Locked Terminals</div>
-                  <div className="text-xl font-mono font-bold text-red-400 mt-1">
-                    {participants.filter((p) => p.isLockedOut).length}
+                <div className="flex items-end">
+                  <div className="flex items-center gap-3">
+                    <span className="font-mono text-xs text-gray-400">Allow Late Join</span>
+                    <button
+                      onClick={() => contestAction('updateConfig', { allowLateJoin: !currentSession?.allow_late_join })}
+                      className={`relative h-5 w-9 rounded-full transition-colors ${currentSession?.allow_late_join ? 'bg-emerald-500' : 'bg-gray-700'}`}
+                    >
+                      <span className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform ${currentSession?.allow_late_join ? 'translate-x-4' : 'translate-x-0.5'}`} />
+                    </button>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
-        )}
 
-        {/* TAB 2: QUESTIONS & LEETCODE IMPORTER */}
-        {activeTab === 'questions' && (
-          <div className="space-y-6">
-            {/* Multi-Heat / Round Switcher Toolbar */}
-            <div className="rounded-2xl border border-white/10 bg-[#0a0f18] p-6 backdrop-blur-xl">
+            {/* Round Presets */}
+            <div className="rounded-2xl border border-white/10 bg-[#0a0f18] p-6">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
-                  <h3 className="font-mono text-sm font-bold text-amber-400 flex items-center gap-2">
-                    <Layers className="h-4 w-4" />
-                    <span>Multi-Heat / Round Switcher Presets</span>
-                  </h3>
-                  <p className="mt-1 text-xs text-gray-400">
-                    Switch between 11:11 Chapter 2 competition stages in 1-click or export/import problem suites.
-                  </p>
+                  <h3 className="font-mono text-sm font-bold text-amber-400 flex items-center gap-2"><Layers className="h-4 w-4" /> Round Presets</h3>
+                  <p className="mt-1 text-xs text-gray-400">1-click load problem sets or import custom JSON</p>
                 </div>
-
-                <div className="flex flex-wrap gap-2">
-                  <button
-                    onClick={handleExportQuestionsJSON}
-                    className="flex items-center gap-1.5 rounded-xl border border-white/15 bg-white/5 px-3 py-2 font-mono text-xs font-semibold text-gray-300 hover:bg-white/10 hover:text-white transition-all cursor-pointer"
-                  >
-                    <Download className="h-3.5 w-3.5" />
-                    <span>Export JSON</span>
+                <div className="flex gap-2">
+                  <button onClick={exportQuestionsJSON} className="flex items-center gap-1.5 rounded-xl border border-white/15 bg-white/5 px-3 py-2 font-mono text-xs text-gray-300 hover:bg-white/10">
+                    <Download className="h-3.5 w-3.5" /> Export JSON
                   </button>
-
-                  <button
-                    onClick={() => setShowImportJsonModal(true)}
-                    className="flex items-center gap-1.5 rounded-xl border border-cyan-500/40 bg-cyan-950/30 px-3 py-2 font-mono text-xs font-semibold text-cyan-300 hover:bg-cyan-900/40 transition-all cursor-pointer"
-                  >
-                    <Upload className="h-3.5 w-3.5" />
-                    <span>Import JSON</span>
+                  <button onClick={() => setShowImportJsonModal(true)} className="flex items-center gap-1.5 rounded-xl border border-cyan-500/40 bg-cyan-950/30 px-3 py-2 font-mono text-xs text-cyan-300 hover:bg-cyan-900/40">
+                    <Upload className="h-3.5 w-3.5" /> Import JSON
                   </button>
                 </div>
               </div>
-
-              {/* Round Presets Grid */}
               <div className="mt-4 grid gap-3 sm:grid-cols-3">
-                {ROUND_PRESETS.map((preset) => (
-                  <div
-                    key={preset.id}
-                    className="rounded-xl border border-white/10 bg-black/40 p-4 flex flex-col justify-between hover:border-amber-500/40 transition-all group"
-                  >
-                    <div>
-                      <div className="flex items-center justify-between">
-                        <span className="font-mono text-xs font-bold text-white group-hover:text-amber-400 transition-colors">
-                          {preset.name.split(':')[0]}
-                        </span>
-                        <span className="rounded bg-white/10 px-2 py-0.5 font-mono text-[10px] text-gray-400">
-                          {preset.durationMinutes}m · {preset.questions.length} Qs
-                        </span>
-                      </div>
-                      <h4 className="mt-1 text-xs font-semibold text-gray-200">
-                        {preset.name.split(':')[1]?.trim() || preset.name}
-                      </h4>
-                      <p className="mt-1 text-[11px] text-gray-400 line-clamp-2">
-                        {preset.description}
-                      </p>
+                {ROUND_PRESETS.map(preset => (
+                  <div key={preset.id} className="rounded-xl border border-white/10 bg-black/40 p-4 hover:border-amber-500/40 transition-all group">
+                    <div className="flex items-center justify-between">
+                      <span className="font-mono text-xs font-bold text-white group-hover:text-amber-400 transition-colors">{preset.name.split(':')[0]}</span>
+                      <span className="rounded bg-white/10 px-2 py-0.5 font-mono text-[10px] text-gray-400">{preset.durationMinutes}m · {preset.questions.length} Qs</span>
                     </div>
-
-                    <button
-                      onClick={() => handleLoadPreset(preset)}
-                      className="mt-3 w-full rounded-lg border border-amber-500/30 bg-amber-950/20 py-1.5 font-mono text-xs font-semibold text-amber-300 hover:bg-amber-500 hover:text-black transition-all cursor-pointer"
-                    >
-                      Load Round Problem Set
+                    <p className="mt-1 text-[11px] text-gray-400 line-clamp-2">{preset.description}</p>
+                    <button onClick={() => handleLoadPreset(preset)} className="mt-3 w-full rounded-lg border border-amber-500/30 bg-amber-950/20 py-1.5 font-mono text-xs text-amber-300 hover:bg-amber-500 hover:text-black transition-all">
+                      Load Problem Set
                     </button>
                   </div>
                 ))}
               </div>
             </div>
 
-            {/* LeetCode Fast Importer Card */}
-            <div className="rounded-2xl border border-cyan-500/30 bg-gradient-to-r from-cyan-950/20 to-[#0a0f18] p-6 backdrop-blur-xl">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                <div>
-                  <h3 className="font-mono text-sm font-bold text-cyan-300 flex items-center gap-2">
-                    <Download className="h-4 w-4" />
-                    <span>LeetCode Problem Importer</span>
-                  </h3>
-                  <p className="mt-1 text-xs text-gray-400">
-                    Input a LeetCode problem slug (e.g. <code className="text-cyan-300">two-sum</code>, <code className="text-cyan-300">valid-parentheses</code>, <code className="text-cyan-300">maximum-subarray</code>) or full URL.
-                  </p>
-                </div>
-
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={leetcodeSlug}
-                    onChange={(e) => setLeetcodeSlug(e.target.value)}
-                    placeholder="e.g. two-sum"
-                    className="w-48 sm:w-64 rounded-xl border border-white/10 bg-black/50 px-3 py-2 font-mono text-xs text-white focus:border-cyan-400 focus:outline-none"
-                  />
-                  <button
-                    onClick={handleImportLeetCode}
-                    disabled={importLoading}
-                    className="rounded-xl bg-cyan-500 px-4 py-2 font-mono text-xs font-bold text-black hover:bg-cyan-400 disabled:opacity-50"
-                  >
-                    {importLoading ? 'Importing...' : 'Fetch'}
-                  </button>
-                </div>
+            {/* LeetCode importer */}
+            <div className="rounded-2xl border border-cyan-500/30 bg-gradient-to-r from-cyan-950/20 to-[#0a0f18] p-6">
+              <h3 className="font-mono text-sm font-bold text-cyan-300 flex items-center gap-2"><ExternalLink className="h-4 w-4" /> LeetCode Importer</h3>
+              <div className="mt-3 flex gap-2">
+                <input type="text" value={leetcodeSlug} onChange={e => setLeetcodeSlug(e.target.value)} placeholder="e.g. two-sum" onKeyDown={e => e.key === 'Enter' && handleImportLeetCode()}
+                  className="flex-1 max-w-xs rounded-xl border border-white/10 bg-black/50 px-3 py-2 font-mono text-xs text-white focus:border-cyan-400 focus:outline-none" />
+                <button onClick={handleImportLeetCode} disabled={importLoading} className="rounded-xl bg-cyan-500 px-4 py-2 font-mono text-xs font-bold text-black hover:bg-cyan-400 disabled:opacity-50">
+                  {importLoading ? 'Importing...' : 'Fetch'}
+                </button>
               </div>
             </div>
 
-            {/* Questions Header & Add Button */}
-            <div className="flex items-center justify-between">
-              <h3 className="font-mono text-lg font-bold text-white">Active Contest Questions</h3>
-              <button
-                onClick={() => {
-                  setEditingQuestion({
-                    title: '',
-                    category: 'Algorithms',
-                    difficulty: 'Medium',
-                    points: 400,
-                    scenario: '',
-                    inputFormat: '',
-                    outputFormat: '',
-                    constraints: '',
-                    starterTemplates: {
-                      c: `#include <stdio.h>\nint main() {\n    return 0;\n}`,
-                      python: `import sys\ndef main():\n    pass\nif __name__ == '__main__':\n    main()`,
-                      java: `import java.util.*;\npublic class Main {\n    public static void main(String[] args) {\n    }\n}`,
-                    },
-                    testCases: [
-                      { id: 'tc-1', input: 'sample_input', expectedOutput: 'sample_output', isHidden: false },
-                      { id: 'tc-2', input: 'hidden_input', expectedOutput: 'hidden_output', isHidden: true },
-                    ],
-                  });
-                  setShowQuestionModal(true);
-                }}
-                className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 px-4 py-2 font-mono text-xs font-bold text-black hover:brightness-110 active:scale-95"
-              >
-                <Plus className="h-4 w-4" />
-                <span>Create Scenario Question</span>
-              </button>
-            </div>
+            {/* Questions list */}
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-mono text-lg font-bold text-white">
+                  Questions for: <span className="text-amber-400">{viewingSession?.label}</span>
+                  <span className="ml-2 text-sm font-normal text-gray-500">({questions.length} problems)</span>
+                </h3>
+                <button onClick={() => { setEditingQuestion({ title: '', category: 'Algorithms', difficulty: 'Medium', points: 400, scenario: '', inputFormat: '', outputFormat: '', constraints: '', starterTemplates: { c: '', python: '', java: '' }, testCases: [{ id: 'tc-1', input: '', expectedOutput: '', isHidden: false }] }); setShowQuestionModal(true); }}
+                  className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 px-4 py-2 font-mono text-xs font-bold text-black hover:brightness-110">
+                  <Plus className="h-4 w-4" /> Create Question
+                </button>
+              </div>
 
-            {/* Questions List */}
-            <div className="grid gap-4 md:grid-cols-2">
-              {questions.map((q, idx) => (
-                <div key={q.id} className="rounded-2xl border border-white/10 bg-[#0a0f18] p-5 backdrop-blur-xl space-y-3">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-mono font-bold text-sm text-emerald-400">Q{idx + 1}</span>
-                        <span className="rounded bg-white/10 px-2 py-0.2 font-mono text-[10px] text-gray-300">
-                          {q.difficulty}
-                        </span>
-                        <span className="font-mono text-xs text-amber-300 font-semibold">{q.points} pts</span>
-                      </div>
-                      <h4 className="mt-1 font-mono text-base font-bold text-white">{q.title}</h4>
-                      <p className="font-mono text-xs text-gray-500">{q.category}</p>
-                    </div>
-
-                    <div className="flex items-center gap-1.5">
-                      <button
-                        onClick={() => {
-                          setEditingQuestion(q);
-                          setShowQuestionModal(true);
-                        }}
-                        className="rounded p-1.5 text-gray-400 hover:bg-white/10 hover:text-white"
-                        title="Edit question"
-                      >
-                        <FileCode className="h-4 w-4" />
-                      </button>
-                      <button
-                        onClick={() => handleDeleteQuestion(q.id)}
-                        className="rounded p-1.5 text-red-400 hover:bg-red-950/40"
-                        title="Delete question"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    </div>
-                  </div>
-
-                  <p className="line-clamp-2 text-xs text-gray-400">{q.scenario}</p>
-
-                  <div className="border-t border-white/[0.08] pt-2 flex items-center justify-between font-mono text-xs text-gray-500">
-                    <span>{q.testCases.length} Test Cases ({q.testCases.filter(t => t.isHidden).length} Hidden)</span>
-                    <span className="text-cyan-400">C, Python, Java Ready</span>
-                  </div>
+              {questions.length === 0 ? (
+                <div className="rounded-2xl border border-dashed border-white/10 bg-[#0a0f18]/50 p-12 text-center text-gray-500 font-mono text-sm">
+                  No questions yet. Import a preset, JSON, or create one manually.
                 </div>
-              ))}
+              ) : (
+                <div className="grid gap-4 md:grid-cols-2">
+                  {questions.map((q, idx) => (
+                    <div key={q.id} className="rounded-2xl border border-white/10 bg-[#0a0f18] p-5 space-y-3">
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-mono font-bold text-sm text-emerald-400">Q{idx + 1}</span>
+                            <span className="rounded bg-white/10 px-2 py-0.5 font-mono text-[10px] text-gray-300">{q.difficulty}</span>
+                            <span className="font-mono text-xs text-amber-300 font-semibold">{q.points} pts</span>
+                          </div>
+                          <h4 className="mt-1 font-mono text-base font-bold text-white">{q.title}</h4>
+                          <p className="font-mono text-xs text-gray-500">{q.category}</p>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <button onClick={() => { setEditingQuestion(q); setShowQuestionModal(true); }} className="rounded p-1.5 text-gray-400 hover:bg-white/10 hover:text-white" title="Edit"><FileCode className="h-4 w-4" /></button>
+                          <button onClick={() => handleDeleteQuestion(q.id)} className="rounded p-1.5 text-red-400 hover:bg-red-950/40" title="Delete"><Trash2 className="h-4 w-4" /></button>
+                        </div>
+                      </div>
+                      <p className="line-clamp-2 text-xs text-gray-400">{q.scenario}</p>
+                      <div className="border-t border-white/[0.08] pt-2 flex justify-between font-mono text-xs text-gray-500">
+                        <span>{q.testCases.length} test cases ({q.testCases.filter(t => t.isHidden).length} hidden)</span>
+                        <span className="text-cyan-400">C · Python · Java</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         )}
 
-        {/* TAB 3: PARTICIPANTS MONITOR */}
+        {/* ═══════════════════════════════════════════════════════════════════
+            TAB 2: REGISTRATION
+        ═══════════════════════════════════════════════════════════════════ */}
+        {activeTab === 'registration' && (
+          <div className="space-y-6">
+            <div className="rounded-2xl border border-white/10 bg-[#0a0f18] p-6">
+              <h3 className="font-mono text-sm font-bold text-orange-400 flex items-center gap-2">
+                <Radio className="h-4 w-4" /> Registration Window Control
+              </h3>
+
+              {phase === 'setup' && (
+                <div className="mt-6 space-y-4">
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div>
+                      <label className="block font-mono text-xs text-gray-400 mb-1">Registration Duration (minutes)</label>
+                      <input type="number" value={regDurationMin} onChange={e => setRegDurationMin(+e.target.value)} min={1} max={30}
+                        className="w-full rounded-xl border border-white/10 bg-black/40 px-3 py-2 font-mono text-sm text-white focus:border-orange-500 focus:outline-none" />
+                    </div>
+                    <div className="flex items-end">
+                      <div className="flex items-center gap-3">
+                        <span className="font-mono text-xs text-gray-400">Auto-Start Challenge When Closed</span>
+                        <button onClick={() => setAutoStartReg(v => !v)}
+                          className={`relative h-5 w-9 rounded-full transition-colors ${autoStartReg ? 'bg-emerald-500' : 'bg-gray-700'}`}>
+                          <span className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform ${autoStartReg ? 'translate-x-4' : 'translate-x-0.5'}`} />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  <button onClick={() => contestAction('openRegistration', { durationMinutes: regDurationMin, autoStart: autoStartReg })}
+                    className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 px-6 py-3 font-mono text-sm font-bold text-black hover:brightness-110 active:scale-95">
+                    <Zap className="h-4 w-4 fill-black" /> Open Registration Now
+                  </button>
+                </div>
+              )}
+
+              {phase === 'registration' && (
+                <div className="mt-6 space-y-6">
+                  {/* Live countdown */}
+                  <div className="flex items-center justify-between rounded-2xl border border-amber-500/30 bg-amber-950/20 p-5">
+                    <div>
+                      <div className="font-mono text-xs text-amber-300 mb-1">Registration closes in</div>
+                      <div className="font-mono text-4xl font-black tabular-nums text-amber-400">{regCountdown}</div>
+                    </div>
+                    <div className="text-right">
+                      <div className="font-mono text-xs text-gray-400 mb-1">Registered</div>
+                      <div className="font-mono text-3xl font-bold text-white">{participants.length}</div>
+                      <div className="font-mono text-xs text-gray-500">/ {currentSession?.max_participants ?? 200}</div>
+                    </div>
+                  </div>
+
+                  {/* Auto start badge */}
+                  <div className={`flex items-center gap-2 rounded-xl border px-4 py-2.5 font-mono text-xs ${currentSession?.auto_start_on_reg_close ? 'border-emerald-500/30 bg-emerald-950/20 text-emerald-300' : 'border-gray-500/30 bg-gray-900/30 text-gray-400'}`}>
+                    <CheckCircle2 className="h-4 w-4" />
+                    Auto-Start: {currentSession?.auto_start_on_reg_close ? 'ON — Challenge will begin automatically' : 'OFF — Manual start required'}
+                  </div>
+
+                  {/* Extend buttons */}
+                  <div className="flex flex-wrap gap-2">
+                    <button onClick={() => contestAction('extendRegistration', { extraMinutes: 1 })} className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 font-mono text-xs text-gray-300 hover:bg-white/10">+1 min</button>
+                    <button onClick={() => contestAction('extendRegistration', { extraMinutes: 3 })} className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 font-mono text-xs text-gray-300 hover:bg-white/10">+3 min</button>
+                    <button onClick={() => contestAction('extendRegistration', { extraMinutes: 5 })} className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 font-mono text-xs text-gray-300 hover:bg-white/10">+5 min</button>
+                    <button onClick={() => { if (confirm('Close registration now?')) contestAction('closeRegistration'); }} className="rounded-xl border border-red-500/40 bg-red-950/30 px-4 py-2 font-mono text-xs text-red-300 hover:bg-red-900/40">Close Now</button>
+                    <button onClick={() => { if (confirm('Start challenge immediately?')) contestAction('startChallenge', { durationMinutes: challengeDurationMin }); }}
+                      className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 px-4 py-2 font-mono text-xs font-bold text-black hover:brightness-110">
+                      <Play className="h-3.5 w-3.5 fill-black" /> Start Challenge Now
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {(phase === 'active' || phase === 'paused' || phase === 'ended' || phase === 'reveal') && (
+                <div className="mt-4 rounded-xl border border-white/10 bg-black/30 p-4 font-mono text-sm text-gray-400 text-center">
+                  Registration window is closed. Contest is in <span className="text-white font-semibold">{PHASE_LABELS[phase]}</span> phase.
+                </div>
+              )}
+            </div>
+
+            {/* Live registered list */}
+            {(phase === 'setup' || phase === 'registration') && participants.length > 0 && (
+              <div className="rounded-2xl border border-white/10 bg-[#0a0f18] overflow-hidden">
+                <div className="px-5 py-3 border-b border-white/[0.08] font-mono text-xs text-gray-400 uppercase tracking-wider">
+                  Registered Participants ({participants.length})
+                </div>
+                <div className="divide-y divide-white/[0.05]">
+                  {participants.map((p, i) => (
+                    <div key={p.id} className="flex items-center justify-between px-5 py-2.5 font-mono text-xs">
+                      <div className="flex items-center gap-3">
+                        <span className="text-gray-500 w-6">{i + 1}.</span>
+                        <div>
+                          <div className="font-semibold text-white">{p.name}</div>
+                          <div className="text-gray-500">{p.rollNumber} · {p.terminalId}</div>
+                        </div>
+                      </div>
+                      <span className="text-gray-500">{new Date(p.registeredAt).toLocaleTimeString()}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ═══════════════════════════════════════════════════════════════════
+            TAB 3: LIVE CONTROLS
+        ═══════════════════════════════════════════════════════════════════ */}
+        {activeTab === 'live' && (
+          <div className="space-y-6">
+            {!isLive && phase !== 'ended' && phase !== 'reveal' ? (
+              <div className="rounded-2xl border border-white/10 bg-[#0a0f18] p-10 text-center">
+                <Zap className="h-10 w-10 text-gray-600 mx-auto mb-3" />
+                <p className="font-mono text-sm text-gray-400">Live controls are only available during an active or paused challenge.</p>
+                <p className="font-mono text-xs text-gray-500 mt-1">Current phase: <span className="text-white">{PHASE_LABELS[phase]}</span></p>
+                {(phase === 'setup' || phase === 'registration') && (
+                  <button onClick={() => contestAction('startChallenge', { durationMinutes: challengeDurationMin })}
+                    className="mt-4 flex items-center gap-2 mx-auto rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 px-5 py-2.5 font-mono text-sm font-bold text-black hover:brightness-110">
+                    <Play className="h-4 w-4 fill-black" /> Start Challenge Directly
+                  </button>
+                )}
+              </div>
+            ) : (
+              <>
+                {/* Challenge status card */}
+                <div className="rounded-2xl border border-white/10 bg-[#0a0f18] p-6">
+                  <div className="flex flex-wrap items-center justify-between gap-4">
+                    <div>
+                      <PhaseBadge phase={phase} />
+                      {currentSession?.challenge_starts_at && (
+                        <p className="mt-1 font-mono text-xs text-gray-400">
+                          Started: {new Date(currentSession.challenge_starts_at).toLocaleTimeString()} ·
+                          Ends: {currentSession.challenge_ends_at ? new Date(currentSession.challenge_ends_at).toLocaleTimeString() : 'TBD'}
+                        </p>
+                      )}
+                    </div>
+                    <div className="font-mono text-5xl font-black tabular-nums text-emerald-400">
+                      {challengeCountdown || '00:00'}
+                    </div>
+                  </div>
+
+                  {/* Progress bar */}
+                  {currentSession?.challenge_starts_at && currentSession?.challenge_ends_at && (() => {
+                    const total = currentSession.challenge_ends_at - currentSession.challenge_starts_at;
+                    const elapsed = Date.now() - currentSession.challenge_starts_at;
+                    const pct = Math.min(100, Math.max(0, (elapsed / total) * 100));
+                    return (
+                      <div className="mt-4 h-2 rounded-full bg-white/5 overflow-hidden">
+                        <div className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-teal-500 transition-all duration-1000" style={{ width: `${pct}%` }} />
+                      </div>
+                    );
+                  })()}
+
+                  <div className="mt-5 flex flex-wrap gap-3">
+                    {phase === 'active' && (
+                      <button onClick={() => contestAction('pause')} className="flex items-center gap-2 rounded-xl border border-amber-500/40 bg-amber-950/30 px-4 py-2.5 font-mono text-xs font-semibold text-amber-300 hover:bg-amber-900/40">
+                        <Pause className="h-4 w-4" /> Pause Challenge
+                      </button>
+                    )}
+                    {phase === 'paused' && (
+                      <button onClick={() => contestAction('resume')} className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 px-4 py-2.5 font-mono text-xs font-bold text-black hover:brightness-110">
+                        <Play className="h-4 w-4 fill-black" /> Resume
+                      </button>
+                    )}
+                    <button onClick={() => contestAction('extend', { extraMinutes: 1 })} className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 font-mono text-xs text-gray-300 hover:bg-white/10">+1 min</button>
+                    <button onClick={() => contestAction('extend', { extraMinutes: 5 })} className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 font-mono text-xs text-gray-300 hover:bg-white/10">+5 min</button>
+                    <button onClick={() => contestAction('extend', { extraMinutes: 10 })} className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 font-mono text-xs text-gray-300 hover:bg-white/10">+10 min</button>
+                    {(phase === 'active' || phase === 'paused') && (
+                      <button onClick={() => { if (confirm('End the challenge now? Auto-submit will still work for participants.')) contestAction('endChallenge'); }}
+                        className="flex items-center gap-2 rounded-xl border border-red-500/40 bg-red-950/30 px-4 py-2.5 font-mono text-xs font-semibold text-red-300 hover:bg-red-900/40">
+                        <StopCircle className="h-4 w-4" /> End Challenge Now
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="mt-4 rounded-xl border border-amber-500/20 bg-amber-950/10 p-3 font-mono text-xs text-amber-300 flex items-center gap-2">
+                    <Timer className="h-4 w-4 shrink-0" />
+                    Auto-submit fires in <strong className="text-amber-400 tabular-nums">{challengeCountdown}</strong> — all editors lock automatically at 00:00
+                  </div>
+                </div>
+
+                {/* Broadcast */}
+                <div className="rounded-2xl border border-white/10 bg-[#0a0f18] p-6">
+                  <h3 className="font-mono text-sm font-bold text-cyan-400 flex items-center gap-2"><Megaphone className="h-4 w-4" /> Broadcast Announcement</h3>
+                  <div className="mt-3 flex gap-2">
+                    <textarea value={announcementText} onChange={e => setAnnouncementText(e.target.value)} placeholder="e.g. '10 minutes remaining! Final push!'" rows={2}
+                      className="flex-1 rounded-xl border border-white/10 bg-black/40 p-3 font-mono text-xs text-white placeholder-gray-500 focus:border-cyan-500 focus:outline-none" />
+                    <button onClick={() => contestAction('announcement', { announcement: announcementText })}
+                      className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 px-4 py-2 font-mono text-xs font-bold text-black hover:brightness-110">
+                      <Send className="h-4 w-4" /> Send
+                    </button>
+                  </div>
+                  {currentSession?.announcement && (
+                    <div className="mt-2 rounded-lg border border-cyan-500/20 bg-cyan-950/10 p-2 font-mono text-xs text-cyan-300">
+                      Current: {currentSession.announcement}
+                    </div>
+                  )}
+                </div>
+
+                {/* KPIs */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                  {[
+                    { label: 'Enrolled', value: participants.length, color: 'text-white' },
+                    { label: 'Submissions', value: submissions.length, color: 'text-cyan-400' },
+                    { label: 'Auto-Submits', value: submissions.filter(s => s.isAutoSubmit).length, color: 'text-amber-400' },
+                    { label: 'Locked Out', value: participants.filter(p => p.isLockedOut).length, color: 'text-red-400' },
+                  ].map(k => (
+                    <div key={k.label} className="rounded-xl border border-white/5 bg-[#0a0f18] p-4">
+                      <div className="font-mono text-[11px] text-gray-400">{k.label}</div>
+                      <div className={`font-mono text-2xl font-bold mt-1 ${k.color}`}>{k.value}</div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Export / Reveal */}
+                <div className="rounded-2xl border border-white/10 bg-[#0a0f18] p-5 flex flex-wrap gap-3 items-center justify-between">
+                  <div className="flex gap-3">
+                    <button onClick={exportCSV} className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 px-4 py-2.5 font-mono text-xs font-bold text-black hover:brightness-110">
+                      <FileSpreadsheet className="h-4 w-4" /> Export CSV
+                    </button>
+                    <button onClick={exportAuditJSON} className="flex items-center gap-2 rounded-xl border border-white/15 bg-white/5 px-4 py-2.5 font-mono text-xs text-gray-300 hover:bg-white/10">
+                      <Download className="h-4 w-4" /> Audit JSON
+                    </button>
+                  </div>
+                  <button onClick={() => contestAction('toggleReveal')}
+                    className={`flex items-center gap-2 rounded-xl border px-4 py-2.5 font-mono text-xs font-bold transition-all ${currentSession?.is_reveal_mode ? 'border-purple-400 bg-purple-400 text-black' : 'border-purple-500/40 bg-purple-950/30 text-purple-300 hover:bg-purple-900/40'}`}>
+                    <Sparkles className="h-4 w-4" />
+                    {currentSession?.is_reveal_mode ? 'Disable Stage Reveal' : 'Trigger Stage Reveal'}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        )}
+
+        {/* ═══════════════════════════════════════════════════════════════════
+            TAB 4: PARTICIPANTS MONITOR
+        ═══════════════════════════════════════════════════════════════════ */}
         {activeTab === 'participants' && (
-          <div className="overflow-hidden rounded-2xl border border-white/10 bg-[#0a0f18] backdrop-blur-xl">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="border-b border-white/[0.08] bg-black/40 font-mono text-xs text-gray-400 uppercase">
-                  <th className="py-3 px-4">Candidate</th>
-                  <th className="py-3 px-4">Terminal</th>
-                  <th className="py-3 px-4">Active Language</th>
-                  <th className="py-3 px-4">Strikes</th>
-                  <th className="py-3 px-4">Status</th>
-                  <th className="py-3 px-4">Last Active</th>
-                  <th className="py-3 px-4 text-right">Proctor Controls</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-white/[0.06] font-mono text-xs">
-                {participants.length === 0 ? (
-                  <tr>
-                    <td colSpan={7} className="py-8 text-center text-gray-500">
-                      No participants registered yet.
-                    </td>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="font-mono text-xs text-gray-400">{participants.length} participants · Session: <span className="text-white">{viewingSession?.label}</span></div>
+              <button onClick={exportCSV} className="flex items-center gap-1.5 rounded-xl border border-white/10 bg-white/5 px-3 py-1.5 font-mono text-xs text-gray-300 hover:bg-white/10">
+                <Download className="h-3.5 w-3.5" /> Export CSV
+              </button>
+            </div>
+            <div className="overflow-hidden rounded-2xl border border-white/10 bg-[#0a0f18]">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="border-b border-white/[0.08] bg-black/40 font-mono text-[11px] text-gray-400 uppercase">
+                    <th className="py-3 px-4">Candidate</th>
+                    <th className="py-3 px-4 hidden sm:table-cell">Terminal</th>
+                    <th className="py-3 px-4 hidden md:table-cell">Language</th>
+                    <th className="py-3 px-4">Strikes</th>
+                    <th className="py-3 px-4">Status</th>
+                    <th className="py-3 px-4 hidden lg:table-cell">Last Active</th>
+                    <th className="py-3 px-4 text-right">Actions</th>
                   </tr>
-                ) : (
-                  participants.map((p) => (
+                </thead>
+                <tbody className="divide-y divide-white/[0.06] font-mono text-xs">
+                  {participants.length === 0 ? (
+                    <tr><td colSpan={7} className="py-8 text-center text-gray-500">No participants registered yet.</td></tr>
+                  ) : participants.map((p) => (
                     <tr key={p.id} className="hover:bg-white/[0.03]">
                       <td className="py-3 px-4">
                         <div className="font-bold text-white">{p.name}</div>
                         <div className="text-[11px] text-gray-400">{p.rollNumber}</div>
                       </td>
-                      <td className="py-3 px-4 text-cyan-300">{p.terminalId}</td>
-                      <td className="py-3 px-4 uppercase text-gray-300">{p.activeLanguage || 'Not Started'}</td>
+                      <td className="py-3 px-4 hidden sm:table-cell text-cyan-300">{p.terminalId}</td>
+                      <td className="py-3 px-4 hidden md:table-cell uppercase text-gray-300">{p.activeLanguage || '—'}</td>
                       <td className="py-3 px-4">
-                        <span className={`font-bold ${p.strikes >= 3 ? 'text-red-400' : p.strikes > 0 ? 'text-amber-400' : 'text-gray-400'}`}>
-                          {p.strikes} / 3
+                        <span className={`font-bold ${p.strikes >= 3 ? 'text-red-400' : p.strikes > 0 ? 'text-amber-400' : 'text-gray-400'}`}>{p.strikes}/3</span>
+                      </td>
+                      <td className="py-3 px-4">
+                        <span className={`rounded border px-2 py-0.5 text-[10px] ${p.isLockedOut ? 'border-red-500/40 bg-red-950/60 text-red-300' : 'border-emerald-500/40 bg-emerald-950/60 text-emerald-300'}`}>
+                          {p.isLockedOut ? 'Locked' : 'Active'}
                         </span>
                       </td>
-                      <td className="py-3 px-4">
-                        {p.isLockedOut ? (
-                          <span className="rounded bg-red-950/60 border border-red-500/40 px-2 py-0.5 text-[10px] text-red-300">
-                            Locked Out
-                          </span>
-                        ) : (
-                          <span className="rounded bg-emerald-950/60 border border-emerald-500/40 px-2 py-0.5 text-[10px] text-emerald-300">
-                            Active
-                          </span>
-                        )}
-                      </td>
-                      <td className="py-3 px-4 text-gray-400">
-                        {new Date(p.lastActiveAt).toLocaleTimeString()}
-                      </td>
+                      <td className="py-3 px-4 hidden lg:table-cell text-gray-400">{new Date(p.lastActiveAt).toLocaleTimeString()}</td>
                       <td className="py-3 px-4 text-right">
-                        <div className="flex items-center justify-end gap-1.5">
+                        <div className="flex items-center justify-end gap-1">
                           {p.strikes > 0 && (
-                            <button
-                              onClick={() => handleParticipantAction(p.id, 'reset_strikes')}
-                              className="flex items-center gap-1 rounded bg-emerald-950/40 border border-emerald-500/30 px-2 py-1 text-[11px] font-mono text-emerald-300 hover:bg-emerald-900/50 transition-colors cursor-pointer"
-                              title="Reset strikes to 0 and unlock terminal"
-                            >
-                              <Undo2 className="h-3 w-3" />
-                              <span>Pardon</span>
+                            <button onClick={() => participantAction(p.id, 'reset_strikes')} className="flex items-center gap-1 rounded border border-emerald-500/30 bg-emerald-950/40 px-1.5 py-1 text-[11px] text-emerald-300 hover:bg-emerald-900/50" title="Pardon — reset strikes">
+                              <Undo2 className="h-3 w-3" /> Pardon
                             </button>
                           )}
-                          <button
-                            onClick={() => handleParticipantAction(p.id, 'add_strike')}
-                            className="flex items-center gap-1 rounded bg-amber-950/40 border border-amber-500/30 px-2 py-1 text-[11px] font-mono text-amber-300 hover:bg-amber-900/50 transition-colors cursor-pointer"
-                            title="Add 1 warning strike"
-                          >
-                            <ShieldAlert className="h-3 w-3" />
-                            <span>+1 Strike</span>
+                          <button onClick={() => participantAction(p.id, 'add_strike')} className="flex items-center gap-1 rounded border border-amber-500/30 bg-amber-950/40 px-1.5 py-1 text-[11px] text-amber-300 hover:bg-amber-900/50">
+                            <ShieldAlert className="h-3 w-3" /> +Strike
                           </button>
-                          <button
-                            onClick={() => handleParticipantAction(p.id, 'toggle_lockout')}
-                            className={`flex items-center gap-1 rounded border px-2 py-1 text-[11px] font-mono transition-colors cursor-pointer ${
-                              p.isLockedOut
-                                ? 'bg-emerald-950/40 border-emerald-500/30 text-emerald-300 hover:bg-emerald-900/50'
-                                : 'bg-red-950/40 border-red-500/30 text-red-300 hover:bg-red-900/50'
-                            }`}
-                            title={p.isLockedOut ? 'Unlock terminal' : 'Immediately lock terminal'}
-                          >
-                            <Lock className="h-3 w-3" />
-                            <span>{p.isLockedOut ? 'Unlock' : 'Lockout'}</span>
+                          <button onClick={() => participantAction(p.id, 'toggle_lockout')} className={`flex items-center gap-1 rounded border px-1.5 py-1 text-[11px] ${p.isLockedOut ? 'border-emerald-500/30 bg-emerald-950/40 text-emerald-300' : 'border-red-500/30 bg-red-950/40 text-red-300'}`}>
+                            <Lock className="h-3 w-3" /> {p.isLockedOut ? 'Unlock' : 'Lock'}
                           </button>
-                          <button
-                            onClick={() => {
-                              if (confirm(`Remove participant ${p.name} (${p.rollNumber})?`)) {
-                                handleParticipantAction(p.id, 'delete');
-                              }
-                            }}
-                            className="rounded bg-white/5 border border-white/10 p-1 text-gray-400 hover:text-red-400 hover:bg-red-950/40 transition-colors cursor-pointer"
-                            title="Remove participant"
-                          >
+                          <button onClick={() => { if (confirm(`Remove ${p.name}?`)) participantAction(p.id, 'delete'); }} className="rounded border border-white/10 bg-white/5 p-1 text-gray-400 hover:text-red-400">
                             <Trash2 className="h-3.5 w-3.5" />
                           </button>
                         </div>
                       </td>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        )}
-
-        {/* TAB 4: SUBMISSIONS & CODE INSPECTOR */}
-        {activeTab === 'submissions' && (
-          <div className="overflow-hidden rounded-2xl border border-white/10 bg-[#0a0f18] backdrop-blur-xl">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="border-b border-white/[0.08] bg-black/40 font-mono text-xs text-gray-400 uppercase">
-                  <th className="py-3 px-4">Candidate</th>
-                  <th className="py-3 px-4">Question</th>
-                  <th className="py-3 px-4">Lang</th>
-                  <th className="py-3 px-4">Score</th>
-                  <th className="py-3 px-4">Test Cases</th>
-                  <th className="py-3 px-4">Time</th>
-                  <th className="py-3 px-4">Action</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-white/[0.06] font-mono text-xs">
-                {submissions.length === 0 ? (
-                  <tr>
-                    <td colSpan={7} className="py-8 text-center text-gray-500">
-                      No submissions received yet.
-                    </td>
-                  </tr>
-                ) : (
-                  submissions.map((sub) => (
-                    <tr key={sub.id} className="hover:bg-white/[0.03]">
-                      <td className="py-3 px-4 font-bold text-white">
-                        {sub.participantName} <span className="text-gray-400 font-normal">({sub.participantRoll})</span>
-                      </td>
-                      <td className="py-3 px-4 text-cyan-300">{sub.questionTitle}</td>
-                      <td className="py-3 px-4 uppercase text-gray-300">{sub.language}</td>
-                      <td className="py-3 px-4 font-bold text-emerald-400">{sub.score} pts</td>
-                      <td className="py-3 px-4">
-                        <span className={sub.testCasesPassed === sub.totalTestCases ? 'text-emerald-400 font-bold' : 'text-amber-400'}>
-                          {sub.testCasesPassed} / {sub.totalTestCases} Passed
-                        </span>
-                      </td>
-                      <td className="py-3 px-4 text-gray-400">
-                        {new Date(sub.submittedAt).toLocaleTimeString()}
-                      </td>
-                      <td className="py-3 px-4">
-                        <button
-                          onClick={() => setInspectedSubmission(sub)}
-                          className="flex items-center gap-1 rounded bg-white/5 border border-white/10 px-2.5 py-1 text-xs text-gray-300 hover:bg-white/10 hover:text-white"
-                        >
-                          <Eye className="h-3.5 w-3.5" />
-                          <span>View Code</span>
-                        </button>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        )}
-
-        {/* TAB 5: PLAGIARISM & CODE DIFF INSPECTOR */}
-        {activeTab === 'plagiarism' && (
-          <div className="space-y-6">
-            {/* Top Toolbar: Question Selector + Auto-Scan */}
-            <div className="rounded-2xl border border-white/10 bg-[#0a0f18] p-6 backdrop-blur-xl">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                <div>
-                  <h3 className="font-mono text-sm font-bold text-purple-400 flex items-center gap-2">
-                    <GitCompare className="h-4 w-4" />
-                    <span>Cross-Candidate Code Plagiarism & Similarity Radar</span>
-                  </h3>
-                  <p className="mt-1 text-xs text-gray-400">
-                    Dual AST tokenization and 3-gram sequence similarity scanner across contestant submissions.
-                  </p>
-                </div>
-
-                <div className="flex flex-wrap items-center gap-3">
-                  <select
-                    value={plagQuestionId}
-                    onChange={(e) => {
-                      setPlagQuestionId(e.target.value);
-                      setSuspectPairs([]);
-                    }}
-                    className="rounded-xl border border-white/15 bg-black/60 px-3 py-2 font-mono text-xs text-white focus:border-purple-400 focus:outline-none"
-                  >
-                    <option value="">Select Challenge Problem...</option>
-                    {questions.map((q) => (
-                      <option key={q.id} value={q.id}>
-                        {q.title} ({submissions.filter((s) => s.questionId === q.id).length} subs)
-                      </option>
-                    ))}
-                  </select>
-
-                  <button
-                    onClick={() => handleScanAllPlagiarism(plagQuestionId)}
-                    disabled={!plagQuestionId}
-                    className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-purple-500 to-indigo-500 px-4 py-2 font-mono text-xs font-bold text-white hover:brightness-110 active:scale-95 disabled:opacity-40 transition-all cursor-pointer"
-                  >
-                    <RefreshCw className="h-3.5 w-3.5" />
-                    <span>Auto-Scan All Pairs</span>
-                  </button>
-                </div>
-              </div>
-
-              {/* Suspect Rankings Table if scanned */}
-              {suspectPairs.length > 0 && (
-                <div className="mt-6 border-t border-white/[0.08] pt-4">
-                  <h4 className="font-mono text-xs font-bold text-gray-300 uppercase tracking-wider mb-3">
-                    Detected Candidate Pairs Ranked by Similarity ({suspectPairs.length} pairs analyzed)
-                  </h4>
-                  <div className="overflow-x-auto rounded-xl border border-white/10 bg-black/40">
-                    <table className="w-full text-left font-mono text-xs">
-                      <thead>
-                        <tr className="border-b border-white/[0.08] bg-white/[0.02] text-gray-400 uppercase text-[11px]">
-                          <th className="py-2.5 px-3">Similarity</th>
-                          <th className="py-2.5 px-3">Risk Level</th>
-                          <th className="py-2.5 px-3">Candidate A</th>
-                          <th className="py-2.5 px-3">Candidate B</th>
-                          <th className="py-2.5 px-3">Language</th>
-                          <th className="py-2.5 px-3 text-right">Action</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-white/[0.06]">
-                        {suspectPairs.map((pair, idx) => {
-                          const { subA, subB, similarity } = pair;
-                          const riskColor =
-                            similarity.riskLevel === 'CRITICAL'
-                              ? 'text-red-400 bg-red-950/40 border-red-500/40'
-                              : similarity.riskLevel === 'HIGH'
-                              ? 'text-orange-400 bg-orange-950/40 border-orange-500/40'
-                              : similarity.riskLevel === 'MODERATE'
-                              ? 'text-yellow-400 bg-yellow-950/40 border-yellow-500/40'
-                              : 'text-emerald-400 bg-emerald-950/40 border-emerald-500/40';
-
-                          return (
-                            <tr key={`${subA.id}-${subB.id}-${idx}`} className="hover:bg-white/[0.03]">
-                              <td className="py-2.5 px-3 font-bold text-white">
-                                <div className="flex items-center gap-2">
-                                  <div className="w-12 bg-white/10 rounded-full h-2 overflow-hidden">
-                                    <div
-                                      className={`h-full ${
-                                        similarity.similarityScore >= 75
-                                          ? 'bg-red-500'
-                                          : similarity.similarityScore >= 50
-                                          ? 'bg-amber-500'
-                                          : 'bg-emerald-500'
-                                      }`}
-                                      style={{ width: `${similarity.similarityScore}%` }}
-                                    />
-                                  </div>
-                                  <span>{similarity.similarityScore}%</span>
-                                </div>
-                              </td>
-                              <td className="py-2.5 px-3">
-                                <span className={`rounded border px-2 py-0.5 text-[10px] font-bold ${riskColor}`}>
-                                  {similarity.riskLevel}
-                                </span>
-                              </td>
-                              <td className="py-2.5 px-3 font-medium text-white">
-                                {subA.participantName} <span className="text-gray-400 font-normal">({subA.participantRoll})</span>
-                              </td>
-                              <td className="py-2.5 px-3 font-medium text-white">
-                                {subB.participantName} <span className="text-gray-400 font-normal">({subB.participantRoll})</span>
-                              </td>
-                              <td className="py-2.5 px-3 uppercase text-gray-300">
-                                {subA.language} / {subB.language}
-                              </td>
-                              <td className="py-2.5 px-3 text-right">
-                                <button
-                                  onClick={() => {
-                                    setCandidateAId(subA.id);
-                                    setCandidateBId(subB.id);
-                                  }}
-                                  className="rounded bg-white/5 border border-white/10 px-2.5 py-1 text-xs text-purple-300 hover:bg-purple-950/40 hover:border-purple-500/30 transition-all cursor-pointer"
-                                >
-                                  Load in Diff Viewer
-                                </button>
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              )}
+                  ))}
+                </tbody>
+              </table>
             </div>
-
-            {/* Side-by-Side Dual Monaco Editor Code Comparison */}
-            <div className="rounded-2xl border border-white/10 bg-[#0a0f18] p-6 backdrop-blur-xl space-y-4">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-white/[0.08] pb-4">
-                <div>
-                  <h3 className="font-mono text-base font-bold text-white flex items-center gap-2">
-                    <Code2 className="h-4 w-4 text-purple-400" />
-                    <span>Dual Side-by-Side Code Diff Workspace</span>
-                  </h3>
-                  <p className="mt-0.5 text-xs text-gray-400">
-                    Inspect AST syntactic overlap and identical logic branches in real time.
-                  </p>
-                </div>
-
-                {/* Live Pair Similarity Badge if both candidates selected */}
-                {(() => {
-                  const subA = submissions.find((s) => s.id === candidateAId);
-                  const subB = submissions.find((s) => s.id === candidateBId);
-                  if (!subA || !subB) return null;
-                  const sim = calculateCodeSimilarity(subA.code, subB.code);
-                  return (
-                    <div className="flex items-center gap-3">
-                      <div className="text-right">
-                        <div className="font-mono text-xs text-gray-400">Similarity Metric</div>
-                        <div className="font-mono text-lg font-extrabold text-purple-400">
-                          {sim.similarityScore}% Overlap
-                        </div>
+            {violations.length > 0 && (
+              <div className="rounded-2xl border border-red-500/20 bg-[#0a0f18] p-5">
+                <h4 className="font-mono text-sm font-bold text-red-400 mb-3 flex items-center gap-2"><AlertTriangle className="h-4 w-4" /> Anti-Cheat Log ({violations.length})</h4>
+                <div className="space-y-2 max-h-48 overflow-y-auto">
+                  {violations.slice(0, 20).map(v => (
+                    <div key={v.id} className="flex items-center justify-between rounded-lg border border-red-500/10 bg-red-950/10 px-3 py-2 font-mono text-xs">
+                      <div>
+                        <span className="font-bold text-red-300">{v.participantName}</span>
+                        <span className="text-gray-400 ml-2">{v.type}</span>
+                        {v.details && <span className="text-gray-500 ml-2">— {v.details}</span>}
                       </div>
-                      <span
-                        className={`rounded-xl border px-3 py-1 font-mono text-xs font-bold ${
-                          sim.riskLevel === 'CRITICAL'
-                            ? 'border-red-500/40 bg-red-950/40 text-red-300'
-                            : sim.riskLevel === 'HIGH'
-                            ? 'border-orange-500/40 bg-orange-950/40 text-orange-300'
-                            : sim.riskLevel === 'MODERATE'
-                            ? 'border-yellow-500/40 bg-yellow-950/40 text-yellow-300'
-                            : 'border-emerald-500/40 bg-emerald-950/40 text-emerald-300'
-                        }`}
-                      >
-                        {sim.riskLevel} RISK
-                      </span>
-                    </div>
-                  );
-                })()}
-              </div>
-
-              {/* Candidate Pickers */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="block font-mono text-xs text-gray-400">Candidate A Submission</label>
-                  <select
-                    value={candidateAId}
-                    onChange={(e) => setCandidateAId(e.target.value)}
-                    className="w-full rounded-xl border border-white/10 bg-black/60 px-3 py-2 font-mono text-xs text-white focus:border-purple-400 focus:outline-none"
-                  >
-                    <option value="">Select Candidate A...</option>
-                    {(plagQuestionId ? submissions.filter((s) => s.questionId === plagQuestionId) : submissions).map((s) => (
-                      <option key={s.id} value={s.id}>
-                        {s.participantName} ({s.participantRoll}) · {s.language.toUpperCase()} · {s.score} pts · {new Date(s.submittedAt).toLocaleTimeString()}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="block font-mono text-xs text-gray-400">Candidate B Submission</label>
-                  <select
-                    value={candidateBId}
-                    onChange={(e) => setCandidateBId(e.target.value)}
-                    className="w-full rounded-xl border border-white/10 bg-black/60 px-3 py-2 font-mono text-xs text-white focus:border-purple-400 focus:outline-none"
-                  >
-                    <option value="">Select Candidate B...</option>
-                    {(plagQuestionId ? submissions.filter((s) => s.questionId === plagQuestionId) : submissions).map((s) => (
-                      <option key={s.id} value={s.id}>
-                        {s.participantName} ({s.participantRoll}) · {s.language.toUpperCase()} · {s.score} pts · {new Date(s.submittedAt).toLocaleTimeString()}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              {/* Dual Editors */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
-                {/* Editor A */}
-                <div className="rounded-xl border border-white/10 bg-black/60 overflow-hidden">
-                  <div className="border-b border-white/10 bg-white/[0.02] px-4 py-2 flex items-center justify-between font-mono text-xs">
-                    <span className="font-bold text-white">
-                      {submissions.find((s) => s.id === candidateAId)?.participantName || 'Candidate A'}
-                    </span>
-                    <span className="text-gray-400 uppercase">
-                      {submissions.find((s) => s.id === candidateAId)?.language || 'Language'}
-                    </span>
-                  </div>
-                  <div className="h-[440px]">
-                    <Editor
-                      height="100%"
-                      language={
-                        submissions.find((s) => s.id === candidateAId)?.language === 'python'
-                          ? 'python'
-                          : submissions.find((s) => s.id === candidateAId)?.language === 'java'
-                          ? 'java'
-                          : 'c'
-                      }
-                      theme="vs-dark"
-                      value={submissions.find((s) => s.id === candidateAId)?.code || '// Select Candidate A to view code'}
-                      options={{
-                        readOnly: true,
-                        minimap: { enabled: false },
-                        fontSize: 12,
-                        scrollBeyondLastLine: false,
-                        fontFamily: 'var(--font-geist-mono)',
-                      }}
-                    />
-                  </div>
-                </div>
-
-                {/* Editor B */}
-                <div className="rounded-xl border border-white/10 bg-black/60 overflow-hidden">
-                  <div className="border-b border-white/10 bg-white/[0.02] px-4 py-2 flex items-center justify-between font-mono text-xs">
-                    <span className="font-bold text-white">
-                      {submissions.find((s) => s.id === candidateBId)?.participantName || 'Candidate B'}
-                    </span>
-                    <span className="text-gray-400 uppercase">
-                      {submissions.find((s) => s.id === candidateBId)?.language || 'Language'}
-                    </span>
-                  </div>
-                  <div className="h-[440px]">
-                    <Editor
-                      height="100%"
-                      language={
-                        submissions.find((s) => s.id === candidateBId)?.language === 'python'
-                          ? 'python'
-                          : submissions.find((s) => s.id === candidateBId)?.language === 'java'
-                          ? 'java'
-                          : 'c'
-                      }
-                      theme="vs-dark"
-                      value={submissions.find((s) => s.id === candidateBId)?.code || '// Select Candidate B to view code'}
-                      options={{
-                        readOnly: true,
-                        minimap: { enabled: false },
-                        fontSize: 12,
-                        scrollBeyondLastLine: false,
-                        fontFamily: 'var(--font-geist-mono)',
-                      }}
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* TAB 6: ANTI-CHEAT VIOLATIONS AUDIT */}
-        {activeTab === 'violations' && (
-          <div className="overflow-hidden rounded-2xl border border-white/10 bg-[#0a0f18] backdrop-blur-xl">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="border-b border-white/[0.08] bg-black/40 font-mono text-xs text-gray-400 uppercase">
-                  <th className="py-3 px-4">Time</th>
-                  <th className="py-3 px-4">Candidate</th>
-                  <th className="py-3 px-4">Violation Type</th>
-                  <th className="py-3 px-4">Details</th>
-                  <th className="py-3 px-4">Strike Count</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-white/[0.06] font-mono text-xs">
-                {violations.length === 0 ? (
-                  <tr>
-                    <td colSpan={5} className="py-8 text-center text-gray-500">
-                      Zero anti-cheat violations recorded. Pure integrity!
-                    </td>
-                  </tr>
-                ) : (
-                  violations.map((v) => (
-                    <tr key={v.id} className="hover:bg-white/[0.03]">
-                      <td className="py-3 px-4 text-gray-400">
-                        {new Date(v.timestamp).toLocaleTimeString()}
-                      </td>
-                      <td className="py-3 px-4 font-bold text-white">{v.participantName}</td>
-                      <td className="py-3 px-4">
-                        <span className="rounded bg-red-950/40 border border-red-500/30 px-2 py-0.5 text-[10px] text-red-300 font-bold uppercase">
-                          {v.type.replace('_', ' ')}
-                        </span>
-                      </td>
-                      <td className="py-3 px-4 text-gray-300">{v.details}</td>
-                      <td className="py-3 px-4 text-red-400 font-bold">{v.strikeCount} / 3</td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
-
-      {/* Code Inspector Drawer/Modal */}
-      {inspectedSubmission && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-6 backdrop-blur-md">
-          <div className="max-w-3xl w-full rounded-2xl border border-white/15 bg-[#0a0f19] p-6 shadow-2xl flex flex-col max-h-[85vh]">
-            <div className="flex items-center justify-between border-b border-white/[0.08] pb-4">
-              <div>
-                <h3 className="font-mono text-lg font-bold text-white">
-                  Submission Code Inspector
-                </h3>
-                <p className="text-xs text-gray-400">
-                  {inspectedSubmission.participantName} ({inspectedSubmission.participantRoll}) · {inspectedSubmission.questionTitle} ({inspectedSubmission.language.toUpperCase()})
-                </p>
-              </div>
-              <div className="text-right">
-                <span className="font-mono text-emerald-400 font-bold text-base">{inspectedSubmission.score} pts</span>
-                <div className="font-mono text-xs text-gray-400">{inspectedSubmission.testCasesPassed} / {inspectedSubmission.totalTestCases} Test Cases</div>
-              </div>
-            </div>
-
-            <div className="mt-4 flex-1 overflow-y-auto">
-              <pre className="rounded-xl border border-white/10 bg-black/60 p-4 font-mono text-xs text-emerald-300 whitespace-pre-wrap overflow-x-auto">
-                {inspectedSubmission.code}
-              </pre>
-
-              {/* Test Case Inspection Breakdown */}
-              <div className="mt-4 space-y-2">
-                <h4 className="font-mono text-xs font-bold text-gray-400 uppercase">Test Case Breakdown</h4>
-                <div className="grid gap-2">
-                  {inspectedSubmission.testCaseDetails?.map((tc, idx) => (
-                    <div
-                      key={tc.testCaseId || idx}
-                      className={`rounded-lg border p-2.5 font-mono text-xs flex items-center justify-between ${
-                        tc.passed
-                          ? 'border-emerald-500/30 bg-emerald-950/20 text-emerald-300'
-                          : 'border-red-500/30 bg-red-950/20 text-red-300'
-                      }`}
-                    >
-                      <div className="flex items-center gap-2">
-                        <span className="font-bold">Case {idx + 1} {tc.isHidden && '(Hidden)'}:</span>
-                        <span>{tc.passed ? 'PASSED' : 'FAILED'}</span>
-                      </div>
-                      {tc.error && <span className="text-[11px] text-red-400">{tc.error}</span>}
+                      <div className="text-gray-500">{new Date(v.timestamp).toLocaleTimeString()} · Strike {v.strikeCount}</div>
                     </div>
                   ))}
                 </div>
               </div>
-            </div>
+            )}
+          </div>
+        )}
 
-            <div className="mt-4 border-t border-white/[0.08] pt-3 text-right">
-              <button
-                onClick={() => setInspectedSubmission(null)}
-                className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 font-mono text-xs text-gray-300 hover:bg-white/10 hover:text-white"
-              >
-                Close Inspector
+        {/* ═══════════════════════════════════════════════════════════════════
+            TAB 5: SUBMISSIONS
+        ═══════════════════════════════════════════════════════════════════ */}
+        {activeTab === 'submissions' && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="font-mono text-xs text-gray-400">{submissions.length} submissions · <span className="text-amber-300">{submissions.filter(s => s.isAutoSubmit).length} auto-submitted</span></div>
+              <button onClick={exportAuditJSON} className="flex items-center gap-1.5 rounded-xl border border-white/10 bg-white/5 px-3 py-1.5 font-mono text-xs text-gray-300 hover:bg-white/10">
+                <Download className="h-3.5 w-3.5" /> Audit JSON
               </button>
             </div>
+            <div className="overflow-hidden rounded-2xl border border-white/10 bg-[#0a0f18]">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="border-b border-white/[0.08] bg-black/40 font-mono text-[11px] text-gray-400 uppercase">
+                    <th className="py-3 px-4">Candidate</th>
+                    <th className="py-3 px-4 hidden sm:table-cell">Question</th>
+                    <th className="py-3 px-4">Lang</th>
+                    <th className="py-3 px-4">Score</th>
+                    <th className="py-3 px-4 hidden md:table-cell">Tests</th>
+                    <th className="py-3 px-4 hidden lg:table-cell">Submitted</th>
+                    <th className="py-3 px-4 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-white/[0.06] font-mono text-xs">
+                  {submissions.length === 0 ? (
+                    <tr><td colSpan={7} className="py-8 text-center text-gray-500">No submissions yet.</td></tr>
+                  ) : submissions.map(s => (
+                    <tr key={s.id} className="hover:bg-white/[0.03]">
+                      <td className="py-3 px-4">
+                        <div className="font-bold text-white">{s.participantName}</div>
+                        <div className="text-[11px] text-gray-400">{s.participantRoll}</div>
+                      </td>
+                      <td className="py-3 px-4 hidden sm:table-cell">
+                        <div className="text-gray-200">{s.questionTitle}</div>
+                        {s.isAutoSubmit && <span className="rounded bg-amber-950/60 border border-amber-500/30 px-1.5 py-0.5 text-[10px] text-amber-300">AUTO</span>}
+                      </td>
+                      <td className="py-3 px-4 uppercase text-gray-300">{s.language}</td>
+                      <td className="py-3 px-4">
+                        <span className={`font-bold ${s.score > 0 ? 'text-emerald-400' : 'text-gray-400'}`}>{s.score}</span>
+                        {s.speedBonus > 0 && <span className="ml-1 text-cyan-400 text-[10px]">+{s.speedBonus}</span>}
+                      </td>
+                      <td className="py-3 px-4 hidden md:table-cell text-gray-300">{s.testCasesPassed}/{s.totalTestCases}</td>
+                      <td className="py-3 px-4 hidden lg:table-cell text-gray-400">{new Date(s.submittedAt).toLocaleTimeString()}</td>
+                      <td className="py-3 px-4 text-right">
+                        <div className="flex items-center justify-end gap-1.5">
+                          <button onClick={() => setInspectedSubmission(s)} className="flex items-center gap-1 rounded border border-white/10 bg-white/5 px-2 py-1 text-[11px] text-gray-300 hover:text-white">
+                            <Eye className="h-3 w-3" /> View
+                          </button>
+                          <button onClick={() => handleRejudge(s.id)} disabled={rejudging === s.id} className="flex items-center gap-1 rounded border border-indigo-500/30 bg-indigo-950/40 px-2 py-1 text-[11px] text-indigo-300 hover:bg-indigo-900/40 disabled:opacity-50">
+                            {rejudging === s.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />}
+                            Re-judge
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Manual Scenario Question Editor Modal */}
-      {showQuestionModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-6 backdrop-blur-md overflow-y-auto">
-          <div className="max-w-2xl w-full rounded-2xl border border-white/15 bg-[#0a0f19] p-6 shadow-2xl space-y-4 my-8">
-            <h3 className="font-mono text-lg font-bold text-white">
-              {editingQuestion.id ? 'Edit Challenge Question' : 'Create Real-World Scenario Question'}
-            </h3>
+        {/* ═══════════════════════════════════════════════════════════════════
+            TAB 6: HISTORY
+        ═══════════════════════════════════════════════════════════════════ */}
+        {activeTab === 'history' && (
+          <div className="space-y-4">
+            <h2 className="font-mono text-lg font-bold text-white">All Contest Sessions</h2>
+            {sessions.length === 0 ? (
+              <div className="rounded-2xl border border-dashed border-white/10 p-12 text-center text-gray-500 font-mono text-sm">No sessions created yet.</div>
+            ) : (
+              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                {sessions.map(s => {
+                  // Quick stats (only available for viewed session; for others we show label + phase)
+                  const isViewed = s.id === viewingSessionId;
+                  return (
+                    <div key={s.id} className={`rounded-2xl border bg-[#0a0f18] p-5 space-y-3 transition-all ${isViewed ? 'border-amber-500/40 shadow-lg shadow-amber-500/5' : 'border-white/10 hover:border-white/20'}`}>
+                      <div className="flex items-start justify-between gap-2">
+                        <div>
+                          <h3 className="font-mono text-sm font-bold text-white">{s.label}</h3>
+                          {s.scheduled_at && (
+                            <p className="font-mono text-xs text-gray-400 flex items-center gap-1 mt-0.5">
+                              <Calendar className="h-3 w-3" /> {new Date(s.scheduled_at).toLocaleString()}
+                            </p>
+                          )}
+                          {s.notes && <p className="text-xs text-gray-500 mt-1 italic">{s.notes}</p>}
+                        </div>
+                        <PhaseBadge phase={s.phase} />
+                      </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block font-mono text-xs text-gray-400 mb-1">Title</label>
-                <input
-                  type="text"
-                  value={editingQuestion.title || ''}
-                  onChange={(e) => setEditingQuestion({ ...editingQuestion, title: e.target.value })}
-                  placeholder="e.g. Drone Payload Balancer"
-                  className="w-full rounded-lg border border-white/10 bg-black/40 px-3 py-1.5 font-mono text-xs text-white"
-                />
-              </div>
+                      {s.challenge_starts_at && (
+                        <div className="grid grid-cols-2 gap-2 border-t border-white/[0.06] pt-3">
+                          <div className="rounded-lg bg-black/30 p-2 text-center">
+                            <div className="font-mono text-[10px] text-gray-500">Duration</div>
+                            <div className="font-mono text-sm font-bold text-white">{Math.round((s.challenge_duration_ms ?? 3000000) / 60000)} min</div>
+                          </div>
+                          <div className="rounded-lg bg-black/30 p-2 text-center">
+                            <div className="font-mono text-[10px] text-gray-500">Started</div>
+                            <div className="font-mono text-sm font-bold text-white">{new Date(s.challenge_starts_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+                          </div>
+                        </div>
+                      )}
 
-              <div>
-                <label className="block font-mono text-xs text-gray-400 mb-1">Points</label>
-                <input
-                  type="number"
-                  value={editingQuestion.points || 400}
-                  onChange={(e) => setEditingQuestion({ ...editingQuestion, points: Number(e.target.value) })}
-                  className="w-full rounded-lg border border-white/10 bg-black/40 px-3 py-1.5 font-mono text-xs text-white"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block font-mono text-xs text-gray-400 mb-1">Difficulty</label>
-                <select
-                  value={editingQuestion.difficulty || 'Medium'}
-                  onChange={(e) => setEditingQuestion({ ...editingQuestion, difficulty: e.target.value as any })}
-                  className="w-full rounded-lg border border-white/10 bg-black/40 px-3 py-1.5 font-mono text-xs text-white"
-                >
-                  <option value="Easy">Easy</option>
-                  <option value="Medium">Medium</option>
-                  <option value="Hard">Hard</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block font-mono text-xs text-gray-400 mb-1">Category</label>
-                <input
-                  type="text"
-                  value={editingQuestion.category || ''}
-                  onChange={(e) => setEditingQuestion({ ...editingQuestion, category: e.target.value })}
-                  placeholder="e.g. Dynamic Programming"
-                  className="w-full rounded-lg border border-white/10 bg-black/40 px-3 py-1.5 font-mono text-xs text-white"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block font-mono text-xs text-gray-400 mb-1">Scenario Narrative</label>
-              <textarea
-                value={editingQuestion.scenario || ''}
-                onChange={(e) => setEditingQuestion({ ...editingQuestion, scenario: e.target.value })}
-                rows={4}
-                placeholder="Describe the real-life engineering problem..."
-                className="w-full rounded-lg border border-white/10 bg-black/40 p-2.5 font-sans text-xs text-white"
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block font-mono text-xs text-gray-400 mb-1">Input Format</label>
-                <textarea
-                  value={editingQuestion.inputFormat || ''}
-                  onChange={(e) => setEditingQuestion({ ...editingQuestion, inputFormat: e.target.value })}
-                  rows={2}
-                  className="w-full rounded-lg border border-white/10 bg-black/40 p-2 font-mono text-xs text-white"
-                />
-              </div>
-              <div>
-                <label className="block font-mono text-xs text-gray-400 mb-1">Output Format</label>
-                <textarea
-                  value={editingQuestion.outputFormat || ''}
-                  onChange={(e) => setEditingQuestion({ ...editingQuestion, outputFormat: e.target.value })}
-                  rows={2}
-                  className="w-full rounded-lg border border-white/10 bg-black/40 p-2 font-mono text-xs text-white"
-                />
-              </div>
-            </div>
-
-            {/* Test Cases Studio */}
-            <div className="space-y-2 border-t border-white/[0.08] pt-3">
-              <div className="flex items-center justify-between">
-                <label className="font-mono text-xs font-bold text-cyan-400">
-                  Test Cases ({editingQuestion.testCases?.length || 0})
-                </label>
-                <button
-                  type="button"
-                  onClick={() => {
-                    const current = editingQuestion.testCases || [];
-                    setEditingQuestion({
-                      ...editingQuestion,
-                      testCases: [
-                        ...current,
-                        {
-                          id: `tc-${Date.now()}`,
-                          input: '',
-                          expectedOutput: '',
-                          isHidden: current.length >= 2,
-                        },
-                      ],
-                    });
-                  }}
-                  className="rounded bg-white/5 border border-white/10 px-2 py-0.5 font-mono text-[11px] text-cyan-300 hover:bg-white/10"
-                >
-                  + Add Test Case
-                </button>
-              </div>
-
-              <div className="max-h-48 overflow-y-auto space-y-2 pr-1">
-                {(editingQuestion.testCases || []).map((tc, idx) => (
-                  <div key={tc.id || idx} className="rounded-lg border border-white/10 bg-black/40 p-2 text-xs space-y-1.5">
-                    <div className="flex items-center justify-between">
-                      <span className="font-mono text-gray-400 font-bold">Case #{idx + 1}</span>
-                      <div className="flex items-center gap-2">
-                        <label className="flex items-center gap-1 font-mono text-[11px] text-gray-400">
-                          <input
-                            type="checkbox"
-                            checked={tc.isHidden}
-                            onChange={(e) => {
-                              const updated = [...(editingQuestion.testCases || [])];
-                              updated[idx].isHidden = e.target.checked;
-                              setEditingQuestion({ ...editingQuestion, testCases: updated });
-                            }}
-                          />
-                          Hidden Case
-                        </label>
+                      <div className="flex gap-2">
                         <button
-                          type="button"
-                          onClick={() => {
-                            const updated = (editingQuestion.testCases || []).filter((_, i) => i !== idx);
-                            setEditingQuestion({ ...editingQuestion, testCases: updated });
-                          }}
-                          className="text-red-400 hover:text-red-300"
+                          onClick={() => { setViewingSessionId(s.id); setActiveTab('submissions'); }}
+                          className="flex-1 rounded-lg border border-white/10 bg-white/5 py-1.5 font-mono text-xs text-gray-300 hover:text-white text-center"
                         >
-                          <Trash2 className="h-3.5 w-3.5" />
+                          View Submissions
+                        </button>
+                        <button
+                          onClick={() => { setViewingSessionId(s.id); setActiveTab('participants'); }}
+                          className="flex-1 rounded-lg border border-white/10 bg-white/5 py-1.5 font-mono text-xs text-gray-300 hover:text-white text-center"
+                        >
+                          Participants
                         </button>
                       </div>
                     </div>
-                    <div className="grid grid-cols-2 gap-2">
-                      <textarea
-                        value={tc.input}
-                        onChange={(e) => {
-                          const updated = [...(editingQuestion.testCases || [])];
-                          updated[idx].input = e.target.value;
-                          setEditingQuestion({ ...editingQuestion, testCases: updated });
-                        }}
-                        placeholder="Stdin input..."
-                        rows={2}
-                        className="w-full rounded border border-white/10 bg-black/60 p-1.5 font-mono text-[11px] text-emerald-300"
-                      />
-                      <textarea
-                        value={tc.expectedOutput}
-                        onChange={(e) => {
-                          const updated = [...(editingQuestion.testCases || [])];
-                          updated[idx].expectedOutput = e.target.value;
-                          setEditingQuestion({ ...editingQuestion, testCases: updated });
-                        }}
-                        placeholder="Expected stdout..."
-                        rows={2}
-                        className="w-full rounded border border-white/10 bg-black/60 p-1.5 font-mono text-[11px] text-cyan-300"
-                      />
+                  );
+                })}
+              </div>
+            )}
+
+            {/* New session CTA */}
+            <button onClick={() => setShowNewSessionModal(true)} className="flex items-center gap-2 rounded-xl border border-dashed border-white/20 bg-white/5 px-5 py-3 font-mono text-sm text-gray-400 hover:text-white hover:border-white/30 transition-all">
+              <PlusCircle className="h-5 w-5" /> Create New Contest Session
+            </button>
+          </div>
+        )}
+
+        {/* ═══════════════════════════════════════════════════════════════════
+            TAB 7: PLAGIARISM
+        ═══════════════════════════════════════════════════════════════════ */}
+        {activeTab === 'plagiarism' && (
+          <div className="space-y-6">
+            <div className="rounded-2xl border border-white/10 bg-[#0a0f18] p-6">
+              <h3 className="font-mono text-sm font-bold text-red-400 flex items-center gap-2"><GitCompare className="h-4 w-4" /> Code Plagiarism Scanner</h3>
+              <div className="mt-4 flex gap-2">
+                <select value={plagQuestionId} onChange={e => setPlagQuestionId(e.target.value)}
+                  className="flex-1 rounded-xl border border-white/10 bg-black/50 px-3 py-2 font-mono text-xs text-white focus:border-red-400 focus:outline-none">
+                  <option value="">Select a question to scan...</option>
+                  {questions.map(q => (
+                    <option key={q.id} value={q.id}>{q.title}</option>
+                  ))}
+                </select>
+                <button onClick={() => scanPlagiarism(plagQuestionId)} disabled={!plagQuestionId}
+                  className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-red-500 to-pink-500 px-4 py-2 font-mono text-xs font-bold text-white hover:brightness-110 disabled:opacity-50">
+                  <Search className="h-4 w-4" /> Scan All Pairs
+                </button>
+              </div>
+            </div>
+
+            {suspectPairs.length > 0 && (
+              <div className="space-y-3">
+                {suspectPairs.map(({ subA, subB, similarity }, i) => (
+                  <div key={i} className="rounded-2xl border border-red-500/20 bg-[#0a0f18] p-5">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-3 font-mono text-xs">
+                        <span className="font-bold text-white">{subA.participantName}</span>
+                        <GitCompare className="h-4 w-4 text-gray-500" />
+                        <span className="font-bold text-white">{subB.participantName}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="h-2 w-24 rounded-full bg-white/10 overflow-hidden">
+                          <div className={`h-full rounded-full ${similarity.similarityScore > 0.8 ? 'bg-red-500' : similarity.similarityScore > 0.5 ? 'bg-amber-500' : 'bg-emerald-500'}`}
+                            style={{ width: `${Math.round(similarity.similarityScore * 100)}%` }} />
+                        </div>
+                        <span className={`font-mono text-xs font-bold ${similarity.similarityScore > 0.8 ? 'text-red-400' : similarity.similarityScore > 0.5 ? 'text-amber-400' : 'text-emerald-400'}`}>
+                          {Math.round(similarity.similarityScore * 100)}%
+                        </span>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <div className="font-mono text-[10px] text-gray-500 mb-1">{subA.participantName} ({subA.language.toUpperCase()})</div>
+                        <pre className="rounded-lg bg-black/40 p-3 font-mono text-[10px] text-gray-300 overflow-auto max-h-32">{subA.code.slice(0, 400)}{subA.code.length > 400 ? '...' : ''}</pre>
+                      </div>
+                      <div>
+                        <div className="font-mono text-[10px] text-gray-500 mb-1">{subB.participantName} ({subB.language.toUpperCase()})</div>
+                        <pre className="rounded-lg bg-black/40 p-3 font-mono text-[10px] text-gray-300 overflow-auto max-h-32">{subB.code.slice(0, 400)}{subB.code.length > 400 ? '...' : ''}</pre>
+                      </div>
                     </div>
                   </div>
                 ))}
               </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* ══════════════════════════════════════════════════════════════════════
+          MODALS
+      ══════════════════════════════════════════════════════════════════════ */}
+
+      {/* New Session Modal */}
+      {showNewSessionModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-md">
+          <div className="w-full max-w-lg rounded-2xl border border-white/10 bg-[#0d1420] p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="font-mono text-lg font-bold text-white">New Contest Session</h3>
+              <button onClick={() => setShowNewSessionModal(false)} className="text-gray-400 hover:text-white"><X className="h-5 w-5" /></button>
             </div>
 
-            <div className="flex justify-end gap-3 pt-3 border-t border-white/[0.08]">
-              <button
-                type="button"
-                onClick={() => setShowQuestionModal(false)}
-                className="rounded-xl border border-white/10 px-4 py-2 font-mono text-xs text-gray-400 hover:text-white"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={handleSaveQuestion}
-                className="rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 px-5 py-2 font-mono text-xs font-bold text-black hover:brightness-110 active:scale-95"
-              >
-                Save Challenge Question
+            <div className="space-y-3">
+              <div>
+                <label className="block font-mono text-xs text-gray-400 mb-1">Session Label *</label>
+                <input type="text" value={newSessionLabel} onChange={e => setNewSessionLabel(e.target.value)} placeholder="e.g. Trial Run 2, Chapter 2 Final"
+                  className="w-full rounded-xl border border-white/10 bg-black/40 px-3 py-2 font-mono text-sm text-white focus:border-emerald-500 focus:outline-none" />
+              </div>
+              <div>
+                <label className="block font-mono text-xs text-gray-400 mb-1">Scheduled At (optional)</label>
+                <input type="datetime-local" value={newSessionScheduled} onChange={e => setNewSessionScheduled(e.target.value)}
+                  className="w-full rounded-xl border border-white/10 bg-black/40 px-3 py-2 font-mono text-sm text-white focus:border-emerald-500 focus:outline-none" />
+              </div>
+              <div>
+                <label className="block font-mono text-xs text-gray-400 mb-1">Notes (optional)</label>
+                <textarea value={newSessionNotes} onChange={e => setNewSessionNotes(e.target.value)} placeholder="e.g. Dry run with 20 students" rows={2}
+                  className="w-full rounded-xl border border-white/10 bg-black/40 px-3 py-2 font-mono text-sm text-white focus:border-emerald-500 focus:outline-none resize-none" />
+              </div>
+              <div>
+                <label className="block font-mono text-xs text-gray-400 mb-1">Copy Questions From</label>
+                <select value={newSessionCopyFrom ?? ''} onChange={e => setNewSessionCopyFrom(e.target.value || null)}
+                  className="w-full rounded-xl border border-white/10 bg-black/40 px-3 py-2 font-mono text-sm text-white focus:border-emerald-500 focus:outline-none">
+                  <option value="">— Start blank —</option>
+                  {sessions.map(s => <option key={s.id} value={s.id}>{s.label} ({s.phase})</option>)}
+                </select>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-3 pt-2">
+              <button onClick={() => setShowNewSessionModal(false)} className="rounded-xl border border-white/10 px-4 py-2 font-mono text-xs text-gray-300 hover:bg-white/5">Cancel</button>
+              <button onClick={handleCreateSession} disabled={newSessionCreating}
+                className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 px-5 py-2 font-mono text-xs font-bold text-black hover:brightness-110 disabled:opacity-50">
+                {newSessionCreating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <PlusCircle className="h-3.5 w-3.5" />}
+                Create Session
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Problem Set JSON Bulk Import Modal */}
-      {showImportJsonModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-6 backdrop-blur-md">
-          <div className="max-w-xl w-full rounded-2xl border border-white/15 bg-[#0a0f19] p-6 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between border-b border-white/[0.08] pb-3">
-              <h3 className="font-mono text-lg font-bold text-white flex items-center gap-2">
-                <Upload className="h-5 w-5 text-cyan-400" />
-                <span>Import Problem Set JSON</span>
-              </h3>
-              <button
-                onClick={() => setShowImportJsonModal(false)}
-                className="text-gray-400 hover:text-white font-mono text-sm"
-              >
-                ✕
-              </button>
+      {/* Question Editor Modal */}
+      {showQuestionModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4 backdrop-blur-md">
+          <div className="w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-2xl border border-white/10 bg-[#0d1420] shadow-2xl">
+            <div className="sticky top-0 z-10 flex items-center justify-between border-b border-white/[0.08] bg-[#0d1420] px-6 py-4">
+              <h3 className="font-mono text-sm font-bold text-white">{editingQuestion.id ? 'Edit Question' : 'Create Question'}</h3>
+              <button onClick={() => setShowQuestionModal(false)} className="text-gray-400 hover:text-white"><X className="h-5 w-5" /></button>
             </div>
 
-            <p className="text-xs text-gray-400">
-              Paste a JSON array of questions, or upload an exported problem set file to immediately configure the active marathon contest.
-            </p>
+            <div className="p-6 space-y-4">
+              <div className="grid gap-4 sm:grid-cols-3">
+                <div className="sm:col-span-2">
+                  <label className="block font-mono text-xs text-gray-400 mb-1">Title *</label>
+                  <input type="text" value={editingQuestion.title ?? ''} onChange={e => setEditingQuestion(q => ({ ...q, title: e.target.value }))}
+                    className="w-full rounded-xl border border-white/10 bg-black/40 px-3 py-2 font-mono text-sm text-white focus:border-cyan-500 focus:outline-none" />
+                </div>
+                <div>
+                  <label className="block font-mono text-xs text-gray-400 mb-1">Points</label>
+                  <input type="number" value={editingQuestion.points ?? 400} onChange={e => setEditingQuestion(q => ({ ...q, points: +e.target.value }))}
+                    className="w-full rounded-xl border border-white/10 bg-black/40 px-3 py-2 font-mono text-sm text-white focus:border-cyan-500 focus:outline-none" />
+                </div>
+              </div>
 
-            <div>
-              <label className="block font-mono text-xs text-gray-400 mb-1.5">JSON Payload</label>
-              <textarea
-                value={importJsonText}
-                onChange={(e) => setImportJsonText(e.target.value)}
-                rows={10}
-                placeholder={`[\n  {\n    "id": "custom-1",\n    "title": "Problem Title",\n    "difficulty": "Medium",\n    "points": 400,\n    "scenario": "...",\n    "testCases": [...]\n  }\n]`}
-                className="w-full rounded-xl border border-white/10 bg-black/60 p-3 font-mono text-xs text-cyan-300 placeholder-gray-600 focus:border-cyan-400 focus:outline-none"
-              />
-            </div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <label className="block font-mono text-xs text-gray-400 mb-1">Category</label>
+                  <input type="text" value={editingQuestion.category ?? ''} onChange={e => setEditingQuestion(q => ({ ...q, category: e.target.value }))}
+                    className="w-full rounded-xl border border-white/10 bg-black/40 px-3 py-2 font-mono text-sm text-white focus:border-cyan-500 focus:outline-none" />
+                </div>
+                <div>
+                  <label className="block font-mono text-xs text-gray-400 mb-1">Difficulty</label>
+                  <select value={editingQuestion.difficulty ?? 'Medium'} onChange={e => setEditingQuestion(q => ({ ...q, difficulty: e.target.value as any }))}
+                    className="w-full rounded-xl border border-white/10 bg-black/40 px-3 py-2 font-mono text-sm text-white focus:border-cyan-500 focus:outline-none">
+                    <option>Easy</option><option>Medium</option><option>Hard</option>
+                  </select>
+                </div>
+              </div>
 
-            <div className="flex items-center justify-between pt-2 border-t border-white/[0.08]">
-              <label className="flex items-center gap-1.5 cursor-pointer font-mono text-xs text-gray-400 hover:text-cyan-300 transition-colors">
-                <input
-                  type="file"
-                  accept=".json"
-                  className="hidden"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) {
-                      const reader = new FileReader();
-                      reader.onload = (ev) => {
-                        setImportJsonText(String(ev.target?.result || ''));
-                      };
-                      reader.readAsText(file);
-                    }
-                  }}
-                />
-                <FileCode className="h-4 w-4" />
-                <span>Upload .JSON File</span>
-              </label>
+              {[
+                { key: 'scenario', label: 'Scenario Description' },
+                { key: 'inputFormat', label: 'Input Format' },
+                { key: 'outputFormat', label: 'Output Format' },
+                { key: 'constraints', label: 'Constraints' },
+              ].map(({ key, label }) => (
+                <div key={key}>
+                  <label className="block font-mono text-xs text-gray-400 mb-1">{label}</label>
+                  <textarea value={(editingQuestion as any)[key] ?? ''} onChange={e => setEditingQuestion(q => ({ ...q, [key]: e.target.value }))} rows={3}
+                    className="w-full rounded-xl border border-white/10 bg-black/40 px-3 py-2 font-mono text-xs text-white focus:border-cyan-500 focus:outline-none resize-y" />
+                </div>
+              ))}
 
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={() => setShowImportJsonModal(false)}
-                  className="rounded-xl border border-white/10 px-4 py-2 font-mono text-xs text-gray-400 hover:text-white cursor-pointer"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  onClick={handleImportQuestionsJSON}
-                  disabled={!importJsonText.trim()}
-                  className="rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 px-5 py-2 font-mono text-xs font-bold text-black hover:brightness-110 active:scale-95 disabled:opacity-40 cursor-pointer"
-                >
-                  Import Problem Set
+              {/* Test Cases */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="font-mono text-xs text-gray-400">Test Cases</label>
+                  <button onClick={() => setEditingQuestion(q => ({ ...q, testCases: [...(q.testCases ?? []), { id: `tc-${Date.now()}`, input: '', expectedOutput: '', isHidden: false }] }))}
+                    className="flex items-center gap-1 rounded-lg bg-white/5 border border-white/10 px-2 py-1 font-mono text-[11px] text-gray-300 hover:bg-white/10">
+                    <Plus className="h-3 w-3" /> Add
+                  </button>
+                </div>
+                <div className="space-y-3">
+                  {(editingQuestion.testCases ?? []).map((tc, i) => (
+                    <div key={tc.id} className="rounded-xl border border-white/10 bg-black/30 p-3 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="font-mono text-[11px] text-gray-500">Test {i + 1}</span>
+                        <div className="flex items-center gap-3">
+                          <label className="flex items-center gap-1.5 font-mono text-[11px] text-gray-400 cursor-pointer">
+                            <input type="checkbox" checked={tc.isHidden} onChange={e => {
+                              const tcs = [...(editingQuestion.testCases ?? [])];
+                              tcs[i] = { ...tcs[i], isHidden: e.target.checked };
+                              setEditingQuestion(q => ({ ...q, testCases: tcs }));
+                            }} className="accent-amber-400" />
+                            Hidden
+                          </label>
+                          <button onClick={() => setEditingQuestion(q => ({ ...q, testCases: (q.testCases ?? []).filter((_, idx) => idx !== i) }))} className="text-red-400 hover:text-red-300"><Trash2 className="h-3.5 w-3.5" /></button>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <div className="font-mono text-[10px] text-gray-500 mb-1">Input</div>
+                          <textarea value={tc.input} onChange={e => {
+                            const tcs = [...(editingQuestion.testCases ?? [])];
+                            tcs[i] = { ...tcs[i], input: e.target.value };
+                            setEditingQuestion(q => ({ ...q, testCases: tcs }));
+                          }} rows={2} className="w-full rounded-lg border border-white/10 bg-black/50 px-2 py-1 font-mono text-xs text-emerald-300 focus:outline-none resize-none" />
+                        </div>
+                        <div>
+                          <div className="font-mono text-[10px] text-gray-500 mb-1">Expected Output</div>
+                          <textarea value={tc.expectedOutput} onChange={e => {
+                            const tcs = [...(editingQuestion.testCases ?? [])];
+                            tcs[i] = { ...tcs[i], expectedOutput: e.target.value };
+                            setEditingQuestion(q => ({ ...q, testCases: tcs }));
+                          }} rows={2} className="w-full rounded-lg border border-white/10 bg-black/50 px-2 py-1 font-mono text-xs text-cyan-300 focus:outline-none resize-none" />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-3 border-t border-white/[0.08] pt-4">
+                <button onClick={() => setShowQuestionModal(false)} className="rounded-xl border border-white/10 px-4 py-2 font-mono text-xs text-gray-300 hover:bg-white/5">Cancel</button>
+                <button onClick={handleSaveQuestion} className="rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 px-5 py-2 font-mono text-xs font-bold text-black hover:brightness-110">
+                  {editingQuestion.id ? 'Save Changes' : 'Create Question'}
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Import JSON Modal */}
+      {showImportJsonModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-md">
+          <div className="w-full max-w-xl rounded-2xl border border-white/10 bg-[#0d1420] p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="font-mono text-sm font-bold text-white">Import Questions JSON</h3>
+              <button onClick={() => setShowImportJsonModal(false)} className="text-gray-400 hover:text-white"><X className="h-5 w-5" /></button>
+            </div>
+            <textarea value={importJsonText} onChange={e => setImportJsonText(e.target.value)} placeholder='[{"title":"...", "testCases":[...]}]' rows={10}
+              className="w-full rounded-xl border border-white/10 bg-black/50 p-3 font-mono text-xs text-white focus:border-cyan-500 focus:outline-none resize-y" />
+            <div className="flex justify-end gap-3">
+              <button onClick={() => setShowImportJsonModal(false)} className="rounded-xl border border-white/10 px-4 py-2 font-mono text-xs text-gray-300">Cancel</button>
+              <button onClick={handleImportQuestionsJSON} className="rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 px-5 py-2 font-mono text-xs font-bold text-black hover:brightness-110">Import</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Code Inspector Modal */}
+      {inspectedSubmission && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4 backdrop-blur-md">
+          <div className="w-full max-w-4xl max-h-[90vh] flex flex-col rounded-2xl border border-white/10 bg-[#0d1420] shadow-2xl overflow-hidden">
+            <div className="flex items-center justify-between border-b border-white/[0.08] px-6 py-4">
+              <div>
+                <div className="font-mono text-sm font-bold text-white">{inspectedSubmission.participantName} — {inspectedSubmission.questionTitle}</div>
+                <div className="font-mono text-xs text-gray-400 mt-0.5">
+                  {inspectedSubmission.language.toUpperCase()} · Score: {inspectedSubmission.score} · {inspectedSubmission.testCasesPassed}/{inspectedSubmission.totalTestCases} passed
+                  {inspectedSubmission.isAutoSubmit && <span className="ml-2 rounded bg-amber-950/60 border border-amber-500/30 px-1.5 py-0.5 text-[10px] text-amber-300">AUTO-SUBMITTED</span>}
+                </div>
+              </div>
+              <button onClick={() => setInspectedSubmission(null)} className="text-gray-400 hover:text-white"><X className="h-5 w-5" /></button>
+            </div>
+            <div className="flex-1 overflow-hidden">
+              <Editor height="60vh" language={inspectedSubmission.language === 'c' ? 'c' : inspectedSubmission.language}
+                value={inspectedSubmission.code} options={{ readOnly: true, minimap: { enabled: false }, fontSize: 13, wordWrap: 'on' }} theme="vs-dark" />
             </div>
           </div>
         </div>

@@ -1,87 +1,230 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { store } from '@/lib/store';
+import {
+  getActiveSession,
+  getSessionById,
+  getAllSessions,
+  createSession,
+  updateSession,
+  copyQuestionsToSession,
+  autoTransitionSession,
+} from '@/lib/db';
 
-export async function GET() {
-  return NextResponse.json({
-    contest: store.contest,
-    serverTime: Date.now(),
-    participantCount: store.participants.size,
-    submissionCount: store.submissions.size,
-    questionCount: store.questions.length,
-  });
+function isAdmin(passkey: string) {
+  return passkey === 'admin1111' || passkey === process.env.ADMIN_SECRET;
+}
+
+// Converts a ContestSession to the legacy ContestState shape so arena/leaderboard keep working
+function sessionToContestState(session: any) {
+  return {
+    isActive: session.phase === 'active' || session.phase === 'paused',
+    isPaused: session.phase === 'paused' || session.is_paused,
+    startTime: session.challenge_starts_at ?? null,
+    durationMinutes: Math.round((session.challenge_duration_ms ?? 3000000) / 60000),
+    endTime: session.challenge_ends_at ?? null,
+    title: session.label,
+    announcement: session.announcement ?? '',
+    isRevealMode: session.is_reveal_mode ?? false,
+    // New fields
+    phase: session.phase,
+    sessionId: session.id,
+    registrationEndsAt: session.registration_ends_at ?? null,
+    registrationOpensAt: session.registration_opens_at ?? null,
+  };
+}
+
+export async function GET(req: NextRequest) {
+  try {
+    const { searchParams } = new URL(req.url);
+    const sessionId = searchParams.get('sessionId');
+
+    let session = sessionId ? await getSessionById(sessionId) : await getActiveSession();
+    if (!session) {
+      return NextResponse.json({ error: 'No contest session found' }, { status: 404 });
+    }
+
+    // Auto-transition phases based on timestamps (no cron needed)
+    session = await autoTransitionSession(session);
+
+    return NextResponse.json({
+      contest: sessionToContestState(session),
+      session,
+      serverTime: Date.now(),
+    });
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
 }
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { action, durationMinutes, announcement, passkey } = body;
+    const { action, passkey, sessionId: reqSessionId } = body;
 
-    // Validate admin passkey
-    if (passkey !== 'admin1111' && passkey !== process.env.ADMIN_SECRET) {
+    if (!isAdmin(passkey)) {
       return NextResponse.json({ error: 'Unauthorized: Invalid Admin Passkey' }, { status: 401 });
     }
 
     const now = Date.now();
 
+    // ── Session Management Actions ──────────────────────────────────────
+    if (action === 'createSession') {
+      const { label, notes, scheduledAt, copyFromSessionId } = body;
+      if (!label) return NextResponse.json({ error: 'Session label is required' }, { status: 400 });
+
+      const newSession = await createSession(label, notes || '', scheduledAt);
+      if (!newSession) return NextResponse.json({ error: 'Failed to create session' }, { status: 500 });
+
+      if (copyFromSessionId) {
+        await copyQuestionsToSession(copyFromSessionId, newSession.id);
+      }
+
+      return NextResponse.json({ success: true, session: newSession });
+    }
+
+    if (action === 'getSessions') {
+      const sessions = await getAllSessions();
+      return NextResponse.json({ sessions });
+    }
+
+    // ── Session-specific actions (require sessionId) ─────────────────────
+    const targetSessionId = reqSessionId;
+    if (!targetSessionId) {
+      return NextResponse.json({ error: 'sessionId is required' }, { status: 400 });
+    }
+
+    let session = await getSessionById(targetSessionId);
+    if (!session) return NextResponse.json({ error: 'Session not found' }, { status: 404 });
+
     switch (action) {
-      case 'start':
-        store.contest.isActive = true;
-        store.contest.isPaused = false;
-        store.contest.startTime = now;
-        const duration = store.contest.durationMinutes || 50;
-        store.contest.endTime = now + duration * 60 * 1000;
-        break;
 
-      case 'pause':
-        store.contest.isPaused = !store.contest.isPaused;
+      // ── REGISTRATION ──────────────────────────────────────────────────
+      case 'openRegistration': {
+        const durationMs = (body.durationMinutes ?? 3) * 60 * 1000;
+        session = (await updateSession(targetSessionId, {
+          phase: 'registration',
+          registration_opens_at: now,
+          registration_duration_ms: durationMs,
+          registration_ends_at: now + durationMs,
+          auto_start_on_reg_close: body.autoStart ?? true,
+        }))!;
         break;
+      }
 
-      case 'extend':
+      case 'extendRegistration': {
+        const extraMs = (body.extraMinutes ?? 1) * 60 * 1000;
+        const newEnd = (session.registration_ends_at ?? now) + extraMs;
+        session = (await updateSession(targetSessionId, {
+          registration_ends_at: newEnd,
+        }))!;
+        break;
+      }
+
+      case 'closeRegistration': {
+        if (session.auto_start_on_reg_close) {
+          const challengeEndsAt = now + (session.challenge_duration_ms ?? 3000000);
+          session = (await updateSession(targetSessionId, {
+            phase: 'active',
+            challenge_starts_at: now,
+            challenge_ends_at: challengeEndsAt,
+          }))!;
+        } else {
+          session = (await updateSession(targetSessionId, { phase: 'setup' }))!;
+        }
+        break;
+      }
+
+      // ── CHALLENGE START (manual) ───────────────────────────────────────
+      case 'startChallenge': {
+        const durationMs = (body.durationMinutes ?? Math.round((session.challenge_duration_ms ?? 3000000) / 60000)) * 60 * 1000;
+        session = (await updateSession(targetSessionId, {
+          phase: 'active',
+          challenge_starts_at: now,
+          challenge_ends_at: now + durationMs,
+          challenge_duration_ms: durationMs,
+          is_paused: false,
+        }))!;
+        break;
+      }
+
+      // ── PAUSE / RESUME ─────────────────────────────────────────────────
+      case 'pause': {
+        session = (await updateSession(targetSessionId, {
+          phase: 'paused',
+          is_paused: true,
+          pause_started_at: now,
+        }))!;
+        break;
+      }
+
+      case 'resume': {
+        const pausedMs = session.pause_started_at ? now - session.pause_started_at : 0;
+        const newEnd = (session.challenge_ends_at ?? now) + pausedMs;
+        session = (await updateSession(targetSessionId, {
+          phase: 'active',
+          is_paused: false,
+          pause_started_at: null,
+          challenge_ends_at: newEnd,
+        }))!;
+        break;
+      }
+
+      // ── EXTEND TIME ───────────────────────────────────────────────────
+      case 'extend': {
         const extraMinutes = Number(body.extraMinutes || 5);
-        if (store.contest.endTime) {
-          store.contest.endTime += extraMinutes * 60 * 1000;
-        }
+        const newEnd = (session.challenge_ends_at ?? now) + extraMinutes * 60 * 1000;
+        session = (await updateSession(targetSessionId, { challenge_ends_at: newEnd }))!;
         break;
+      }
 
+      // ── STOP / END ─────────────────────────────────────────────────────
       case 'stop':
-        store.contest.isActive = false;
-        store.contest.isPaused = false;
+      case 'endChallenge': {
+        session = (await updateSession(targetSessionId, {
+          phase: 'ended',
+          is_paused: false,
+        }))!;
         break;
+      }
 
-      case 'setDuration':
-        if (durationMinutes && durationMinutes > 0) {
-          store.contest.durationMinutes = durationMinutes;
-          if (store.contest.isActive && store.contest.startTime) {
-            store.contest.endTime = store.contest.startTime + durationMinutes * 60 * 1000;
-          }
-        }
+      // ── REVEAL ─────────────────────────────────────────────────────────
+      case 'toggleReveal': {
+        session = (await updateSession(targetSessionId, {
+          phase: session.phase === 'reveal' ? 'ended' : 'reveal',
+          is_reveal_mode: !session.is_reveal_mode,
+        }))!;
         break;
+      }
 
-      case 'announcement':
-        store.contest.announcement = announcement || '';
+      // ── ANNOUNCEMENT ──────────────────────────────────────────────────
+      case 'announcement': {
+        session = (await updateSession(targetSessionId, {
+          announcement: body.announcement || '',
+        }))!;
         break;
+      }
 
-      case 'toggleReveal':
-        store.contest.isRevealMode = !store.contest.isRevealMode;
+      // ── SESSION CONFIG ─────────────────────────────────────────────────
+      case 'updateConfig': {
+        const updates: any = {};
+        if (body.label !== undefined) updates.label = body.label;
+        if (body.notes !== undefined) updates.notes = body.notes;
+        if (body.scheduledAt !== undefined) updates.scheduled_at = body.scheduledAt;
+        if (body.maxParticipants !== undefined) updates.max_participants = body.maxParticipants;
+        if (body.allowLateJoin !== undefined) updates.allow_late_join = body.allowLateJoin;
+        if (body.durationMinutes !== undefined) updates.challenge_duration_ms = body.durationMinutes * 60 * 1000;
+        if (body.autoStartOnRegClose !== undefined) updates.auto_start_on_reg_close = body.autoStartOnRegClose;
+        session = (await updateSession(targetSessionId, updates))!;
         break;
-
-      case 'reset':
-        store.contest.isActive = false;
-        store.contest.isPaused = false;
-        store.contest.startTime = null;
-        store.contest.endTime = null;
-        store.contest.isRevealMode = false;
-        store.submissions.clear();
-        store.violations = [];
-        break;
+      }
 
       default:
-        return NextResponse.json({ error: 'Unknown action' }, { status: 400 });
+        return NextResponse.json({ error: `Unknown action: ${action}` }, { status: 400 });
     }
 
     return NextResponse.json({
       success: true,
-      contest: store.contest,
+      contest: sessionToContestState(session),
+      session,
       serverTime: now,
     });
   } catch (error: any) {

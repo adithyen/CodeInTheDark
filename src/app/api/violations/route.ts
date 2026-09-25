@@ -1,62 +1,56 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { store } from '@/lib/store';
-import { Violation } from '@/types';
+import {
+  getActiveSession,
+  getParticipantById,
+  updateParticipant,
+  insertViolation,
+  getViolationsForSession,
+} from '@/lib/db';
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { participantId, name, rollNumber, terminalId, type, details, currentStrikes } = body;
+    const { participantId, name, type, details, currentStrikes, sessionId: reqSessionId } = body;
 
     if (!participantId) {
       return NextResponse.json({ error: 'Participant ID is required' }, { status: 400 });
     }
 
-    let participant = store.participants.get(participantId);
+    let targetSessionId = reqSessionId;
+    if (!targetSessionId) {
+      const session = await getActiveSession();
+      targetSessionId = session?.id ?? null;
+    }
+    if (!targetSessionId) {
+      return NextResponse.json({ error: 'No active session' }, { status: 403 });
+    }
+
+    const participant = await getParticipantById(participantId);
     if (!participant) {
-      // Auto-hydrate in serverless runtime containers
-      const now = Date.now();
-      participant = {
-        id: participantId,
-        name: name || participantId,
-        rollNumber: rollNumber || 'UNKNOWN',
-        terminalId: terminalId || 'NODE-1',
-        registeredAt: now,
-        strikes: currentStrikes !== undefined ? Math.max(0, currentStrikes - 1) : 0,
-        isLockedOut: false,
-        lastActiveAt: now,
-      };
-      store.participants.set(participantId, participant);
+      return NextResponse.json({ error: 'Participant not found' }, { status: 404 });
     }
 
-    if (currentStrikes !== undefined) {
-      participant.strikes = Math.max(participant.strikes + 1, currentStrikes);
-    } else {
-      participant.strikes += 1;
-    }
+    // Sync strike count — take max of DB value and client-reported value
+    const newStrikes = Math.max(participant.strikes + 1, (currentStrikes ?? 0) + 1);
+    const isLockedOut = newStrikes >= 3;
 
-    if (participant.strikes >= 3) {
-      participant.isLockedOut = true;
-    }
-
-    const violation: Violation = {
-      id: `viol-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+    await updateParticipant(participantId, { strikes: newStrikes, isLockedOut });
+    await insertViolation({
+      sessionId: targetSessionId,
       participantId,
       participantName: participant.name,
       type: type || 'tab_blur',
-      timestamp: Date.now(),
-      strikeCount: participant.strikes,
       details: details || '',
-    };
-
-    store.violations.unshift(violation);
+      strikeCount: newStrikes,
+    });
 
     return NextResponse.json({
       success: true,
-      strikes: participant.strikes,
-      isLockedOut: participant.isLockedOut,
-      message: participant.isLockedOut
+      strikes: newStrikes,
+      isLockedOut,
+      message: isLockedOut
         ? 'STRIKE 3: Participant locked out due to repeated anti-cheat violations.'
-        : `WARNING: Anti-cheat violation recorded. Strike ${participant.strikes}/3.`,
+        : `WARNING: Anti-cheat violation recorded. Strike ${newStrikes}/3.`,
     });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
@@ -65,11 +59,20 @@ export async function POST(req: NextRequest) {
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
-  const passkey = searchParams.get('passkey');
+  const passkey = searchParams.get('passkey') || '';
+  const sessionId = searchParams.get('sessionId');
 
   if (passkey !== 'admin1111' && passkey !== process.env.ADMIN_SECRET) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  return NextResponse.json({ violations: store.violations });
+  let targetSessionId = sessionId;
+  if (!targetSessionId) {
+    const session = await getActiveSession();
+    targetSessionId = session?.id ?? null;
+  }
+  if (!targetSessionId) return NextResponse.json({ violations: [] });
+
+  const violations = await getViolationsForSession(targetSessionId);
+  return NextResponse.json({ violations });
 }

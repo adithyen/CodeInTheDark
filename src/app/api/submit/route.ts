@@ -1,74 +1,81 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { store } from '@/lib/store';
+import {
+  getActiveSession,
+  getParticipantById,
+  getQuestionsForSession,
+  upsertSubmission,
+  updateParticipant,
+} from '@/lib/db';
 import { executeCode } from '@/lib/executor';
-import { Submission, Language } from '@/types';
+import { Language } from '@/types';
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { 
-      participantId, 
-      participantName, 
-      rollNumber, 
-      terminalId, 
-      questionId, 
-      language, 
+    const {
+      participantId,
+      participantName,
+      participantRoll,
+      terminalId,
+      questionId,
+      language,
       code,
-      strikes 
+      strikes,
+      isAutoSubmit = false,
+      sessionId: reqSessionId,
     } = body;
 
     if (!participantId || !questionId || !language || !code) {
-      return NextResponse.json({ error: 'Missing submission fields' }, { status: 400 });
+      return NextResponse.json({ error: 'Missing required submission fields' }, { status: 400 });
     }
 
-    let participant = store.participants.get(participantId);
+    // Get the session
+    let targetSessionId = reqSessionId;
+    if (!targetSessionId) {
+      const session = await getActiveSession();
+      targetSessionId = session?.id ?? null;
+    }
+    if (!targetSessionId) {
+      return NextResponse.json({ error: 'No active contest session' }, { status: 403 });
+    }
+
+    // Fetch participant from DB
+    const participant = await getParticipantById(participantId);
     if (!participant) {
-      // Auto-hydrate participant state if hitting a fresh serverless container
-      const now = Date.now();
-      participant = {
-        id: participantId,
-        name: participantName || participantId,
-        rollNumber: rollNumber || 'UNKNOWN',
-        terminalId: terminalId || 'NODE-1',
-        registeredAt: now,
-        strikes: strikes || 0,
-        isLockedOut: strikes >= 3,
-        lastActiveAt: now,
-      };
-      store.participants.set(participantId, participant);
+      return NextResponse.json({ error: 'Participant not found. Please re-register.' }, { status: 404 });
     }
 
     if (participant.isLockedOut) {
       return NextResponse.json({ error: 'Participant locked out due to anti-cheat strikes' }, { status: 403 });
     }
 
-    const question = store.questions.find((q) => q.id === questionId);
+    // Get questions for session (including hidden test cases for evaluation)
+    const questions = await getQuestionsForSession(targetSessionId, true);
+    const question = questions.find((q) => q.id === questionId);
     if (!question) {
-      return NextResponse.json({ error: 'Question not found' }, { status: 404 });
+      return NextResponse.json({ error: 'Question not found in this session' }, { status: 404 });
     }
 
     const now = Date.now();
-    participant.lastActiveAt = now;
-    participant.activeLanguage = language as Language;
-    participant.currentQuestionId = questionId;
 
-    // Background evaluation: execute against all test cases
+    // Update participant last active
+    await updateParticipant(participantId, {
+      activeLanguage: language as Language,
+      currentQuestionId: questionId,
+      lastActiveAt: now,
+    });
+
+    // Run test cases
     const testCases = question.testCases;
     let passedCount = 0;
-    const testCaseDetails: Submission['testCaseDetails'] = [];
+    const testCaseDetails: any[] = [];
 
-    // Run test cases sequentially or in parallel
     for (const tc of testCases) {
       const res = await executeCode(language as Language, code, tc.input);
-
-      // Clean compare
       const normalizedActual = (res.stdout || '').replace(/\r\n/g, '\n').trim();
       const normalizedExpected = (tc.expectedOutput || '').replace(/\r\n/g, '\n').trim();
-
       const passed = res.isSuccess && normalizedActual === normalizedExpected;
-      if (passed) {
-        passedCount++;
-      }
+      if (passed) passedCount++;
 
       testCaseDetails.push({
         testCaseId: tc.id,
@@ -80,27 +87,26 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // Scoring formula: Partial ratio of points + speed bonus
     const totalCount = testCases.length;
     const passRatio = totalCount > 0 ? passedCount / totalCount : 0;
     const baseScore = Math.round(passRatio * question.points);
 
-    // Speed bonus calculation based on remaining contest time
+    // Speed bonus (up to 25% for solving early)
     let speedBonus = 0;
-    if (store.contest.isActive && store.contest.startTime && store.contest.endTime) {
-      const totalDurationMs = store.contest.endTime - store.contest.startTime;
-      const remainingMs = Math.max(0, store.contest.endTime - now);
-      if (totalDurationMs > 0 && passedCount > 0) {
-        // Up to 25% bonus for solving early
+    const session = await getActiveSession();
+    if (session?.challenge_starts_at && session?.challenge_ends_at && passedCount > 0) {
+      const totalDurationMs = session.challenge_ends_at - session.challenge_starts_at;
+      const remainingMs = Math.max(0, session.challenge_ends_at - now);
+      if (totalDurationMs > 0) {
         speedBonus = Math.round(baseScore * (remainingMs / totalDurationMs) * 0.25);
       }
     }
 
     const finalScore = baseScore + speedBonus;
-    const subId = `sub-${participantId}-${questionId}`;
 
-    const submission: Submission = {
-      id: subId,
+    // Persist submission (upserts — latest code wins per participant per question)
+    await upsertSubmission({
+      sessionId: targetSessionId,
       participantId,
       participantName: participant.name,
       participantRoll: participant.rollNumber,
@@ -109,22 +115,23 @@ export async function POST(req: NextRequest) {
       language: language as Language,
       code,
       submittedAt: now,
+      isAutoSubmit,
       evaluationStatus: 'completed',
       testCasesPassed: passedCount,
       totalTestCases: totalCount,
       score: finalScore,
       speedBonus,
       testCaseDetails,
-    };
+    });
 
-    store.submissions.set(subId, submission);
-
-    // Notice: Participant gets a blind acknowledgment!
     return NextResponse.json({
       success: true,
-      message: 'Submission successfully received and locked. Under Code In The Dark rules, output and test results remain sealed until evaluation reveal.',
+      message: isAutoSubmit
+        ? 'Timer expired — code automatically submitted and locked for evaluation.'
+        : 'Submission received and locked. Output remains sealed until stage reveal.',
       submittedAt: now,
       questionId,
+      isAutoSubmit,
     });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });

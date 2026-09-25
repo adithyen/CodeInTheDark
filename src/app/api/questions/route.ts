@@ -1,72 +1,74 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { store } from '@/lib/store';
+import {
+  getActiveSession,
+  getSessionById,
+  getQuestionsForSession,
+  upsertQuestion,
+  deleteQuestion,
+  bulkImportQuestions,
+} from '@/lib/db';
 import { Question } from '@/types';
+
+function isAdmin(passkey: string) {
+  return passkey === 'admin1111' || passkey === process.env.ADMIN_SECRET;
+}
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
-  const isAdmin = searchParams.get('admin') === 'true';
-  const passkey = searchParams.get('passkey');
+  const adminFlag = searchParams.get('admin') === 'true';
+  const passkey = searchParams.get('passkey') || '';
+  const sessionId = searchParams.get('sessionId');
 
-  const authenticated = isAdmin && (passkey === 'admin1111' || passkey === process.env.ADMIN_SECRET);
+  const authenticated = adminFlag && isAdmin(passkey);
 
-  if (authenticated) {
-    // Return complete questions including all hidden test cases for organizers
-    return NextResponse.json({ questions: store.questions });
+  let targetSessionId = sessionId;
+  if (!targetSessionId) {
+    const session = await getActiveSession();
+    targetSessionId = session?.id ?? null;
   }
 
-  // Sanitize for participants: strictly filter out hidden test cases
-  const sanitized = store.questions.map((q) => ({
-    ...q,
-    testCases: q.testCases
-      .filter((tc) => !tc.isHidden)
-      .map((tc) => ({
-        id: tc.id,
-        input: tc.input,
-        expectedOutput: tc.expectedOutput,
-        isHidden: false,
-        explanation: tc.explanation,
-      })),
-  }));
+  if (!targetSessionId) {
+    return NextResponse.json({ questions: [] });
+  }
 
-  return NextResponse.json({ questions: sanitized });
+  const questions = await getQuestionsForSession(targetSessionId, authenticated);
+  return NextResponse.json({ questions });
 }
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { passkey, question } = body;
+    const { passkey, question, questions, action, sessionId: reqSessionId } = body;
 
-    if (passkey !== 'admin1111' && passkey !== process.env.ADMIN_SECRET) {
-      return NextResponse.json({ error: 'Unauthorized: Invalid Admin Passkey' }, { status: 401 });
+    if (!isAdmin(passkey)) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    if (body.action === 'bulk_import') {
-      const { questions } = body;
+    // Resolve session
+    let targetSessionId = reqSessionId;
+    if (!targetSessionId) {
+      const session = await getActiveSession();
+      targetSessionId = session?.id ?? null;
+    }
+    if (!targetSessionId) {
+      return NextResponse.json({ error: 'No active session found' }, { status: 404 });
+    }
+
+    if (action === 'bulk_import') {
       if (!Array.isArray(questions) || questions.length === 0) {
-        return NextResponse.json({ error: 'Questions array is required for bulk import' }, { status: 400 });
+        return NextResponse.json({ error: 'Questions array required' }, { status: 400 });
       }
-      store.questions = questions.map((q: any, idx: number) => ({
-        ...q,
-        id: q.id || `q-${Date.now()}-${idx + 1}`,
-        order: idx + 1,
-        testCases: q.testCases || [],
-      }));
-      return NextResponse.json({ success: true, count: store.questions.length, questions: store.questions });
+      await bulkImportQuestions(targetSessionId, questions);
+      const updated = await getQuestionsForSession(targetSessionId, true);
+      return NextResponse.json({ success: true, count: updated.length, questions: updated });
     }
 
     if (!question || !question.title) {
       return NextResponse.json({ error: 'Invalid question payload' }, { status: 400 });
     }
 
-    const newQuestion: Question = {
-      ...question,
-      id: question.id || `q-${Date.now()}`,
-      order: store.questions.length + 1,
-      testCases: question.testCases || [],
-    };
-
-    store.questions.push(newQuestion);
-    return NextResponse.json({ success: true, question: newQuestion });
+    const saved = await upsertQuestion(targetSessionId, question as Partial<Question>);
+    return NextResponse.json({ success: true, question: saved });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
@@ -75,19 +77,23 @@ export async function POST(req: NextRequest) {
 export async function PUT(req: NextRequest) {
   try {
     const body = await req.json();
-    const { passkey, question } = body;
+    const { passkey, question, sessionId: reqSessionId } = body;
 
-    if (passkey !== 'admin1111' && passkey !== process.env.ADMIN_SECRET) {
-      return NextResponse.json({ error: 'Unauthorized: Invalid Admin Passkey' }, { status: 401 });
+    if (!isAdmin(passkey)) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const index = store.questions.findIndex((q) => q.id === question.id);
-    if (index === -1) {
-      return NextResponse.json({ error: 'Question not found' }, { status: 404 });
+    let targetSessionId = reqSessionId;
+    if (!targetSessionId) {
+      const session = await getActiveSession();
+      targetSessionId = session?.id ?? null;
+    }
+    if (!targetSessionId) {
+      return NextResponse.json({ error: 'No active session' }, { status: 404 });
     }
 
-    store.questions[index] = { ...store.questions[index], ...question };
-    return NextResponse.json({ success: true, question: store.questions[index] });
+    const saved = await upsertQuestion(targetSessionId, question as Partial<Question>);
+    return NextResponse.json({ success: true, question: saved });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
@@ -97,13 +103,17 @@ export async function DELETE(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const id = searchParams.get('id');
-    const passkey = searchParams.get('passkey');
+    const passkey = searchParams.get('passkey') || '';
 
-    if (passkey !== 'admin1111' && passkey !== process.env.ADMIN_SECRET) {
-      return NextResponse.json({ error: 'Unauthorized: Invalid Admin Passkey' }, { status: 401 });
+    if (!isAdmin(passkey)) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    store.questions = store.questions.filter((q) => q.id !== id);
+    if (!id) {
+      return NextResponse.json({ error: 'Question ID required' }, { status: 400 });
+    }
+
+    await deleteQuestion(id);
     return NextResponse.json({ success: true });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });

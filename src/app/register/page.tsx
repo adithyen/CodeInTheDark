@@ -1,8 +1,11 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { Terminal, Shield, ArrowRight, CheckCircle2, User, Hash, Monitor, AlertCircle } from 'lucide-react';
+import { Terminal, Shield, ArrowRight, CheckCircle2, User, Hash, Monitor, AlertCircle, Clock, Lock, Loader2 } from 'lucide-react';
+import { ContestSession } from '@/types';
+
+type GateStatus = 'loading' | 'not_open' | 'open' | 'active' | 'ended';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -12,20 +15,93 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // Check if already registered in local storage
+  const [session, setSession] = useState<ContestSession | null>(null);
+  const [gateStatus, setGateStatus] = useState<GateStatus>('loading');
+  const [countdown, setCountdown] = useState('');
+  const [serverTimeOffset, setServerTimeOffset] = useState(0);
+
+  const fetchContestState = useCallback(async () => {
+    try {
+      const res = await fetch('/api/contest');
+      if (!res.ok) return;
+      const data = await res.json();
+      const s: ContestSession = data.session;
+      const serverNow: number = data.serverTime;
+      setServerTimeOffset(serverNow - Date.now());
+      setSession(s);
+
+      if (s.phase === 'active' || s.phase === 'paused') {
+        setGateStatus('active');
+      } else if (s.phase === 'registration') {
+        setGateStatus('open');
+      } else if (s.phase === 'ended' || s.phase === 'reveal') {
+        setGateStatus('ended');
+      } else {
+        setGateStatus('not_open');
+      }
+    } catch {
+      setGateStatus('not_open');
+    }
+  }, []);
+
+  // Poll every 3 seconds
+  useEffect(() => {
+    fetchContestState();
+    const interval = setInterval(fetchContestState, 3000);
+    return () => clearInterval(interval);
+  }, [fetchContestState]);
+
+  // Auto-redirect when phase transitions to active
+  useEffect(() => {
+    if (gateStatus === 'active') {
+      const saved = localStorage.getItem('cid_participant');
+      if (saved) {
+        try {
+          const p = JSON.parse(saved);
+          // Check if this participant belongs to current session
+          if (p.sessionId === session?.id) {
+            router.push('/arena');
+          }
+        } catch { /* ignore */ }
+      }
+    }
+  }, [gateStatus, session, router]);
+
+  // Check if already registered in this session
   useEffect(() => {
     const saved = localStorage.getItem('cid_participant');
     if (saved) {
       try {
-        const parsed = JSON.parse(saved);
-        if (parsed.id) {
-          router.push('/arena');
+        const p = JSON.parse(saved);
+        if (p.id && p.sessionId && session && p.sessionId === session.id) {
+          if (gateStatus === 'active') {
+            router.push('/arena');
+          }
         }
-      } catch {
-        // Ignore
-      }
+      } catch { /* ignore */ }
     }
-  }, [router]);
+  }, [session, gateStatus, router]);
+
+  // Live countdown ticker
+  useEffect(() => {
+    if (!session?.registration_ends_at || gateStatus !== 'open') return;
+
+    const tick = () => {
+      const now = Date.now() + serverTimeOffset;
+      const remaining = (session.registration_ends_at ?? 0) - now;
+      if (remaining <= 0) {
+        setCountdown('Closing...');
+        return;
+      }
+      const mins = Math.floor(remaining / 60000);
+      const secs = Math.floor((remaining % 60000) / 1000);
+      setCountdown(`${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`);
+    };
+
+    tick();
+    const timer = setInterval(tick, 1000);
+    return () => clearInterval(timer);
+  }, [session, gateStatus, serverTimeOffset]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -50,33 +126,86 @@ export default function RegisterPage() {
 
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error || 'Registration failed');
+        if (res.status === 409) {
+          // Already registered — use existing participant info
+          setError('Roll number already registered. If this is you, please wait for the contest to begin.');
+        } else {
+          setError(data.error || 'Registration failed');
+        }
         setLoading(false);
         return;
       }
 
-      // Persist in localStorage for local-first resilience
-      localStorage.setItem('cid_participant', JSON.stringify(data.participant));
+      // Persist participant + session ID in localStorage
+      localStorage.setItem('cid_participant', JSON.stringify({
+        ...data.participant,
+        sessionId: session?.id,
+      }));
 
-      // Attempt fullscreen presentation mode immediately during user click gesture
+      // Attempt fullscreen
       try {
         if (!document.fullscreenElement) {
           await document.documentElement.requestFullscreen();
         }
-      } catch {
-        // Pre-flight gateway on /arena will prompt if browser requires direct click
-      }
+      } catch { /* arena will prompt */ }
 
       router.push('/arena');
     } catch {
-      setError('Network connection failed. Please check connection and try again.');
+      setError('Network connection failed. Please check your connection and try again.');
       setLoading(false);
     }
   };
 
+  // ── Gate States ─────────────────────────────────────────────────────
+
+  if (gateStatus === 'loading') {
+    return (
+      <div className="flex flex-1 items-center justify-center">
+        <div className="flex flex-col items-center gap-3 font-mono text-sm text-gray-400">
+          <Loader2 className="h-7 w-7 animate-spin text-emerald-400" />
+          <span>Checking contest status...</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (gateStatus === 'not_open') {
+    return (
+      <div className="relative flex flex-1 items-center justify-center p-4 bg-grid-cyber">
+        <div className="pointer-events-none absolute h-[350px] w-[500px] radial-glow-emerald" />
+        <div className="w-full max-w-md rounded-2xl border border-white/10 bg-[#0c121d]/85 p-8 backdrop-blur-2xl shadow-2xl text-center space-y-4">
+          <div className="flex h-14 w-14 mx-auto items-center justify-center rounded-2xl border border-amber-500/30 bg-amber-500/10">
+            <Lock className="h-7 w-7 text-amber-400" />
+          </div>
+          <h1 className="font-mono text-xl font-bold text-white">Registration Not Open</h1>
+          <p className="text-sm text-gray-400">
+            The contest organizer hasn&apos;t opened the registration window yet. Please wait for the announcement.
+          </p>
+          <div className="rounded-xl border border-white/5 bg-black/30 p-3 font-mono text-xs text-gray-400">
+            <span className="animate-pulse">⬤</span> Checking every 3 seconds...
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (gateStatus === 'ended') {
+    return (
+      <div className="relative flex flex-1 items-center justify-center p-4 bg-grid-cyber">
+        <div className="w-full max-w-md rounded-2xl border border-white/10 bg-[#0c121d]/85 p-8 backdrop-blur-2xl shadow-2xl text-center space-y-4">
+          <div className="flex h-14 w-14 mx-auto items-center justify-center rounded-2xl border border-gray-500/30 bg-gray-500/10">
+            <Shield className="h-7 w-7 text-gray-400" />
+          </div>
+          <h1 className="font-mono text-xl font-bold text-white">Contest Ended</h1>
+          <p className="text-sm text-gray-400">This contest session has concluded. Check the leaderboard for results.</p>
+        </div>
+      </div>
+    );
+  }
+
+  // gateStatus === 'open' or 'active'
   return (
     <div className="relative flex flex-1 items-center justify-center p-4 sm:p-6 bg-grid-cyber">
-      {/* Background glow */}
       <div className="pointer-events-none absolute h-[350px] w-[500px] radial-glow-emerald" />
 
       <div className="w-full max-w-md rounded-2xl border border-white/10 bg-[#0c121d]/85 p-8 backdrop-blur-2xl shadow-2xl">
@@ -85,12 +214,23 @@ export default function RegisterPage() {
             <Terminal className="h-6 w-6" />
           </div>
           <div>
-            <h1 className="font-mono text-xl font-bold tracking-tight text-white">
-              PARTICIPANT ONBOARDING
-            </h1>
-            <p className="text-xs text-gray-400">11:11 Chapter 2 · Code In The Dark</p>
+            <h1 className="font-mono text-xl font-bold tracking-tight text-white">PARTICIPANT ONBOARDING</h1>
+            <p className="text-xs text-gray-400">{session?.label ?? '11:11 Chapter 2 · Code In The Dark'}</p>
           </div>
         </div>
+
+        {/* Registration Countdown */}
+        {gateStatus === 'open' && session?.registration_ends_at && (
+          <div className="mt-4 flex items-center justify-between rounded-xl border border-amber-500/30 bg-amber-950/20 px-4 py-2.5">
+            <div className="flex items-center gap-2 font-mono text-xs text-amber-300">
+              <Clock className="h-4 w-4 text-amber-400" />
+              <span>Registration closes in</span>
+            </div>
+            <span className="font-mono text-lg font-bold tabular-nums text-amber-400">
+              {countdown || '--:--'}
+            </span>
+          </div>
+        )}
 
         {error && (
           <div className="mt-4 flex items-center gap-2 rounded-lg border border-red-500/40 bg-red-950/20 p-3 text-xs text-red-300">
@@ -144,11 +284,11 @@ export default function RegisterPage() {
             />
           </div>
 
-          {/* System Check Checklist */}
+          {/* System Check */}
           <div className="rounded-xl border border-white/5 bg-black/30 p-3 text-[11px] text-gray-400 space-y-1.5">
             <div className="flex items-center gap-2 text-emerald-300">
               <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
-              <span>Fullscreen lock & anti-cheat shield active</span>
+              <span>Fullscreen lock &amp; anti-cheat shield active</span>
             </div>
             <div className="flex items-center gap-2 text-cyan-300">
               <CheckCircle2 className="h-3.5 w-3.5 text-cyan-400" />
@@ -156,7 +296,7 @@ export default function RegisterPage() {
             </div>
             <div className="flex items-center gap-2 text-amber-300">
               <CheckCircle2 className="h-3.5 w-3.5 text-amber-400" />
-              <span>Offline-first local cache enabled</span>
+              <span>Persistent Supabase backend connected</span>
             </div>
           </div>
 
@@ -166,12 +306,9 @@ export default function RegisterPage() {
             className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 py-3.5 font-mono text-sm font-bold text-black shadow-lg shadow-emerald-500/20 transition-all hover:brightness-110 active:scale-95 disabled:opacity-50"
           >
             {loading ? (
-              <span>Initializing Terminal...</span>
+              <><Loader2 className="h-4 w-4 animate-spin" /><span>Initializing Terminal...</span></>
             ) : (
-              <>
-                <span>Enter Blind Arena</span>
-                <ArrowRight className="h-4 w-4" />
-              </>
+              <><span>Enter Blind Arena</span><ArrowRight className="h-4 w-4" /></>
             )}
           </button>
         </form>
