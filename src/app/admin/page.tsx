@@ -755,10 +755,21 @@ export default function AdminPage() {
                     </div>
                   </div>
 
-                  {/* Auto start badge */}
-                  <div className={`flex items-center gap-2 rounded-xl border px-4 py-2.5 font-mono text-xs ${currentSession?.auto_start_on_reg_close ? 'border-emerald-500/30 bg-emerald-950/20 text-emerald-300' : 'border-gray-500/30 bg-gray-900/30 text-gray-400'}`}>
-                    <CheckCircle2 className="h-4 w-4" />
-                    Auto-Start: {currentSession?.auto_start_on_reg_close ? 'ON — Challenge will begin automatically' : 'OFF — Manual start required'}
+                  {/* Auto start live toggle button */}
+                  <div className="flex items-center justify-between rounded-xl border border-white/10 bg-black/30 p-3">
+                    <div className="flex items-center gap-2 font-mono text-xs">
+                      <CheckCircle2 className={`h-4 w-4 ${currentSession?.auto_start_on_reg_close ? 'text-emerald-400' : 'text-gray-500'}`} />
+                      <span className={currentSession?.auto_start_on_reg_close ? 'text-emerald-300 font-semibold' : 'text-gray-400'}>
+                        Auto-Start on Timeout: {currentSession?.auto_start_on_reg_close ? 'ENABLED (Starts automatically)' : 'DISABLED (Manual start required)'}
+                      </span>
+                    </div>
+                    <button
+                      onClick={() => contestAction('updateConfig', { autoStartOnRegClose: !currentSession?.auto_start_on_reg_close })}
+                      className={`relative h-6 w-11 rounded-full transition-colors cursor-pointer ${currentSession?.auto_start_on_reg_close ? 'bg-emerald-500' : 'bg-gray-700'}`}
+                      title="Click to toggle auto-start behavior"
+                    >
+                      <span className={`absolute top-1 h-4 w-4 rounded-full bg-white shadow transition-transform ${currentSession?.auto_start_on_reg_close ? 'translate-x-6' : 'translate-x-1'}`} />
+                    </button>
                   </div>
 
                   {/* Extend buttons */}

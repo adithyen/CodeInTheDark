@@ -278,8 +278,10 @@ export default function ArenaPage() {
   // 7. Handle timer expiration — auto-submit current code for ALL questions
   const handleTimerExpired = () => {
     setIsContestOver(true);
-    // Auto-submit current question's code
-    if (activeQuestion && participant && code.trim()) {
+    if (!participant) return;
+
+    // 1. Auto-submit current active question's code
+    if (activeQuestion && code.trim()) {
       fetch('/api/submit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -297,6 +299,35 @@ export default function ArenaPage() {
         }),
       }).catch(() => {});
     }
+
+    // 2. Also auto-submit saved drafts for other questions if not yet submitted
+    questions.forEach((q) => {
+      if (q.id === activeQuestion?.id) return;
+      if (submittedQuestions[q.id]) return; // already submitted
+
+      (['python', 'c', 'java'] as Language[]).forEach((lang) => {
+        const draftKey = `cid_draft_${participant.id}_${q.id}_${lang}`;
+        const draft = localStorage.getItem(draftKey);
+        if (draft && draft.trim()) {
+          fetch('/api/submit', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              participantId: participant.id,
+              participantName: participant.name,
+              participantRoll: participant.rollNumber,
+              terminalId: participant.terminalId,
+              strikes: participant.strikes,
+              questionId: q.id,
+              language: lang,
+              code: draft,
+              sessionId,
+              isAutoSubmit: true,
+            }),
+          }).catch(() => {});
+        }
+      });
+    });
   };
 
   if (!participant || questions.length === 0) {
