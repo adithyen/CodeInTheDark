@@ -40,6 +40,20 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized: Invalid Admin Passkey' }, { status: 401 });
     }
 
+    if (body.action === 'bulk_import') {
+      const { questions } = body;
+      if (!Array.isArray(questions) || questions.length === 0) {
+        return NextResponse.json({ error: 'Questions array is required for bulk import' }, { status: 400 });
+      }
+      store.questions = questions.map((q: any, idx: number) => ({
+        ...q,
+        id: q.id || `q-${Date.now()}-${idx + 1}`,
+        order: idx + 1,
+        testCases: q.testCases || [],
+      }));
+      return NextResponse.json({ success: true, count: store.questions.length, questions: store.questions });
+    }
+
     if (!question || !question.title) {
       return NextResponse.json({ error: 'Invalid question payload' }, { status: 400 });
     }

@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import Editor from '@monaco-editor/react';
 import { 
   ShieldCheck, 
   Play, 
@@ -19,9 +20,21 @@ import {
   Code2,
   CheckCircle2,
   Eye,
-  Lock
+  Lock,
+  GitCompare,
+  FileSpreadsheet,
+  Layers,
+  Upload,
+  RefreshCw,
+  ShieldAlert,
+  UserCheck,
+  UserX,
+  Undo2,
+  Search
 } from 'lucide-react';
 import { Question, ContestState, Participant, Submission, Violation, TestCase } from '@/types';
+import { calculateCodeSimilarity, SimilarityResult } from '@/lib/plagiarism';
+import { ROUND_PRESETS, RoundPreset } from '@/lib/presets';
 
 export default function AdminPage() {
   const [passkey, setPasskey] = useState('');
@@ -35,7 +48,7 @@ export default function AdminPage() {
   const [violations, setViolations] = useState<Violation[]>([]);
 
   // Navigation tabs
-  const [activeTab, setActiveTab] = useState<'control' | 'questions' | 'participants' | 'submissions' | 'violations'>('control');
+  const [activeTab, setActiveTab] = useState<'control' | 'questions' | 'participants' | 'submissions' | 'plagiarism' | 'violations'>('control');
 
   // Control inputs
   const [announcementText, setAnnouncementText] = useState('');
@@ -45,6 +58,16 @@ export default function AdminPage() {
   const [leetcodeSlug, setLeetcodeSlug] = useState('');
   const [importLoading, setImportLoading] = useState(false);
   const [importResult, setImportResult] = useState<Partial<Question> | null>(null);
+
+  // Plagiarism Inspector state
+  const [plagQuestionId, setPlagQuestionId] = useState('');
+  const [candidateAId, setCandidateAId] = useState('');
+  const [candidateBId, setCandidateBId] = useState('');
+  const [suspectPairs, setSuspectPairs] = useState<{ subA: Submission; subB: Submission; similarity: SimilarityResult }[]>([]);
+
+  // Bulk JSON Import state
+  const [showImportJsonModal, setShowImportJsonModal] = useState(false);
+  const [importJsonText, setImportJsonText] = useState('');
 
   // Manual Question Creator modal/form
   const [showQuestionModal, setShowQuestionModal] = useState(false);
@@ -221,6 +244,157 @@ export default function AdminPage() {
     }
   };
 
+  // Participant proctor actions (Strike Reset, +1 Strike, Lockout Toggle, Remove)
+  const handleParticipantAction = async (participantId: string, action: string) => {
+    try {
+      const res = await fetch('/api/participants', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ passkey, participantId, action }),
+      });
+      if (res.ok) {
+        fetchAdminData(passkey);
+      } else {
+        const d = await res.json();
+        alert(d.error || 'Participant action failed');
+      }
+    } catch {
+      alert('Network error modifying participant');
+    }
+  };
+
+  // Export Results CSV
+  const handleExportCSV = () => {
+    if (participants.length === 0) {
+      alert('No participant records to export');
+      return;
+    }
+    const headers = ['Roll Number', 'Name', 'Terminal ID', 'Total Score', 'Questions Solved', 'Strikes', 'Status', 'Registered At'];
+    const rows = participants.map((p) => {
+      const userSubs = submissions.filter((s) => s.participantId === p.id);
+      const totalScore = userSubs.reduce((acc, s) => acc + (s.score || 0), 0);
+      const solvedCount = userSubs.filter((s) => s.testCasesPassed === s.totalTestCases).length;
+      return [
+        `"${p.rollNumber}"`,
+        `"${p.name}"`,
+        `"${p.terminalId}"`,
+        totalScore,
+        solvedCount,
+        p.strikes,
+        p.isLockedOut ? 'LOCKED_OUT' : 'ACTIVE',
+        `"${new Date(p.registeredAt).toLocaleString()}"`,
+      ].join(',');
+    });
+    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows].join('\n');
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', `CodeInTheDark_Results_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  // Export Complete Audit JSON
+  const handleExportAuditJSON = () => {
+    const auditData = {
+      exportedAt: new Date().toISOString(),
+      contest,
+      questions,
+      participants,
+      submissions,
+      violations,
+    };
+    const blob = new Blob([JSON.stringify(auditData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `CodeInTheDark_Audit_${Date.now()}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  // Export Questions JSON
+  const handleExportQuestionsJSON = () => {
+    const blob = new Blob([JSON.stringify(questions, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `CodeInTheDark_ProblemSet_${Date.now()}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  // Import Questions JSON
+  const handleImportQuestionsJSON = async () => {
+    try {
+      const parsed = JSON.parse(importJsonText);
+      const qList = Array.isArray(parsed) ? parsed : parsed.questions;
+      if (!Array.isArray(qList) || qList.length === 0) {
+        alert('Invalid format: JSON must be an array of questions or an object with a "questions" array.');
+        return;
+      }
+      const res = await fetch('/api/questions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ passkey, action: 'bulk_import', questions: qList }),
+      });
+      if (res.ok) {
+        alert(`Successfully imported ${qList.length} challenge questions!`);
+        setShowImportJsonModal(false);
+        setImportJsonText('');
+        fetchAdminData(passkey);
+      } else {
+        const d = await res.json();
+        alert(d.error || 'Import failed');
+      }
+    } catch (err: any) {
+      alert(`JSON parsing error: ${err.message}`);
+    }
+  };
+
+  // Load Round Preset
+  const handleLoadPreset = async (preset: RoundPreset) => {
+    if (!confirm(`Switch to "${preset.name}"? This will set active challenge set to ${preset.questions.length} problems.`)) return;
+    try {
+      const res = await fetch('/api/questions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ passkey, action: 'bulk_import', questions: preset.questions }),
+      });
+      if (res.ok) {
+        alert(`Successfully loaded ${preset.name}!`);
+        fetchAdminData(passkey);
+      } else {
+        alert('Failed loading preset');
+      }
+    } catch {
+      alert('Error loading preset');
+    }
+  };
+
+  // Scan all pairs for plagiarism on a question
+  const handleScanAllPlagiarism = (questionId: string) => {
+    if (!questionId) return;
+    const subsForQ = submissions.filter((s) => s.questionId === questionId);
+    if (subsForQ.length < 2) {
+      alert('Need at least 2 submissions for this question to calculate similarity.');
+      return;
+    }
+
+    const pairs: { subA: Submission; subB: Submission; similarity: SimilarityResult }[] = [];
+    for (let i = 0; i < subsForQ.length; i++) {
+      for (let j = i + 1; j < subsForQ.length; j++) {
+        if (subsForQ[i].participantId === subsForQ[j].participantId) continue;
+        const sim = calculateCodeSimilarity(subsForQ[i].code, subsForQ[j].code);
+        pairs.push({ subA: subsForQ[i], subB: subsForQ[j], similarity: sim });
+      }
+    }
+
+    pairs.sort((a, b) => b.similarity.similarityScore - a.similarity.similarityScore);
+    setSuspectPairs(pairs);
+  };
+
   if (!isAuthenticated) {
     return (
       <div className="flex flex-1 items-center justify-center p-4 bg-grid-cyber">
@@ -348,6 +522,16 @@ export default function AdminPage() {
         </button>
 
         <button
+          onClick={() => setActiveTab('plagiarism')}
+          className={`flex items-center gap-2 border-b-2 px-4 py-3 font-mono text-xs font-medium transition-all ${
+            activeTab === 'plagiarism' ? 'border-purple-400 text-purple-400 font-bold' : 'border-transparent text-gray-400 hover:text-white'
+          }`}
+        >
+          <GitCompare className="h-4 w-4" />
+          <span>Plagiarism & Code Diff</span>
+        </button>
+
+        <button
           onClick={() => setActiveTab('violations')}
           className={`flex items-center gap-2 border-b-2 px-4 py-3 font-mono text-xs font-medium transition-all ${
             activeTab === 'violations' ? 'border-red-400 text-red-400 font-bold' : 'border-transparent text-gray-400 hover:text-white'
@@ -472,12 +656,134 @@ export default function AdminPage() {
                 </div>
               </div>
             </div>
+
+            {/* Official Contest Results & Audit Export Card */}
+            <div className="rounded-2xl border border-white/10 bg-[#0a0f18] p-6 backdrop-blur-xl md:col-span-2">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div>
+                  <h3 className="font-mono text-sm font-bold uppercase tracking-wider text-emerald-400 flex items-center gap-2">
+                    <FileSpreadsheet className="h-4 w-4" />
+                    <span>3. Official Contest Results & Audit Export</span>
+                  </h3>
+                  <p className="mt-1 text-xs text-gray-400">
+                    Download verified contestant scorecards, strike tallies, and comprehensive JSON event logs.
+                  </p>
+                </div>
+
+                <div className="flex flex-wrap gap-3">
+                  <button
+                    onClick={handleExportCSV}
+                    className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 px-4 py-2.5 font-mono text-xs font-bold text-black shadow-lg shadow-emerald-500/20 hover:brightness-110 active:scale-95 cursor-pointer"
+                  >
+                    <FileSpreadsheet className="h-4 w-4" />
+                    <span>Download Results CSV</span>
+                  </button>
+
+                  <button
+                    onClick={handleExportAuditJSON}
+                    className="flex items-center gap-2 rounded-xl border border-white/15 bg-white/5 px-4 py-2.5 font-mono text-xs font-semibold text-gray-300 hover:bg-white/10 hover:text-white active:scale-95 cursor-pointer"
+                  >
+                    <Download className="h-4 w-4" />
+                    <span>Full Audit JSON</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Quick Summary KPIs */}
+              <div className="mt-6 grid grid-cols-2 sm:grid-cols-4 gap-4 border-t border-white/[0.08] pt-4">
+                <div className="rounded-xl border border-white/5 bg-black/30 p-3">
+                  <div className="text-[11px] font-mono text-gray-400">Total Enrolled</div>
+                  <div className="text-xl font-mono font-bold text-white mt-1">{participants.length}</div>
+                </div>
+                <div className="rounded-xl border border-white/5 bg-black/30 p-3">
+                  <div className="text-[11px] font-mono text-gray-400">Submissions</div>
+                  <div className="text-xl font-mono font-bold text-cyan-400 mt-1">{submissions.length}</div>
+                </div>
+                <div className="rounded-xl border border-white/5 bg-black/30 p-3">
+                  <div className="text-[11px] font-mono text-gray-400">Strikes Logged</div>
+                  <div className="text-xl font-mono font-bold text-amber-400 mt-1">{violations.length}</div>
+                </div>
+                <div className="rounded-xl border border-white/5 bg-black/30 p-3">
+                  <div className="text-[11px] font-mono text-gray-400">Locked Terminals</div>
+                  <div className="text-xl font-mono font-bold text-red-400 mt-1">
+                    {participants.filter((p) => p.isLockedOut).length}
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         )}
 
         {/* TAB 2: QUESTIONS & LEETCODE IMPORTER */}
         {activeTab === 'questions' && (
           <div className="space-y-6">
+            {/* Multi-Heat / Round Switcher Toolbar */}
+            <div className="rounded-2xl border border-white/10 bg-[#0a0f18] p-6 backdrop-blur-xl">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div>
+                  <h3 className="font-mono text-sm font-bold text-amber-400 flex items-center gap-2">
+                    <Layers className="h-4 w-4" />
+                    <span>Multi-Heat / Round Switcher Presets</span>
+                  </h3>
+                  <p className="mt-1 text-xs text-gray-400">
+                    Switch between 11:11 Chapter 2 competition stages in 1-click or export/import problem suites.
+                  </p>
+                </div>
+
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    onClick={handleExportQuestionsJSON}
+                    className="flex items-center gap-1.5 rounded-xl border border-white/15 bg-white/5 px-3 py-2 font-mono text-xs font-semibold text-gray-300 hover:bg-white/10 hover:text-white transition-all cursor-pointer"
+                  >
+                    <Download className="h-3.5 w-3.5" />
+                    <span>Export JSON</span>
+                  </button>
+
+                  <button
+                    onClick={() => setShowImportJsonModal(true)}
+                    className="flex items-center gap-1.5 rounded-xl border border-cyan-500/40 bg-cyan-950/30 px-3 py-2 font-mono text-xs font-semibold text-cyan-300 hover:bg-cyan-900/40 transition-all cursor-pointer"
+                  >
+                    <Upload className="h-3.5 w-3.5" />
+                    <span>Import JSON</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Round Presets Grid */}
+              <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                {ROUND_PRESETS.map((preset) => (
+                  <div
+                    key={preset.id}
+                    className="rounded-xl border border-white/10 bg-black/40 p-4 flex flex-col justify-between hover:border-amber-500/40 transition-all group"
+                  >
+                    <div>
+                      <div className="flex items-center justify-between">
+                        <span className="font-mono text-xs font-bold text-white group-hover:text-amber-400 transition-colors">
+                          {preset.name.split(':')[0]}
+                        </span>
+                        <span className="rounded bg-white/10 px-2 py-0.5 font-mono text-[10px] text-gray-400">
+                          {preset.durationMinutes}m · {preset.questions.length} Qs
+                        </span>
+                      </div>
+                      <h4 className="mt-1 text-xs font-semibold text-gray-200">
+                        {preset.name.split(':')[1]?.trim() || preset.name}
+                      </h4>
+                      <p className="mt-1 text-[11px] text-gray-400 line-clamp-2">
+                        {preset.description}
+                      </p>
+                    </div>
+
+                    <button
+                      onClick={() => handleLoadPreset(preset)}
+                      className="mt-3 w-full rounded-lg border border-amber-500/30 bg-amber-950/20 py-1.5 font-mono text-xs font-semibold text-amber-300 hover:bg-amber-500 hover:text-black transition-all cursor-pointer"
+                    >
+                      Load Round Problem Set
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+
             {/* LeetCode Fast Importer Card */}
             <div className="rounded-2xl border border-cyan-500/30 bg-gradient-to-r from-cyan-950/20 to-[#0a0f18] p-6 backdrop-blur-xl">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -605,12 +911,13 @@ export default function AdminPage() {
                   <th className="py-3 px-4">Strikes</th>
                   <th className="py-3 px-4">Status</th>
                   <th className="py-3 px-4">Last Active</th>
+                  <th className="py-3 px-4 text-right">Proctor Controls</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/[0.06] font-mono text-xs">
                 {participants.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="py-8 text-center text-gray-500">
+                    <td colSpan={7} className="py-8 text-center text-gray-500">
                       No participants registered yet.
                     </td>
                   </tr>
@@ -641,6 +948,51 @@ export default function AdminPage() {
                       </td>
                       <td className="py-3 px-4 text-gray-400">
                         {new Date(p.lastActiveAt).toLocaleTimeString()}
+                      </td>
+                      <td className="py-3 px-4 text-right">
+                        <div className="flex items-center justify-end gap-1.5">
+                          {p.strikes > 0 && (
+                            <button
+                              onClick={() => handleParticipantAction(p.id, 'reset_strikes')}
+                              className="flex items-center gap-1 rounded bg-emerald-950/40 border border-emerald-500/30 px-2 py-1 text-[11px] font-mono text-emerald-300 hover:bg-emerald-900/50 transition-colors cursor-pointer"
+                              title="Reset strikes to 0 and unlock terminal"
+                            >
+                              <Undo2 className="h-3 w-3" />
+                              <span>Pardon</span>
+                            </button>
+                          )}
+                          <button
+                            onClick={() => handleParticipantAction(p.id, 'add_strike')}
+                            className="flex items-center gap-1 rounded bg-amber-950/40 border border-amber-500/30 px-2 py-1 text-[11px] font-mono text-amber-300 hover:bg-amber-900/50 transition-colors cursor-pointer"
+                            title="Add 1 warning strike"
+                          >
+                            <ShieldAlert className="h-3 w-3" />
+                            <span>+1 Strike</span>
+                          </button>
+                          <button
+                            onClick={() => handleParticipantAction(p.id, 'toggle_lockout')}
+                            className={`flex items-center gap-1 rounded border px-2 py-1 text-[11px] font-mono transition-colors cursor-pointer ${
+                              p.isLockedOut
+                                ? 'bg-emerald-950/40 border-emerald-500/30 text-emerald-300 hover:bg-emerald-900/50'
+                                : 'bg-red-950/40 border-red-500/30 text-red-300 hover:bg-red-900/50'
+                            }`}
+                            title={p.isLockedOut ? 'Unlock terminal' : 'Immediately lock terminal'}
+                          >
+                            <Lock className="h-3 w-3" />
+                            <span>{p.isLockedOut ? 'Unlock' : 'Lockout'}</span>
+                          </button>
+                          <button
+                            onClick={() => {
+                              if (confirm(`Remove participant ${p.name} (${p.rollNumber})?`)) {
+                                handleParticipantAction(p.id, 'delete');
+                              }
+                            }}
+                            className="rounded bg-white/5 border border-white/10 p-1 text-gray-400 hover:text-red-400 hover:bg-red-950/40 transition-colors cursor-pointer"
+                            title="Remove participant"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))
@@ -706,7 +1058,287 @@ export default function AdminPage() {
           </div>
         )}
 
-        {/* TAB 5: ANTI-CHEAT VIOLATIONS AUDIT */}
+        {/* TAB 5: PLAGIARISM & CODE DIFF INSPECTOR */}
+        {activeTab === 'plagiarism' && (
+          <div className="space-y-6">
+            {/* Top Toolbar: Question Selector + Auto-Scan */}
+            <div className="rounded-2xl border border-white/10 bg-[#0a0f18] p-6 backdrop-blur-xl">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div>
+                  <h3 className="font-mono text-sm font-bold text-purple-400 flex items-center gap-2">
+                    <GitCompare className="h-4 w-4" />
+                    <span>Cross-Candidate Code Plagiarism & Similarity Radar</span>
+                  </h3>
+                  <p className="mt-1 text-xs text-gray-400">
+                    Dual AST tokenization and 3-gram sequence similarity scanner across contestant submissions.
+                  </p>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-3">
+                  <select
+                    value={plagQuestionId}
+                    onChange={(e) => {
+                      setPlagQuestionId(e.target.value);
+                      setSuspectPairs([]);
+                    }}
+                    className="rounded-xl border border-white/15 bg-black/60 px-3 py-2 font-mono text-xs text-white focus:border-purple-400 focus:outline-none"
+                  >
+                    <option value="">Select Challenge Problem...</option>
+                    {questions.map((q) => (
+                      <option key={q.id} value={q.id}>
+                        {q.title} ({submissions.filter((s) => s.questionId === q.id).length} subs)
+                      </option>
+                    ))}
+                  </select>
+
+                  <button
+                    onClick={() => handleScanAllPlagiarism(plagQuestionId)}
+                    disabled={!plagQuestionId}
+                    className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-purple-500 to-indigo-500 px-4 py-2 font-mono text-xs font-bold text-white hover:brightness-110 active:scale-95 disabled:opacity-40 transition-all cursor-pointer"
+                  >
+                    <RefreshCw className="h-3.5 w-3.5" />
+                    <span>Auto-Scan All Pairs</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Suspect Rankings Table if scanned */}
+              {suspectPairs.length > 0 && (
+                <div className="mt-6 border-t border-white/[0.08] pt-4">
+                  <h4 className="font-mono text-xs font-bold text-gray-300 uppercase tracking-wider mb-3">
+                    Detected Candidate Pairs Ranked by Similarity ({suspectPairs.length} pairs analyzed)
+                  </h4>
+                  <div className="overflow-x-auto rounded-xl border border-white/10 bg-black/40">
+                    <table className="w-full text-left font-mono text-xs">
+                      <thead>
+                        <tr className="border-b border-white/[0.08] bg-white/[0.02] text-gray-400 uppercase text-[11px]">
+                          <th className="py-2.5 px-3">Similarity</th>
+                          <th className="py-2.5 px-3">Risk Level</th>
+                          <th className="py-2.5 px-3">Candidate A</th>
+                          <th className="py-2.5 px-3">Candidate B</th>
+                          <th className="py-2.5 px-3">Language</th>
+                          <th className="py-2.5 px-3 text-right">Action</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-white/[0.06]">
+                        {suspectPairs.map((pair, idx) => {
+                          const { subA, subB, similarity } = pair;
+                          const riskColor =
+                            similarity.riskLevel === 'CRITICAL'
+                              ? 'text-red-400 bg-red-950/40 border-red-500/40'
+                              : similarity.riskLevel === 'HIGH'
+                              ? 'text-orange-400 bg-orange-950/40 border-orange-500/40'
+                              : similarity.riskLevel === 'MODERATE'
+                              ? 'text-yellow-400 bg-yellow-950/40 border-yellow-500/40'
+                              : 'text-emerald-400 bg-emerald-950/40 border-emerald-500/40';
+
+                          return (
+                            <tr key={`${subA.id}-${subB.id}-${idx}`} className="hover:bg-white/[0.03]">
+                              <td className="py-2.5 px-3 font-bold text-white">
+                                <div className="flex items-center gap-2">
+                                  <div className="w-12 bg-white/10 rounded-full h-2 overflow-hidden">
+                                    <div
+                                      className={`h-full ${
+                                        similarity.similarityScore >= 75
+                                          ? 'bg-red-500'
+                                          : similarity.similarityScore >= 50
+                                          ? 'bg-amber-500'
+                                          : 'bg-emerald-500'
+                                      }`}
+                                      style={{ width: `${similarity.similarityScore}%` }}
+                                    />
+                                  </div>
+                                  <span>{similarity.similarityScore}%</span>
+                                </div>
+                              </td>
+                              <td className="py-2.5 px-3">
+                                <span className={`rounded border px-2 py-0.5 text-[10px] font-bold ${riskColor}`}>
+                                  {similarity.riskLevel}
+                                </span>
+                              </td>
+                              <td className="py-2.5 px-3 font-medium text-white">
+                                {subA.participantName} <span className="text-gray-400 font-normal">({subA.participantRoll})</span>
+                              </td>
+                              <td className="py-2.5 px-3 font-medium text-white">
+                                {subB.participantName} <span className="text-gray-400 font-normal">({subB.participantRoll})</span>
+                              </td>
+                              <td className="py-2.5 px-3 uppercase text-gray-300">
+                                {subA.language} / {subB.language}
+                              </td>
+                              <td className="py-2.5 px-3 text-right">
+                                <button
+                                  onClick={() => {
+                                    setCandidateAId(subA.id);
+                                    setCandidateBId(subB.id);
+                                  }}
+                                  className="rounded bg-white/5 border border-white/10 px-2.5 py-1 text-xs text-purple-300 hover:bg-purple-950/40 hover:border-purple-500/30 transition-all cursor-pointer"
+                                >
+                                  Load in Diff Viewer
+                                </button>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Side-by-Side Dual Monaco Editor Code Comparison */}
+            <div className="rounded-2xl border border-white/10 bg-[#0a0f18] p-6 backdrop-blur-xl space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-white/[0.08] pb-4">
+                <div>
+                  <h3 className="font-mono text-base font-bold text-white flex items-center gap-2">
+                    <Code2 className="h-4 w-4 text-purple-400" />
+                    <span>Dual Side-by-Side Code Diff Workspace</span>
+                  </h3>
+                  <p className="mt-0.5 text-xs text-gray-400">
+                    Inspect AST syntactic overlap and identical logic branches in real time.
+                  </p>
+                </div>
+
+                {/* Live Pair Similarity Badge if both candidates selected */}
+                {(() => {
+                  const subA = submissions.find((s) => s.id === candidateAId);
+                  const subB = submissions.find((s) => s.id === candidateBId);
+                  if (!subA || !subB) return null;
+                  const sim = calculateCodeSimilarity(subA.code, subB.code);
+                  return (
+                    <div className="flex items-center gap-3">
+                      <div className="text-right">
+                        <div className="font-mono text-xs text-gray-400">Similarity Metric</div>
+                        <div className="font-mono text-lg font-extrabold text-purple-400">
+                          {sim.similarityScore}% Overlap
+                        </div>
+                      </div>
+                      <span
+                        className={`rounded-xl border px-3 py-1 font-mono text-xs font-bold ${
+                          sim.riskLevel === 'CRITICAL'
+                            ? 'border-red-500/40 bg-red-950/40 text-red-300'
+                            : sim.riskLevel === 'HIGH'
+                            ? 'border-orange-500/40 bg-orange-950/40 text-orange-300'
+                            : sim.riskLevel === 'MODERATE'
+                            ? 'border-yellow-500/40 bg-yellow-950/40 text-yellow-300'
+                            : 'border-emerald-500/40 bg-emerald-950/40 text-emerald-300'
+                        }`}
+                      >
+                        {sim.riskLevel} RISK
+                      </span>
+                    </div>
+                  );
+                })()}
+              </div>
+
+              {/* Candidate Pickers */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="block font-mono text-xs text-gray-400">Candidate A Submission</label>
+                  <select
+                    value={candidateAId}
+                    onChange={(e) => setCandidateAId(e.target.value)}
+                    className="w-full rounded-xl border border-white/10 bg-black/60 px-3 py-2 font-mono text-xs text-white focus:border-purple-400 focus:outline-none"
+                  >
+                    <option value="">Select Candidate A...</option>
+                    {(plagQuestionId ? submissions.filter((s) => s.questionId === plagQuestionId) : submissions).map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.participantName} ({s.participantRoll}) · {s.language.toUpperCase()} · {s.score} pts · {new Date(s.submittedAt).toLocaleTimeString()}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="block font-mono text-xs text-gray-400">Candidate B Submission</label>
+                  <select
+                    value={candidateBId}
+                    onChange={(e) => setCandidateBId(e.target.value)}
+                    className="w-full rounded-xl border border-white/10 bg-black/60 px-3 py-2 font-mono text-xs text-white focus:border-purple-400 focus:outline-none"
+                  >
+                    <option value="">Select Candidate B...</option>
+                    {(plagQuestionId ? submissions.filter((s) => s.questionId === plagQuestionId) : submissions).map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.participantName} ({s.participantRoll}) · {s.language.toUpperCase()} · {s.score} pts · {new Date(s.submittedAt).toLocaleTimeString()}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* Dual Editors */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                {/* Editor A */}
+                <div className="rounded-xl border border-white/10 bg-black/60 overflow-hidden">
+                  <div className="border-b border-white/10 bg-white/[0.02] px-4 py-2 flex items-center justify-between font-mono text-xs">
+                    <span className="font-bold text-white">
+                      {submissions.find((s) => s.id === candidateAId)?.participantName || 'Candidate A'}
+                    </span>
+                    <span className="text-gray-400 uppercase">
+                      {submissions.find((s) => s.id === candidateAId)?.language || 'Language'}
+                    </span>
+                  </div>
+                  <div className="h-[440px]">
+                    <Editor
+                      height="100%"
+                      language={
+                        submissions.find((s) => s.id === candidateAId)?.language === 'python'
+                          ? 'python'
+                          : submissions.find((s) => s.id === candidateAId)?.language === 'java'
+                          ? 'java'
+                          : 'c'
+                      }
+                      theme="vs-dark"
+                      value={submissions.find((s) => s.id === candidateAId)?.code || '// Select Candidate A to view code'}
+                      options={{
+                        readOnly: true,
+                        minimap: { enabled: false },
+                        fontSize: 12,
+                        scrollBeyondLastLine: false,
+                        fontFamily: 'var(--font-geist-mono)',
+                      }}
+                    />
+                  </div>
+                </div>
+
+                {/* Editor B */}
+                <div className="rounded-xl border border-white/10 bg-black/60 overflow-hidden">
+                  <div className="border-b border-white/10 bg-white/[0.02] px-4 py-2 flex items-center justify-between font-mono text-xs">
+                    <span className="font-bold text-white">
+                      {submissions.find((s) => s.id === candidateBId)?.participantName || 'Candidate B'}
+                    </span>
+                    <span className="text-gray-400 uppercase">
+                      {submissions.find((s) => s.id === candidateBId)?.language || 'Language'}
+                    </span>
+                  </div>
+                  <div className="h-[440px]">
+                    <Editor
+                      height="100%"
+                      language={
+                        submissions.find((s) => s.id === candidateBId)?.language === 'python'
+                          ? 'python'
+                          : submissions.find((s) => s.id === candidateBId)?.language === 'java'
+                          ? 'java'
+                          : 'c'
+                      }
+                      theme="vs-dark"
+                      value={submissions.find((s) => s.id === candidateBId)?.code || '// Select Candidate B to view code'}
+                      options={{
+                        readOnly: true,
+                        minimap: { enabled: false },
+                        fontSize: 12,
+                        scrollBeyondLastLine: false,
+                        fontFamily: 'var(--font-geist-mono)',
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* TAB 6: ANTI-CHEAT VIOLATIONS AUDIT */}
         {activeTab === 'violations' && (
           <div className="overflow-hidden rounded-2xl border border-white/10 bg-[#0a0f18] backdrop-blur-xl">
             <table className="w-full text-left border-collapse">
@@ -1001,6 +1633,81 @@ export default function AdminPage() {
               >
                 Save Challenge Question
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Problem Set JSON Bulk Import Modal */}
+      {showImportJsonModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-6 backdrop-blur-md">
+          <div className="max-w-xl w-full rounded-2xl border border-white/15 bg-[#0a0f19] p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-white/[0.08] pb-3">
+              <h3 className="font-mono text-lg font-bold text-white flex items-center gap-2">
+                <Upload className="h-5 w-5 text-cyan-400" />
+                <span>Import Problem Set JSON</span>
+              </h3>
+              <button
+                onClick={() => setShowImportJsonModal(false)}
+                className="text-gray-400 hover:text-white font-mono text-sm"
+              >
+                ✕
+              </button>
+            </div>
+
+            <p className="text-xs text-gray-400">
+              Paste a JSON array of questions, or upload an exported problem set file to immediately configure the active marathon contest.
+            </p>
+
+            <div>
+              <label className="block font-mono text-xs text-gray-400 mb-1.5">JSON Payload</label>
+              <textarea
+                value={importJsonText}
+                onChange={(e) => setImportJsonText(e.target.value)}
+                rows={10}
+                placeholder={`[\n  {\n    "id": "custom-1",\n    "title": "Problem Title",\n    "difficulty": "Medium",\n    "points": 400,\n    "scenario": "...",\n    "testCases": [...]\n  }\n]`}
+                className="w-full rounded-xl border border-white/10 bg-black/60 p-3 font-mono text-xs text-cyan-300 placeholder-gray-600 focus:border-cyan-400 focus:outline-none"
+              />
+            </div>
+
+            <div className="flex items-center justify-between pt-2 border-t border-white/[0.08]">
+              <label className="flex items-center gap-1.5 cursor-pointer font-mono text-xs text-gray-400 hover:text-cyan-300 transition-colors">
+                <input
+                  type="file"
+                  accept=".json"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      const reader = new FileReader();
+                      reader.onload = (ev) => {
+                        setImportJsonText(String(ev.target?.result || ''));
+                      };
+                      reader.readAsText(file);
+                    }
+                  }}
+                />
+                <FileCode className="h-4 w-4" />
+                <span>Upload .JSON File</span>
+              </label>
+
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowImportJsonModal(false)}
+                  className="rounded-xl border border-white/10 px-4 py-2 font-mono text-xs text-gray-400 hover:text-white cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleImportQuestionsJSON}
+                  disabled={!importJsonText.trim()}
+                  className="rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 px-5 py-2 font-mono text-xs font-bold text-black hover:brightness-110 active:scale-95 disabled:opacity-40 cursor-pointer"
+                >
+                  Import Problem Set
+                </button>
+              </div>
             </div>
           </div>
         </div>
