@@ -3,11 +3,13 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Terminal, Trophy, ShieldCheck, Radio } from 'lucide-react';
+import { Trophy, ShieldCheck, Radio, Compass } from 'lucide-react';
+import NauticalCompass from './NauticalCompass';
 
 export default function Navbar() {
   const pathname = usePathname();
   const [isActiveContest, setIsActiveContest] = useState(false);
+  const [contestPhase, setContestPhase] = useState<string>('setup');
 
   useEffect(() => {
     const checkContest = async () => {
@@ -16,6 +18,7 @@ export default function Navbar() {
         if (res.ok) {
           const data = await res.json();
           setIsActiveContest(data.contest?.isActive || false);
+          setContestPhase(data.session?.phase || 'setup');
         }
       } catch {
         // Ignore
@@ -27,72 +30,84 @@ export default function Navbar() {
   }, []);
 
   return (
-    <header className="sticky top-0 z-30 border-b border-white/[0.08] bg-[#070b12]/80 backdrop-blur-xl">
-      <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6">
-        {/* Brand */}
+    <header className="sticky top-0 z-40 border-b border-[#a68a56]/20 bg-[#050504]/85 backdrop-blur-xl transition-colors">
+      <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-2.5 sm:px-6">
+        {/* Brand with 11:11 Chapter 2 Nautical Typography */}
         <Link href="/" className="group flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500/20 to-cyan-500/20 border border-emerald-500/30 text-emerald-400 shadow-lg shadow-emerald-500/10 transition-transform group-hover:scale-105">
-            <Terminal className="h-5 w-5" />
+          <div className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-[#1c160e] border border-[#a68a56]/30 shadow-lg shadow-black/80 transition-transform group-hover:scale-105">
+            <NauticalCompass size={32} showRings={false} />
           </div>
-          <div>
+          <div className="flex flex-col">
             <div className="flex items-center gap-2">
-              <span className="font-mono text-sm font-bold tracking-tight text-white">
-                CODE IN THE DARK
+              <span className="font-cinzel text-base font-bold tracking-[0.18em] text-[#f3d38c] group-hover:text-[#fce8be] transition-colors">
+                11<span className="text-[#fff2d6]">:11</span>
               </span>
-              <span className="rounded bg-white/10 px-1.5 py-0.2 font-mono text-[10px] font-semibold text-emerald-400">
-                11:11
+              <span className="rounded border border-[#a68a56]/30 bg-[#1c160e]/80 px-1.5 py-0.5 font-nautical-mono text-[9px] font-semibold tracking-wider text-[#d4af37]">
+                CHAPTER II
               </span>
             </div>
-            <p className="text-[11px] text-gray-400">Algorithmic Edition · Chapter 2</p>
+            <span className="font-nautical-mono text-[10px] tracking-widest text-[#a68a56] uppercase">
+              Code In The Dark · Blind Arena
+            </span>
           </div>
         </Link>
 
         {/* Live Contest Indicator & Navigation */}
         <div className="flex items-center gap-2 sm:gap-4">
-          <div className="hidden sm:flex items-center gap-2 rounded-full border border-white/10 bg-black/40 px-3 py-1 font-mono text-xs text-gray-300">
+          <div className="hidden sm:flex items-center gap-2 rounded-full border border-[#a68a56]/25 bg-[#090806]/80 px-3 py-1 font-nautical-mono text-xs text-[#ebe4d5]">
             <span
               className={`h-2 w-2 rounded-full ${
-                isActiveContest ? 'animate-ping bg-emerald-400' : 'bg-gray-500'
+                isActiveContest
+                  ? 'animate-ping bg-[#d4af37]'
+                  : contestPhase === 'registration'
+                  ? 'animate-pulse bg-amber-400'
+                  : 'bg-[#6b5535]'
               }`}
             />
-            <span>{isActiveContest ? 'Round Active (50m)' : 'Lobby Standby'}</span>
+            <span className="text-[11px] tracking-wider text-[#a68a56]">
+              {isActiveContest
+                ? 'VOYAGE ACTIVE (50m)'
+                : contestPhase === 'registration'
+                ? 'REGISTRATION WINDOW'
+                : 'LOBBY STANDBY'}
+            </span>
           </div>
 
-          <nav className="flex items-center gap-1.5">
+          <nav className="flex items-center gap-1.5 font-nautical-mono text-xs">
             <Link
               href="/register"
-              className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 font-mono text-xs font-medium transition-all ${
+              className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 font-medium uppercase tracking-wider transition-all bouncy-btn ${
                 pathname.startsWith('/arena') || pathname === '/register'
-                  ? 'border border-emerald-500/40 bg-emerald-500/10 text-emerald-300'
-                  : 'text-gray-400 hover:bg-white/5 hover:text-white'
+                  ? 'border border-[#d4af37]/60 bg-[#1c160e] text-[#f3d38c] shadow-[0_0_12px_rgba(212,175,55,0.2)]'
+                  : 'text-[#a68a56] hover:bg-[#1c160e]/50 hover:text-[#f3d38c]'
               }`}
             >
-              <Radio className="h-3.5 w-3.5" />
+              <Radio className="h-3.5 w-3.5 text-[#d4af37]" />
               <span>Arena</span>
             </Link>
 
             <Link
               href="/leaderboard"
-              className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 font-mono text-xs font-medium transition-all ${
+              className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 font-medium uppercase tracking-wider transition-all bouncy-btn ${
                 pathname === '/leaderboard'
-                  ? 'border border-cyan-500/40 bg-cyan-500/10 text-cyan-300'
-                  : 'text-gray-400 hover:bg-white/5 hover:text-white'
+                  ? 'border border-[#d4af37]/60 bg-[#1c160e] text-[#f3d38c] shadow-[0_0_12px_rgba(212,175,55,0.2)]'
+                  : 'text-[#a68a56] hover:bg-[#1c160e]/50 hover:text-[#f3d38c]'
               }`}
             >
-              <Trophy className="h-3.5 w-3.5" />
+              <Trophy className="h-3.5 w-3.5 text-[#f3d38c]" />
               <span>Leaderboard</span>
             </Link>
 
             <Link
               href="/admin"
-              className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 font-mono text-xs font-medium transition-all ${
+              className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 font-medium uppercase tracking-wider transition-all bouncy-btn ${
                 pathname === '/admin'
-                  ? 'border border-amber-500/40 bg-amber-500/10 text-amber-300'
-                  : 'text-gray-400 hover:bg-white/5 hover:text-white'
+                  ? 'border border-[#d4af37]/60 bg-[#1c160e] text-[#f3d38c] shadow-[0_0_12px_rgba(212,175,55,0.2)]'
+                  : 'text-[#a68a56] hover:bg-[#1c160e]/50 hover:text-[#f3d38c]'
               }`}
             >
-              <ShieldCheck className="h-3.5 w-3.5" />
-              <span>Admin</span>
+              <ShieldCheck className="h-3.5 w-3.5 text-[#a68a56]" />
+              <span>Command Deck</span>
             </Link>
           </nav>
         </div>

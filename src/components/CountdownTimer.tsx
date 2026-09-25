@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { Clock, PauseCircle, AlertCircle } from 'lucide-react';
+import { Clock, PauseCircle, AlertTriangle } from 'lucide-react';
 
 interface CountdownTimerProps {
   endTime: number | null;
@@ -48,29 +48,34 @@ export default function CountdownTimer({
 
   return (
     <div
-      className={`inline-flex items-center gap-2.5 rounded-xl border px-3.5 py-1.5 font-mono text-sm backdrop-blur-md transition-all ${
+      className={`inline-flex items-center gap-2.5 rounded-xl border px-3.5 py-1.5 font-nautical-mono text-sm backdrop-blur-md transition-all shadow-md ${
         isPaused
-          ? 'border-amber-500/40 bg-amber-950/20 text-amber-300'
+          ? 'border-[#a68a56]/50 bg-[#1c160e]/90 text-[#f3d38c]'
           : isCritical
-          ? 'animate-pulse border-red-500/60 bg-red-950/30 text-red-400 shadow-lg shadow-red-500/20'
+          ? 'animate-pulse border-red-500/70 bg-red-950/40 text-red-300 shadow-[0_0_15px_rgba(239,68,68,0.3)]'
           : isLowTime
-          ? 'border-amber-500/50 bg-amber-950/20 text-amber-400'
-          : 'border-cyan-500/30 bg-[#0c1420]/80 text-cyan-300'
+          ? 'border-amber-500/60 bg-amber-950/30 text-amber-300 shadow-[0_0_15px_rgba(245,158,11,0.2)]'
+          : 'border-[#d4af37]/40 bg-[#1c160e]/85 text-[#f3d38c] shadow-[0_0_15px_rgba(212,175,55,0.15)]'
       } ${className}`}
+      title="Synchronized Voyage Chronometer"
     >
       {isPaused ? (
-        <PauseCircle className="h-4 w-4 animate-spin text-amber-400" />
+        <PauseCircle className="h-4 w-4 animate-spin text-[#d4af37]" />
       ) : isCritical ? (
-        <AlertCircle className="h-4 w-4 text-red-400" />
+        <AlertTriangle className="h-4 w-4 text-red-400" />
       ) : (
-        <Clock className="h-4 w-4 text-cyan-400" />
+        <Clock className="h-4 w-4 text-[#d4af37]" />
       )}
 
-      <span className="font-bold tracking-wider">
+      <span className="font-bold tracking-widest tabular-nums text-base">
         {String(minutes).padStart(2, '0')}:{String(seconds).padStart(2, '0')}
       </span>
 
-      {isPaused && <span className="text-[11px] font-normal uppercase text-amber-400/80">(Paused)</span>}
+      {isPaused && (
+        <span className="text-[10px] font-semibold uppercase tracking-wider text-[#a68a56]">
+          [ANCHORED]
+        </span>
+      )}
     </div>
   );
 }

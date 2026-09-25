@@ -258,22 +258,22 @@ export default function LeaderboardPage() {
   const isUnder5Min = remainingSeconds > 0 && remainingSeconds <= 300;
 
   return (
-    <div className={`relative flex min-h-screen flex-1 flex-col overflow-hidden bg-[#06090e] p-4 sm:p-6 lg:p-8 bg-grid-cyber ${isFullscreen ? 'p-6 lg:p-10' : ''}`}>
+    <div className={`relative flex min-h-screen flex-1 flex-col overflow-hidden bg-[#050504] p-4 sm:p-6 lg:p-8 bg-grid-cyber ${isFullscreen ? 'p-6 lg:p-10' : ''}`}>
       {/* Background Radial Glow */}
-      <div className="pointer-events-none absolute -top-40 left-1/2 h-[550px] w-[1000px] -translate-x-1/2 radial-glow-emerald opacity-60" />
+      <div className="pointer-events-none absolute -top-40 left-1/2 h-[550px] w-[1000px] -translate-x-1/2 radial-glow-gold opacity-50" />
 
       {/* Global Live Flash Announcement Banner if active */}
       {contest?.announcement && (
-        <div className="mx-auto mb-6 w-full max-w-7xl animate-pulse rounded-2xl border border-cyan-500/40 bg-cyan-950/60 p-4 shadow-xl backdrop-blur-xl">
+        <div className="mx-auto mb-6 w-full max-w-7xl animate-pulse rounded-2xl border border-[#d4af37]/40 bg-[#1c160e]/90 p-4 shadow-[0_0_30px_rgba(212,175,55,0.2)] backdrop-blur-xl">
           <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-cyan-500/20 text-cyan-400">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#d4af37]/20 text-[#d4af37]">
               <Megaphone className="h-5 w-5" />
             </div>
             <div className="flex-1">
-              <div className="font-mono text-[10px] font-bold uppercase tracking-wider text-cyan-400">
-                Live Broadcast from Admin Control
+              <div className="font-cinzel text-[10px] font-bold uppercase tracking-wider text-[#d4af37]">
+                Grand Decree · Admiralty Command
               </div>
-              <div className="font-mono text-sm font-semibold text-white">
+              <div className="font-nautical-mono text-sm font-semibold text-[#f3d38c]">
                 {contest.announcement}
               </div>
             </div>
@@ -282,17 +282,19 @@ export default function LeaderboardPage() {
       )}
 
       {/* Header Bar */}
-      <div className="mx-auto flex w-full max-w-7xl flex-wrap items-center justify-between gap-4 border-b border-white/[0.08] pb-6">
+      <div className="mx-auto flex w-full max-w-7xl flex-wrap items-center justify-between gap-4 border-b border-[#a68a56]/20 pb-6">
         <div>
-          <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-950/20 px-3 py-1 font-mono text-xs font-semibold text-emerald-400">
-            <Sparkles className="h-3.5 w-3.5" />
-            LIVE STAGE LEADERBOARD · 11:11 CHAPTER 2
+          <div className="inline-flex items-center gap-2 rounded-full border border-[#d4af37]/30 bg-[#1c160e]/80 px-3 py-1 font-cinzel text-xs font-semibold text-[#f3d38c]">
+            <Sparkles className="h-3.5 w-3.5 text-[#d4af37]" />
+            ADMIRALTY STAGE ROSTER · 11:11 CHAPTER 2
           </div>
-          <h1 className="mt-2 font-mono text-3xl font-extrabold tracking-tight text-white sm:text-4xl">
-            {contestTitle}
+          <h1 className="mt-2 font-cinzel text-3xl font-extrabold tracking-wider text-[#ebe4d5] sm:text-4xl">
+            <span className="bg-gradient-to-r from-[#d4af37] via-[#f3d38c] to-[#a68a56] bg-clip-text text-transparent">
+              {contestTitle}
+            </span>
           </h1>
-          <p className="mt-1 text-sm text-gray-400">
-            Real-time multi-question cumulative scores · Speed bonuses active
+          <p className="mt-1 font-nautical-mono text-xs text-[#a68a56]">
+            Real-time multi-question cumulative scores · Chrono-speed bonuses active
           </p>
         </div>
 
@@ -300,12 +302,12 @@ export default function LeaderboardPage() {
         <div className="flex flex-wrap items-center gap-3">
           {/* Contest Timer Widget */}
           {contest?.isActive && (
-            <div className={`flex items-center gap-2 rounded-xl border px-3.5 py-1.5 font-mono text-xs ${
+            <div className={`flex items-center gap-2 rounded-xl border px-3.5 py-1.5 font-nautical-mono text-xs ${
               isUnder5Min
                 ? 'border-red-500/50 bg-red-950/40 text-red-300 animate-pulse'
-                : 'border-amber-500/30 bg-amber-950/20 text-amber-300'
+                : 'border-[#d4af37]/40 bg-[#1c160e] text-[#f3d38c]'
             }`}>
-              <Clock className="h-4 w-4" />
+              <Clock className="h-4 w-4 text-[#d4af37]" />
               <span>
                 {String(minutes).padStart(2, '0')}:{String(seconds).padStart(2, '0')}
               </span>
@@ -320,29 +322,29 @@ export default function LeaderboardPage() {
                 playAudioTone(440, 880, 0.2, 'sine');
               }
             }}
-            className={`flex items-center gap-1.5 rounded-xl border px-3 py-1.5 font-mono text-xs transition-all cursor-pointer ${
+            className={`flex items-center gap-1.5 rounded-xl border px-3 py-1.5 font-cinzel text-xs transition-all cursor-pointer bouncy-btn ${
               audioEnabled
-                ? 'border-emerald-500/30 bg-emerald-950/30 text-emerald-300'
-                : 'border-white/10 bg-white/5 text-gray-400'
+                ? 'border-[#d4af37]/40 bg-[#1c160e] text-[#f3d38c]'
+                : 'border-[#a68a56]/20 bg-[#050504]/50 text-[#a68a56]'
             }`}
-            title="Toggle Stage Sound Effects & Buzzer"
+            title="Toggle Stage Chimes & Fanfare"
           >
-            {audioEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
-            <span className="hidden sm:inline">{audioEnabled ? 'Sound On' : 'Muted'}</span>
+            {audioEnabled ? <Volume2 className="h-4 w-4 text-[#d4af37]" /> : <VolumeX className="h-4 w-4" />}
+            <span className="hidden sm:inline">{audioEnabled ? 'Chimes Active' : 'Muted'}</span>
           </button>
 
           {/* Fullscreen TV / Projector Mode Toggle */}
           <button
             onClick={toggleFullscreen}
-            className="flex items-center gap-1.5 rounded-xl border border-white/15 bg-white/5 px-3 py-1.5 font-mono text-xs text-gray-300 hover:bg-white/10 hover:text-white transition-all cursor-pointer"
+            className="flex items-center gap-1.5 rounded-xl border border-[#a68a56]/30 bg-[#1c160e]/50 px-3 py-1.5 font-cinzel text-xs text-[#f3d38c] hover:border-[#d4af37] transition-all cursor-pointer bouncy-btn"
             title="Toggle Projector Fullscreen Mode (Press F)"
           >
             {isFullscreen ? <Minimize className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}
             <span className="hidden sm:inline">{isFullscreen ? 'Exit TV Mode' : 'Projector View (F)'}</span>
           </button>
 
-          <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-black/40 px-3 py-1.5 font-mono text-xs text-gray-400">
-            <span className="h-2 w-2 rounded-full bg-emerald-400 animate-ping" />
+          <div className="flex items-center gap-2 rounded-xl border border-[#a68a56]/20 bg-[#050504]/60 px-3 py-1.5 font-nautical-mono text-xs text-[#a68a56]">
+            <span className="h-2 w-2 rounded-full bg-[#d4af37] animate-ping" />
             <span>Updated {lastUpdated || 'Live'}</span>
           </div>
         </div>
@@ -350,21 +352,21 @@ export default function LeaderboardPage() {
 
       {/* Dramatic Stage Reveal Mode Controller Bar */}
       {isRevealMode && (
-        <div className="mx-auto mt-6 w-full max-w-7xl rounded-2xl border-2 border-amber-400/40 bg-gradient-to-r from-amber-950/50 via-purple-950/40 to-[#0a0f19] p-4 sm:p-5 shadow-2xl backdrop-blur-xl">
+        <div className="mx-auto mt-6 w-full max-w-7xl rounded-2xl border border-[#d4af37]/40 bg-gradient-to-r from-[#1c160e] via-[#0e0b07] to-[#1c160e] p-4 sm:p-5 shadow-[0_0_40px_rgba(212,175,55,0.15)] backdrop-blur-xl">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-400 text-black shadow-lg shadow-amber-400/30">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-[#d4af37] to-[#f3d38c] text-[#050504] shadow-lg shadow-[#d4af37]/30">
                 <Crown className="h-6 w-6" />
               </div>
               <div>
-                <div className="flex items-center gap-2 font-mono text-xs font-bold uppercase tracking-wider text-amber-300">
+                <div className="flex items-center gap-2 font-cinzel text-xs font-bold uppercase tracking-wider text-[#d4af37]">
                   <Sparkles className="h-3.5 w-3.5" />
-                  <span>DRAMATIC STAGE REVEAL MODE ACTIVE</span>
+                  <span>DRAMATIC STAGE UNVEILING PROTOCOL</span>
                 </div>
-                <h3 className="font-mono text-base font-extrabold text-white">
+                <h3 className="font-cinzel text-base font-extrabold text-[#ebe4d5]">
                   {revealedCount >= leaderboard.length
-                    ? '🎉 ALL RANKS UNVEILED — CONGRATULATIONS TO THE CHAMPIONS!'
-                    : `Unmasking Leaderboard: ${revealedCount} of ${leaderboard.length} Candidates Revealed`}
+                    ? '⚔️ ALL SEALS UNVEILED — SALUTE TO THE GRAND CHAMPIONS!'
+                    : `Unmasking Admiralty Roster: ${revealedCount} of ${leaderboard.length} Navigators Revealed`}
                 </h3>
               </div>
             </div>
@@ -374,7 +376,7 @@ export default function LeaderboardPage() {
               <button
                 onClick={handleNextReveal}
                 disabled={revealedCount >= leaderboard.length}
-                className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-amber-400 to-yellow-500 px-4 py-2 font-mono text-xs font-bold text-black shadow-lg shadow-amber-400/20 hover:brightness-110 active:scale-95 disabled:opacity-40 transition-all cursor-pointer"
+                className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-[#d4af37] via-[#f3d38c] to-[#a68a56] px-4 py-2 font-cinzel text-xs font-bold text-[#050504] shadow-lg shadow-[#d4af37]/25 hover:brightness-110 active:scale-95 disabled:opacity-40 transition-all cursor-pointer bouncy-btn"
               >
                 <Eye className="h-4 w-4" />
                 <span>Next Reveal</span>
@@ -383,14 +385,14 @@ export default function LeaderboardPage() {
               <button
                 onClick={() => setAutoRevealActive(!autoRevealActive)}
                 disabled={revealedCount >= leaderboard.length}
-                className={`flex items-center gap-1.5 rounded-xl border px-3.5 py-2 font-mono text-xs font-semibold transition-all cursor-pointer ${
+                className={`flex items-center gap-1.5 rounded-xl border px-3.5 py-2 font-cinzel text-xs font-semibold transition-all cursor-pointer bouncy-btn ${
                   autoRevealActive
-                    ? 'border-purple-400 bg-purple-950/40 text-purple-300'
-                    : 'border-white/15 bg-white/5 text-gray-300 hover:bg-white/10'
+                    ? 'border-[#d4af37] bg-[#1c160e] text-[#f3d38c]'
+                    : 'border-[#a68a56]/30 bg-[#050504]/50 text-[#a68a56] hover:text-[#ebe4d5]'
                 }`}
               >
                 {autoRevealActive ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />}
-                <span>{autoRevealActive ? 'Pause Auto' : 'Auto Unmask (2.5s)'}</span>
+                <span>{autoRevealActive ? 'Halt Sequence' : 'Auto Unmask (2.5s)'}</span>
               </button>
 
               <button
@@ -401,10 +403,10 @@ export default function LeaderboardPage() {
                     particleCount: 200,
                     spread: 120,
                     origin: { y: 0.5 },
-                    colors: ['#FFD700', '#FFA500', '#00E676', '#00B0FF'],
+                    colors: ['#D4AF37', '#F3D38C', '#A68A56', '#FFFFFF', '#EBE4D5'],
                   });
                 }}
-                className="flex items-center gap-1 rounded-xl border border-white/15 bg-white/5 px-3 py-2 font-mono text-xs text-gray-400 hover:text-white hover:bg-white/10 transition-all cursor-pointer"
+                className="flex items-center gap-1 rounded-xl border border-[#a68a56]/30 bg-[#1c160e]/50 px-3 py-2 font-cinzel text-xs text-[#a68a56] hover:text-[#f3d38c] hover:border-[#d4af37] transition-all cursor-pointer bouncy-btn"
               >
                 <FastForward className="h-3.5 w-3.5" />
                 <span>Unmask All</span>
@@ -415,7 +417,7 @@ export default function LeaderboardPage() {
                   setRevealedCount(0);
                   setAutoRevealActive(false);
                 }}
-                className="flex items-center gap-1 rounded-xl border border-white/15 bg-white/5 p-2 font-mono text-xs text-gray-400 hover:text-red-400 hover:bg-red-950/30 transition-all cursor-pointer"
+                className="flex items-center gap-1 rounded-xl border border-[#a68a56]/30 bg-[#1c160e]/50 p-2 font-cinzel text-xs text-[#a68a56] hover:text-red-400 hover:border-red-500/40 transition-all cursor-pointer bouncy-btn"
                 title="Reset Stage Reveal"
               >
                 <RotateCcw className="h-4 w-4" />
@@ -430,51 +432,51 @@ export default function LeaderboardPage() {
         {/* Podium Top 3 Cards (Rendered when not in reveal mode OR when top 3 are unmasked) */}
         {leaderboard.length > 0 && (!isRevealMode || isRankRevealed(0) || isRankRevealed(1) || isRankRevealed(2)) && (
           <div className="mb-10 grid gap-4 sm:grid-cols-3">
-            {/* Rank 2 - Silver */}
+            {/* Rank 2 - Brass / Silver */}
             {top3[1] && isRankRevealed(1) && (
-              <div className="order-2 sm:order-1 rounded-2xl border border-gray-400/30 bg-gradient-to-b from-gray-900/60 to-[#0c121d] p-6 backdrop-blur-xl transition-all hover:scale-[1.02] shadow-xl animate-fade-in">
+              <div className="order-2 sm:order-1 rounded-2xl border border-[#a68a56]/40 bg-gradient-to-b from-[#1c160e]/90 to-[#0e0b07] p-6 backdrop-blur-xl transition-all hover:scale-[1.02] shadow-[0_0_25px_rgba(0,0,0,0.8)] animate-fade-in bouncy-card">
                 <div className="flex items-center justify-between">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gray-400/20 text-gray-300 font-mono font-bold text-lg">
-                    2
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#a68a56]/20 border border-[#a68a56]/40 text-[#ebe4d5] font-cinzel-dec font-bold text-lg">
+                    II
                   </div>
-                  <Medal className="h-6 w-6 text-gray-300" />
+                  <Medal className="h-6 w-6 text-[#a68a56]" />
                 </div>
                 <div className="mt-4">
-                  <h3 className="font-mono text-lg font-bold text-white truncate">{top3[1].name}</h3>
-                  <p className="font-mono text-xs text-gray-400">{top3[1].rollNumber} · {top3[1].terminalId}</p>
+                  <h3 className="font-cinzel text-lg font-bold text-[#ebe4d5] truncate">{top3[1].name}</h3>
+                  <p className="font-nautical-mono text-xs text-[#a68a56]">{top3[1].rollNumber} · {top3[1].terminalId}</p>
                 </div>
                 <div className="mt-4 flex items-baseline gap-2">
-                  <span className="font-mono text-3xl font-extrabold text-white">{top3[1].totalScore}</span>
-                  <span className="font-mono text-xs text-gray-400">PTS</span>
+                  <span className="font-nautical-mono text-3xl font-extrabold text-[#f3d38c]">{top3[1].totalScore}</span>
+                  <span className="font-cinzel text-xs text-[#a68a56]">PTS</span>
                 </div>
-                <div className="mt-2 font-mono text-xs text-emerald-400">
-                  {top3[1].questionsSolved} full · {top3[1].partialSolved} partial
+                <div className="mt-2 font-nautical-mono text-xs text-[#d4af37]">
+                  {top3[1].questionsSolved} solved · {top3[1].partialSolved} partial
                 </div>
               </div>
             )}
 
             {/* Rank 1 - Gold (Elevated Champion Spotlight) */}
             {top3[0] && isRankRevealed(0) && (
-              <div className="order-1 sm:order-2 rounded-2xl border-2 border-amber-400/60 bg-gradient-to-b from-amber-950/50 via-yellow-950/30 to-[#0c121d] p-6 sm:-mt-4 backdrop-blur-xl shadow-2xl shadow-amber-500/20 transition-all hover:scale-[1.03] animate-bounce-short ring-2 ring-amber-400/30">
+              <div className="order-1 sm:order-2 rounded-2xl border-2 border-[#d4af37] bg-gradient-to-b from-[#1c160e] via-[#15100a] to-[#0e0b07] p-6 sm:-mt-4 backdrop-blur-xl shadow-[0_0_35px_rgba(212,175,55,0.25)] transition-all hover:scale-[1.03] animate-bounce-short ring-2 ring-[#d4af37]/30 bouncy-card">
                 <div className="flex items-center justify-between">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-amber-400 text-black font-mono font-extrabold text-xl shadow-lg shadow-amber-400/40">
-                    1
+                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-[#d4af37] to-[#f3d38c] text-[#050504] font-cinzel-dec font-extrabold text-2xl shadow-lg shadow-[#d4af37]/40">
+                    I
                   </div>
-                  <Trophy className="h-8 w-8 text-amber-400 animate-bounce" />
+                  <Trophy className="h-8 w-8 text-[#d4af37] animate-bounce" />
                 </div>
                 <div className="mt-4">
-                  <div className="inline-flex items-center gap-1 font-mono text-[10px] font-bold uppercase text-amber-300 mb-1">
-                    <Crown className="h-3 w-3" />
-                    <span>GRAND CHAMPION</span>
+                  <div className="inline-flex items-center gap-1 font-cinzel text-[10px] font-bold uppercase tracking-widest text-[#f3d38c] mb-1">
+                    <Crown className="h-3.5 w-3.5 text-[#d4af37]" />
+                    <span>GRAND ADMIRAL · CHAMPION</span>
                   </div>
-                  <h3 className="font-mono text-xl font-extrabold text-white truncate">{top3[0].name}</h3>
-                  <p className="font-mono text-xs text-amber-200/90">{top3[0].rollNumber} · {top3[0].terminalId}</p>
+                  <h3 className="font-cinzel text-xl font-extrabold text-[#ebe4d5] truncate">{top3[0].name}</h3>
+                  <p className="font-nautical-mono text-xs text-[#f3d38c]/80">{top3[0].rollNumber} · {top3[0].terminalId}</p>
                 </div>
                 <div className="mt-4 flex items-baseline gap-2">
-                  <span className="font-mono text-4xl font-extrabold text-amber-400">{top3[0].totalScore}</span>
-                  <span className="font-mono text-xs font-semibold text-amber-300">PTS</span>
+                  <span className="font-nautical-mono text-4xl font-extrabold text-[#d4af37]">{top3[0].totalScore}</span>
+                  <span className="font-cinzel text-xs font-semibold text-[#f3d38c]">PTS</span>
                 </div>
-                <div className="mt-2 font-mono text-xs text-emerald-400">
+                <div className="mt-2 font-nautical-mono text-xs text-[#f3d38c]">
                   {top3[0].questionsSolved} solved · {top3[0].partialSolved} partial
                 </div>
               </div>
@@ -482,23 +484,23 @@ export default function LeaderboardPage() {
 
             {/* Rank 3 - Bronze */}
             {top3[2] && isRankRevealed(2) && (
-              <div className="order-3 sm:order-3 rounded-2xl border border-amber-700/40 bg-gradient-to-b from-amber-950/20 to-[#0c121d] p-6 backdrop-blur-xl transition-all hover:scale-[1.02] shadow-xl animate-fade-in">
+              <div className="order-3 sm:order-3 rounded-2xl border border-[#8c6738]/50 bg-gradient-to-b from-[#1c160e]/80 to-[#0e0b07] p-6 backdrop-blur-xl transition-all hover:scale-[1.02] shadow-[0_0_25px_rgba(0,0,0,0.8)] animate-fade-in bouncy-card">
                 <div className="flex items-center justify-between">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-700/20 text-amber-500 font-mono font-bold text-lg">
-                    3
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#8c6738]/20 border border-[#8c6738]/40 text-[#f3d38c] font-cinzel-dec font-bold text-lg">
+                    III
                   </div>
-                  <Medal className="h-6 w-6 text-amber-600" />
+                  <Medal className="h-6 w-6 text-[#8c6738]" />
                 </div>
                 <div className="mt-4">
-                  <h3 className="font-mono text-lg font-bold text-white truncate">{top3[2].name}</h3>
-                  <p className="font-mono text-xs text-gray-400">{top3[2].rollNumber} · {top3[2].terminalId}</p>
+                  <h3 className="font-cinzel text-lg font-bold text-[#ebe4d5] truncate">{top3[2].name}</h3>
+                  <p className="font-nautical-mono text-xs text-[#a68a56]">{top3[2].rollNumber} · {top3[2].terminalId}</p>
                 </div>
                 <div className="mt-4 flex items-baseline gap-2">
-                  <span className="font-mono text-3xl font-extrabold text-white">{top3[2].totalScore}</span>
-                  <span className="font-mono text-xs text-gray-400">PTS</span>
+                  <span className="font-nautical-mono text-3xl font-extrabold text-[#f3d38c]">{top3[2].totalScore}</span>
+                  <span className="font-cinzel text-xs text-[#a68a56]">PTS</span>
                 </div>
-                <div className="mt-2 font-mono text-xs text-emerald-400">
-                  {top3[2].questionsSolved} full · {top3[2].partialSolved} partial
+                <div className="mt-2 font-nautical-mono text-xs text-[#d4af37]">
+                  {top3[2].questionsSolved} solved · {top3[2].partialSolved} partial
                 </div>
               </div>
             )}
@@ -506,23 +508,23 @@ export default function LeaderboardPage() {
         )}
 
         {/* Complete Leaderboard Table */}
-        <div className="overflow-hidden rounded-2xl border border-white/10 bg-[#0a0f18]/90 backdrop-blur-xl shadow-2xl">
+        <div className="overflow-hidden rounded-2xl border border-[#a68a56]/25 bg-[#090704]/90 backdrop-blur-xl shadow-2xl">
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="border-b border-white/[0.08] bg-black/40 font-mono text-xs text-gray-400 uppercase tracking-wider">
+                <tr className="border-b border-[#a68a56]/20 bg-[#140f0a] font-cinzel text-xs text-[#d4af37] uppercase tracking-wider">
                   <th className="py-4 px-6">Rank</th>
-                  <th className="py-4 px-6">Candidate</th>
-                  <th className="py-4 px-6">Score</th>
-                  <th className="py-4 px-6">Solved</th>
-                  <th className="py-4 px-6">Per-Question Breakdown</th>
-                  <th className="py-4 px-6">Strikes</th>
+                  <th className="py-4 px-6">Navigator</th>
+                  <th className="py-4 px-6">Bounty Score</th>
+                  <th className="py-4 px-6">Scrolls Solved</th>
+                  <th className="py-4 px-6">Trial Breakdown</th>
+                  <th className="py-4 px-6">Penalties</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-white/[0.06] font-mono text-sm">
+              <tbody className="divide-y divide-[#a68a56]/15 font-nautical-mono text-sm">
                 {leaderboard.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="py-12 text-center text-gray-500">
+                    <td colSpan={6} className="py-12 text-center text-[#a68a56]">
                       Waiting for participants to join and submit solutions...
                     </td>
                   </tr>
@@ -533,17 +535,17 @@ export default function LeaderboardPage() {
                     if (!revealed) {
                       // Shrouded confidential row for stage suspense
                       return (
-                        <tr key={entry.participantId} className="bg-black/30 opacity-60">
-                          <td className="py-4 px-6 font-bold text-gray-600">
-                            <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-xs bg-white/5 text-gray-600">
+                        <tr key={entry.participantId} className="bg-[#050504]/60 opacity-60">
+                          <td className="py-4 px-6 font-bold text-[#a68a56]">
+                            <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-xs bg-[#1c160e] text-[#a68a56] font-cinzel">
                               #{idx + 1}
                             </span>
                           </td>
                           <td colSpan={5} className="py-4 px-6">
                             <div className="flex items-center gap-3">
-                              <span className="h-2 w-2 rounded-full bg-amber-400/50 animate-ping" />
-                              <span className="rounded-lg border border-white/10 bg-white/5 px-3 py-1 font-mono text-xs text-gray-400 uppercase tracking-widest">
-                                🔒 Rank #{idx + 1} Confidential — Shrouded for Stage Unveiling
+                              <span className="h-2 w-2 rounded-full bg-[#d4af37] animate-ping" />
+                              <span className="rounded-lg border border-[#a68a56]/20 bg-[#1c160e]/50 px-3 py-1 font-cinzel text-xs text-[#a68a56] uppercase tracking-widest">
+                                🔒 Rank #{idx + 1} Shrouded in Deep Mist — Awaiting Stage Revelation
                               </span>
                             </div>
                           </td>
@@ -554,27 +556,27 @@ export default function LeaderboardPage() {
                     return (
                       <tr
                         key={entry.participantId}
-                        className={`transition-colors hover:bg-white/[0.04] animate-fade-in ${
+                        className={`transition-colors hover:bg-[#1c160e]/40 animate-fade-in ${
                           idx === 0
-                            ? 'bg-amber-500/[0.06]'
+                            ? 'bg-[#d4af37]/[0.08]'
                             : idx === 1
-                            ? 'bg-gray-400/[0.03]'
+                            ? 'bg-[#a68a56]/[0.06]'
                             : idx === 2
-                            ? 'bg-amber-700/[0.03]'
+                            ? 'bg-[#8c6738]/[0.06]'
                             : ''
                         }`}
                       >
                         {/* Rank */}
                         <td className="py-4 px-6 font-bold">
                           <span
-                            className={`inline-flex h-8 w-8 items-center justify-center rounded-lg text-xs ${
+                            className={`inline-flex h-8 w-8 items-center justify-center rounded-lg text-xs font-cinzel ${
                               idx === 0
-                                ? 'bg-amber-400 text-black font-extrabold shadow-md shadow-amber-400/20'
+                                ? 'bg-[#d4af37] text-[#050504] font-extrabold shadow-md shadow-[#d4af37]/30'
                                 : idx === 1
-                                ? 'bg-gray-300 text-black font-bold'
+                                ? 'bg-[#a68a56] text-[#050504] font-bold'
                                 : idx === 2
-                                ? 'bg-amber-700 text-white font-bold'
-                                : 'text-gray-400 bg-white/5'
+                                ? 'bg-[#8c6738] text-[#ebe4d5] font-bold'
+                                : 'text-[#a68a56] bg-[#1c160e]/60 border border-[#a68a56]/20'
                             }`}
                           >
                             #{idx + 1}
@@ -583,27 +585,27 @@ export default function LeaderboardPage() {
 
                         {/* Candidate */}
                         <td className="py-4 px-6">
-                          <div className="font-bold text-white flex items-center gap-2">
+                          <div className="font-bold text-[#ebe4d5] flex items-center gap-2 font-cinzel">
                             <span>{entry.name}</span>
-                            {idx === 0 && <Crown className="h-4 w-4 text-amber-400 inline" />}
+                            {idx === 0 && <Crown className="h-4 w-4 text-[#d4af37] inline" />}
                           </div>
-                          <div className="text-xs text-gray-400">{entry.rollNumber} · {entry.terminalId}</div>
+                          <div className="text-xs text-[#a68a56] font-nautical-mono">{entry.rollNumber} · {entry.terminalId}</div>
                         </td>
 
                         {/* Total Score */}
                         <td className="py-4 px-6">
-                          <span className={`text-lg font-extrabold ${idx === 0 ? 'text-amber-400' : 'text-emerald-400'}`}>
+                          <span className={`text-lg font-extrabold ${idx === 0 ? 'text-[#d4af37]' : 'text-[#f3d38c]'}`}>
                             {entry.totalScore}
                           </span>
-                          <span className="text-xs text-gray-500 ml-1">pts</span>
+                          <span className="text-xs text-[#a68a56] ml-1">pts</span>
                         </td>
 
                         {/* Solved Ratio */}
                         <td className="py-4 px-6">
-                          <span className="text-emerald-300 font-semibold">{entry.questionsSolved}</span>
-                          <span className="text-gray-500"> / {totalQuestions}</span>
+                          <span className="text-[#f3d38c] font-semibold">{entry.questionsSolved}</span>
+                          <span className="text-[#a68a56]"> / {totalQuestions}</span>
                           {entry.partialSolved > 0 && (
-                            <span className="text-xs text-amber-400/80 ml-1.5">
+                            <span className="text-xs text-[#d4af37] ml-1.5">
                               (+{entry.partialSolved} partial)
                             </span>
                           )}
@@ -615,12 +617,12 @@ export default function LeaderboardPage() {
                             {Object.entries(entry.perQuestionScores).map(([qId, qData]) => (
                               <div
                                 key={qId}
-                                className="flex items-center gap-1 rounded bg-black/50 border border-white/10 px-2 py-0.5 text-xs"
+                                className="flex items-center gap-1 rounded bg-[#050504] border border-[#a68a56]/20 px-2 py-0.5 text-xs"
                                 title={`Score: ${qData.score} | Passed: ${qData.passedRatio} | Language: ${qData.language}`}
                               >
-                                <span className="text-gray-400 uppercase text-[10px]">{qData.language}</span>
-                                <span className="font-semibold text-emerald-300">{qData.score}p</span>
-                                <span className="text-[10px] text-gray-500">({qData.passedRatio})</span>
+                                <span className="text-[#a68a56] uppercase text-[10px]">{qData.language}</span>
+                                <span className="font-semibold text-[#f3d38c]">{qData.score}p</span>
+                                <span className="text-[10px] text-[#a68a56]">({qData.passedRatio})</span>
                               </div>
                             ))}
                           </div>
@@ -634,7 +636,7 @@ export default function LeaderboardPage() {
                               {entry.strikes}
                             </span>
                           ) : (
-                            <span className="text-xs text-gray-500">0</span>
+                            <span className="text-xs text-[#a68a56]">0</span>
                           )}
                         </td>
                       </tr>

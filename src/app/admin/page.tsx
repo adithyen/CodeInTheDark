@@ -28,19 +28,19 @@ const PHASE_LABELS: Record<ContestPhase, string> = {
 };
 
 const PHASE_COLORS: Record<ContestPhase, string> = {
-  setup:        'text-gray-400 border-gray-500/40 bg-gray-900/40',
-  registration: 'text-amber-300 border-amber-500/40 bg-amber-950/30',
-  active:       'text-emerald-300 border-emerald-500/40 bg-emerald-950/30',
-  paused:       'text-amber-400 border-amber-400/50 bg-amber-950/40',
-  ended:        'text-gray-400 border-gray-600/40 bg-gray-900/30',
-  reveal:       'text-purple-300 border-purple-500/40 bg-purple-950/30',
+  setup:        'text-[#a68a56] border-[#a68a56]/30 bg-[#1c160e]/50',
+  registration: 'text-[#f3d38c] border-[#d4af37]/40 bg-[#1c160e]',
+  active:       'text-[#d4af37] border-[#d4af37]/60 bg-[#1c160e]',
+  paused:       'text-[#f3d38c] border-[#f3d38c]/40 bg-[#1c160e]/80',
+  ended:        'text-[#a68a56] border-[#a68a56]/20 bg-[#050504]',
+  reveal:       'text-[#f3d38c] border-[#d4af37]/50 bg-[#1c160e]',
 };
 
 function PhaseBadge({ phase }: { phase: ContestPhase }) {
   return (
-    <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 font-mono text-[10px] font-semibold ${PHASE_COLORS[phase]}`}>
-      {(phase === 'active') && <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-ping" />}
-      {(phase === 'registration') && <span className="h-1.5 w-1.5 rounded-full bg-amber-400 animate-pulse" />}
+    <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 font-cinzel text-[10px] font-semibold ${PHASE_COLORS[phase]}`}>
+      {(phase === 'active') && <span className="h-1.5 w-1.5 rounded-full bg-[#d4af37] animate-ping" />}
+      {(phase === 'registration') && <span className="h-1.5 w-1.5 rounded-full bg-[#f3d38c] animate-pulse" />}
       {PHASE_LABELS[phase]}
     </span>
   );
@@ -434,19 +434,36 @@ export default function AdminPage() {
   // ────────────────────────────────────────────────────────────────────────────
   if (!isAuthenticated) {
     return (
-      <div className="flex flex-1 items-center justify-center p-4 bg-grid-cyber">
-        <div className="w-full max-w-sm rounded-2xl border border-white/10 bg-[#0c121d]/90 p-8 backdrop-blur-2xl shadow-2xl">
+      <div className="flex flex-1 items-center justify-center p-4 bg-grid-cyber bg-[#050504]">
+        <div className="w-full max-w-sm rounded-2xl border border-[#d4af37]/30 bg-[#0e0b07]/95 p-8 backdrop-blur-2xl shadow-[0_0_50px_rgba(0,0,0,0.9)]">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-400"><Lock className="h-5 w-5" /></div>
-            <div><h2 className="font-mono text-lg font-bold text-white">ADMIN COMMAND</h2><p className="text-xs text-gray-400">11:11 Chapter 2 Organizer Portal</p></div>
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#d4af37]/10 border border-[#d4af37]/30 text-[#d4af37]">
+              <Lock className="h-5 w-5" />
+            </div>
+            <div>
+              <h2 className="font-cinzel text-lg font-bold text-[#f3d38c]">ADMIRALTY COMMAND</h2>
+              <p className="font-nautical-mono text-xs text-[#a68a56]">11:11 Chapter 2 Sanctuary Bridge</p>
+            </div>
           </div>
-          {authError && <div className="mt-4 rounded-lg border border-red-500/40 bg-red-950/20 p-2.5 font-mono text-xs text-red-300">{authError}</div>}
+          {authError && <div className="mt-4 rounded-lg border border-red-500/40 bg-red-950/20 p-2.5 font-nautical-mono text-xs text-red-300">{authError}</div>}
           <form onSubmit={handleLogin} className="mt-6 space-y-4">
             <div>
-              <label className="block font-mono text-xs text-gray-400 mb-1">Master Organizer Passkey</label>
-              <input type="password" value={passkey} onChange={(e) => setPasskey(e.target.value)} placeholder="admin1111" required className="w-full rounded-xl border border-white/10 bg-black/40 px-3 py-2 font-mono text-sm text-white focus:border-amber-500 focus:outline-none" />
+              <label className="block font-cinzel text-xs text-[#a68a56] mb-1">Master Admiralty Key</label>
+              <input
+                type="password"
+                value={passkey}
+                onChange={(e) => setPasskey(e.target.value)}
+                placeholder="admin1111"
+                required
+                className="w-full rounded-xl border border-[#a68a56]/30 bg-[#050504] px-3 py-2 font-nautical-mono text-sm text-[#ebe4d5] focus:border-[#d4af37] focus:outline-none"
+              />
             </div>
-            <button type="submit" className="w-full rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 py-2.5 font-mono text-sm font-bold text-black hover:brightness-110">Authenticate Command Center</button>
+            <button
+              type="submit"
+              className="w-full rounded-xl bg-gradient-to-r from-[#d4af37] via-[#f3d38c] to-[#a68a56] py-2.5 font-cinzel text-sm font-bold tracking-wider text-[#050504] hover:brightness-110 shadow-[0_0_20px_rgba(212,175,55,0.25)] bouncy-btn"
+            >
+              Authenticate Command Bridge
+            </button>
           </form>
         </div>
       </div>
@@ -460,44 +477,44 @@ export default function AdminPage() {
   const isLive = phase === 'active' || phase === 'paused';
 
   return (
-    <div className="flex flex-1 flex-col bg-[#06090e]">
+    <div className="flex flex-1 flex-col bg-[#050504]">
       {/* ── Sticky Header ── */}
-      <div className="sticky top-0 z-40 border-b border-white/[0.08] bg-[#08090e]/95 backdrop-blur-xl">
+      <div className="sticky top-0 z-40 border-b border-[#a68a56]/20 bg-[#080604]/95 backdrop-blur-xl">
         <div className="mx-auto flex w-full max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
           {/* Logo */}
           <div className="flex items-center gap-3">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-500/10 border border-amber-500/30">
-              <ShieldCheck className="h-4 w-4 text-amber-400" />
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#d4af37]/10 border border-[#d4af37]/30">
+              <ShieldCheck className="h-4 w-4 text-[#d4af37]" />
             </div>
-            <span className="font-mono text-sm font-bold text-white hidden sm:inline">ADMIN COMMAND CENTER</span>
+            <span className="font-cinzel text-sm font-bold tracking-wider text-[#ebe4d5] hidden sm:inline">ADMIRALTY COMMAND BRIDGE</span>
           </div>
 
           {/* Session Selector */}
           <div className="relative flex-1 max-w-xs">
             <button
               onClick={() => setSelectorOpen(o => !o)}
-              className="flex w-full items-center justify-between gap-2 rounded-xl border border-white/10 bg-black/40 px-3 py-2 font-mono text-xs text-white hover:border-white/20 transition-all"
+              className="flex w-full items-center justify-between gap-2 rounded-xl border border-[#a68a56]/30 bg-[#050504] px-3 py-2 font-nautical-mono text-xs text-[#ebe4d5] hover:border-[#d4af37] transition-all bouncy-btn"
             >
               <div className="flex items-center gap-2 truncate">
-                <span className="truncate">{viewingSession?.label ?? 'No Session'}</span>
+                <span className="truncate">{viewingSession?.label ?? 'No Voyage Session'}</span>
                 {viewingSession && <PhaseBadge phase={viewingSession.phase} />}
               </div>
-              <ChevronDown className={`h-3.5 w-3.5 text-gray-400 shrink-0 transition-transform ${selectorOpen ? 'rotate-180' : ''}`} />
+              <ChevronDown className={`h-3.5 w-3.5 text-[#a68a56] shrink-0 transition-transform ${selectorOpen ? 'rotate-180' : ''}`} />
             </button>
 
             {selectorOpen && (
-              <div className="absolute left-0 top-full mt-1 z-50 w-full min-w-[280px] rounded-xl border border-white/10 bg-[#0c121d] shadow-2xl overflow-hidden">
+              <div className="absolute left-0 top-full mt-1 z-50 w-full min-w-[280px] rounded-xl border border-[#a68a56]/30 bg-[#0c0906] shadow-2xl overflow-hidden">
                 <div className="py-1">
                   {sessions.map(s => (
                     <button
                       key={s.id}
                       onClick={() => { setViewingSessionId(s.id); setSelectorOpen(false); }}
-                      className={`flex w-full items-center justify-between px-3 py-2.5 text-left transition-colors hover:bg-white/5 ${viewingSessionId === s.id ? 'bg-white/5' : ''}`}
+                      className={`flex w-full items-center justify-between px-3 py-2.5 text-left transition-colors hover:bg-[#1c160e] ${viewingSessionId === s.id ? 'bg-[#1c160e]' : ''}`}
                     >
                       <div>
-                        <div className="font-mono text-xs font-semibold text-white">{s.label}</div>
+                        <div className="font-cinzel text-xs font-semibold text-[#ebe4d5]">{s.label}</div>
                         {s.scheduled_at && (
-                          <div className="font-mono text-[10px] text-gray-500">
+                          <div className="font-nautical-mono text-[10px] text-[#a68a56]">
                             {new Date(s.scheduled_at).toLocaleString()}
                           </div>
                         )}
@@ -505,13 +522,13 @@ export default function AdminPage() {
                       <PhaseBadge phase={s.phase} />
                     </button>
                   ))}
-                  <div className="border-t border-white/[0.08] p-1.5">
+                  <div className="border-t border-[#a68a56]/20 p-1.5">
                     <button
                       onClick={() => { setShowNewSessionModal(true); setSelectorOpen(false); }}
-                      className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 font-mono text-xs text-emerald-400 hover:bg-emerald-950/30"
+                      className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 font-cinzel text-xs text-[#f3d38c] hover:bg-[#1c160e]"
                     >
-                      <PlusCircle className="h-3.5 w-3.5" />
-                      New Contest Session
+                      <PlusCircle className="h-3.5 w-3.5 text-[#d4af37]" />
+                      Initiate New Voyage Session
                     </button>
                   </div>
                 </div>
@@ -525,41 +542,41 @@ export default function AdminPage() {
             {isLive && (
               <button
                 onClick={() => contestAction('toggleReveal')}
-                className={`flex items-center gap-1.5 rounded-xl border px-3 py-1.5 font-mono text-[11px] font-semibold transition-all ${currentSession?.is_reveal_mode ? 'border-purple-400 bg-purple-400 text-black shadow-lg shadow-purple-400/30' : 'border-white/15 bg-white/5 text-purple-300 hover:bg-white/10'}`}
+                className={`flex items-center gap-1.5 rounded-xl border px-3 py-1.5 font-cinzel text-[11px] font-semibold transition-all bouncy-btn ${currentSession?.is_reveal_mode ? 'border-[#d4af37] bg-[#d4af37] text-[#050504] shadow-lg shadow-[#d4af37]/30' : 'border-[#a68a56]/30 bg-[#1c160e]/50 text-[#f3d38c] hover:border-[#d4af37]'}`}
               >
                 <Sparkles className="h-3.5 w-3.5" />
                 {currentSession?.is_reveal_mode ? 'Reveal Active' : 'Stage Reveal'}
               </button>
             )}
-            <button onClick={() => fetchAllData(passkey)} className="rounded-lg border border-white/10 bg-white/5 p-1.5 text-gray-400 hover:text-white" title="Refresh data">
+            <button onClick={() => fetchAllData(passkey)} className="rounded-lg border border-[#a68a56]/30 bg-[#1c160e]/50 p-1.5 text-[#a68a56] hover:text-[#f3d38c] hover:border-[#d4af37] bouncy-btn" title="Refresh log">
               <RefreshCw className="h-3.5 w-3.5" />
             </button>
           </div>
         </div>
 
         {/* Tabs */}
-        <div className="mx-auto flex w-full max-w-7xl overflow-x-auto border-t border-white/[0.06] px-4 sm:px-6">
+        <div className="mx-auto flex w-full max-w-7xl overflow-x-auto border-t border-[#a68a56]/15 px-4 sm:px-6">
           {(([
-            { id: 'setup',        icon: Settings,      label: 'Challenge Setup',     color: 'amber',   badge: '' },
-            { id: 'registration', icon: Radio,          label: 'Registration',        color: 'orange',  badge: '' },
-            { id: 'live',         icon: Zap,            label: 'Live Controls',       color: 'emerald', badge: isLive ? '●' : '' },
-            { id: 'participants', icon: Users,          label: `Participants (${participants.length})`, color: 'cyan',    badge: '' },
-            { id: 'submissions',  icon: Code2,          label: `Submissions (${submissions.length})`,  color: 'indigo',  badge: '' },
-            { id: 'history',      icon: History,        label: 'History',             color: 'violet',  badge: '' },
-            { id: 'plagiarism',   icon: GitCompare,     label: 'Plagiarism',          color: 'red',     badge: '' },
-          ] as Array<{ id: typeof activeTab; icon: React.ComponentType<{className?: string}>; label: string; color: string; badge: string }>)).map(({ id, icon: Icon, label, color, badge }) => (
+            { id: 'setup',        icon: Settings,      label: 'Trial Charter Setup',      badge: '' },
+            { id: 'registration', icon: Radio,          label: 'Voyage Muster',            badge: '' },
+            { id: 'live',         icon: Zap,            label: 'Command Deck',             badge: isLive ? '●' : '' },
+            { id: 'participants', icon: Users,          label: `Navigators (${participants.length})`, badge: '' },
+            { id: 'submissions',  icon: Code2,          label: `Scrolls (${submissions.length})`,    badge: '' },
+            { id: 'history',      icon: History,        label: 'Voyage Annals',            badge: '' },
+            { id: 'plagiarism',   icon: GitCompare,     label: 'Cipher Duplication',       badge: '' },
+          ] as Array<{ id: typeof activeTab; icon: React.ComponentType<{className?: string}>; label: string; badge: string }>)).map(({ id, icon: Icon, label, badge }) => (
             <button
               key={id}
               onClick={() => setActiveTab(id)}
-              className={`flex shrink-0 items-center gap-1.5 border-b-2 px-3 py-2.5 font-mono text-xs font-medium transition-all ${
+              className={`flex shrink-0 items-center gap-1.5 border-b-2 px-3.5 py-2.5 font-cinzel text-xs font-medium transition-all bouncy-btn ${
                 activeTab === id
-                  ? `border-${color}-400 text-${color}-400 font-bold`
-                  : 'border-transparent text-gray-400 hover:text-white'
+                  ? 'border-[#d4af37] text-[#f3d38c] font-bold shadow-[0_2px_10px_rgba(212,175,55,0.2)]'
+                  : 'border-transparent text-[#a68a56] hover:text-[#ebe4d5]'
               }`}
             >
               <Icon className="h-3.5 w-3.5" />
               <span>{label}</span>
-              {badge && <span className="animate-pulse text-emerald-400">{badge}</span>}
+              {badge && <span className="animate-pulse text-[#d4af37]">{badge}</span>}
             </button>
           ))}
         </div>
@@ -574,36 +591,36 @@ export default function AdminPage() {
         {activeTab === 'setup' && (
           <div className="space-y-6">
             {/* Session config card */}
-            <div className="rounded-2xl border border-white/10 bg-[#0a0f18] p-6">
-              <h3 className="font-mono text-sm font-bold text-amber-400 flex items-center gap-2">
-                <Settings className="h-4 w-4" /> Session Configuration
+            <div className="rounded-2xl border border-[#a68a56]/25 bg-[#090704] p-6 shadow-xl">
+              <h3 className="font-cinzel text-sm font-bold text-[#f3d38c] flex items-center gap-2">
+                <Settings className="h-4 w-4 text-[#d4af37]" /> Voyage Session Configuration
                 {viewingSession && <PhaseBadge phase={viewingSession.phase} />}
               </h3>
               <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 <div>
-                  <label className="block font-mono text-xs text-gray-400 mb-1">Challenge Duration (min)</label>
+                  <label className="block font-cinzel text-xs text-[#a68a56] mb-1">Challenge Duration (min)</label>
                   <div className="flex gap-2">
                     <input type="number" value={challengeDurationMin} onChange={e => setChallengeDurationMin(+e.target.value)} min={1} max={180}
-                      className="w-full rounded-lg border border-white/10 bg-black/40 px-3 py-1.5 font-mono text-xs text-white focus:border-amber-500 focus:outline-none" />
+                      className="w-full rounded-lg border border-[#a68a56]/30 bg-[#050504] px-3 py-1.5 font-nautical-mono text-xs text-[#ebe4d5] focus:border-[#d4af37] focus:outline-none" />
                     <button onClick={() => contestAction('updateConfig', { durationMinutes: challengeDurationMin })}
-                      className="rounded-lg bg-amber-500/20 border border-amber-500/40 px-3 py-1.5 font-mono text-xs text-amber-300 hover:bg-amber-500/30">Save</button>
+                      className="rounded-lg bg-[#1c160e] border border-[#d4af37]/40 px-3 py-1.5 font-cinzel text-xs text-[#f3d38c] hover:border-[#d4af37] bouncy-btn">Save</button>
                   </div>
                 </div>
                 <div>
-                  <label className="block font-mono text-xs text-gray-400 mb-1">Max Participants</label>
+                  <label className="block font-cinzel text-xs text-[#a68a56] mb-1">Max Navigators</label>
                   <div className="flex gap-2">
                     <input type="number" value={maxParticipants} onChange={e => setMaxParticipants(+e.target.value)} min={1}
-                      className="w-full rounded-lg border border-white/10 bg-black/40 px-3 py-1.5 font-mono text-xs text-white focus:border-amber-500 focus:outline-none" />
+                      className="w-full rounded-lg border border-[#a68a56]/30 bg-[#050504] px-3 py-1.5 font-nautical-mono text-xs text-[#ebe4d5] focus:border-[#d4af37] focus:outline-none" />
                     <button onClick={() => contestAction('updateConfig', { maxParticipants })}
-                      className="rounded-lg bg-amber-500/20 border border-amber-500/40 px-3 py-1.5 font-mono text-xs text-amber-300 hover:bg-amber-500/30">Save</button>
+                      className="rounded-lg bg-[#1c160e] border border-[#d4af37]/40 px-3 py-1.5 font-cinzel text-xs text-[#f3d38c] hover:border-[#d4af37] bouncy-btn">Save</button>
                   </div>
                 </div>
                 <div className="flex items-end">
                   <div className="flex items-center gap-3">
-                    <span className="font-mono text-xs text-gray-400">Allow Late Join</span>
+                    <span className="font-cinzel text-xs text-[#a68a56]">Allow Late Join</span>
                     <button
                       onClick={() => contestAction('updateConfig', { allowLateJoin: !currentSession?.allow_late_join })}
-                      className={`relative h-5 w-9 rounded-full transition-colors ${currentSession?.allow_late_join ? 'bg-emerald-500' : 'bg-gray-700'}`}
+                      className={`relative h-5 w-9 rounded-full transition-colors cursor-pointer ${currentSession?.allow_late_join ? 'bg-[#d4af37]' : 'bg-[#2a2218]'}`}
                     >
                       <span className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform ${currentSession?.allow_late_join ? 'translate-x-4' : 'translate-x-0.5'}`} />
                     </button>
@@ -613,30 +630,30 @@ export default function AdminPage() {
             </div>
 
             {/* Round Presets */}
-            <div className="rounded-2xl border border-white/10 bg-[#0a0f18] p-6">
+            <div className="rounded-2xl border border-[#a68a56]/25 bg-[#090704] p-6 shadow-xl">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
-                  <h3 className="font-mono text-sm font-bold text-amber-400 flex items-center gap-2"><Layers className="h-4 w-4" /> Round Presets</h3>
-                  <p className="mt-1 text-xs text-gray-400">1-click load problem sets or import custom JSON</p>
+                  <h3 className="font-cinzel text-sm font-bold text-[#f3d38c] flex items-center gap-2"><Layers className="h-4 w-4 text-[#d4af37]" /> Trial Presets</h3>
+                  <p className="mt-1 font-nautical-mono text-xs text-[#a68a56]">1-click load preconfigured trial scrolls or import custom parchment JSON</p>
                 </div>
                 <div className="flex gap-2">
-                  <button onClick={exportQuestionsJSON} className="flex items-center gap-1.5 rounded-xl border border-white/15 bg-white/5 px-3 py-2 font-mono text-xs text-gray-300 hover:bg-white/10">
-                    <Download className="h-3.5 w-3.5" /> Export JSON
+                  <button onClick={exportQuestionsJSON} className="flex items-center gap-1.5 rounded-xl border border-[#a68a56]/30 bg-[#1c160e]/50 px-3 py-2 font-cinzel text-xs text-[#ebe4d5] hover:border-[#d4af37] bouncy-btn">
+                    <Download className="h-3.5 w-3.5 text-[#d4af37]" /> Export JSON
                   </button>
-                  <button onClick={() => setShowImportJsonModal(true)} className="flex items-center gap-1.5 rounded-xl border border-cyan-500/40 bg-cyan-950/30 px-3 py-2 font-mono text-xs text-cyan-300 hover:bg-cyan-900/40">
-                    <Upload className="h-3.5 w-3.5" /> Import JSON
+                  <button onClick={() => setShowImportJsonModal(true)} className="flex items-center gap-1.5 rounded-xl border border-[#d4af37]/40 bg-[#1c160e] px-3 py-2 font-cinzel text-xs text-[#f3d38c] hover:border-[#d4af37] bouncy-btn">
+                    <Upload className="h-3.5 w-3.5 text-[#d4af37]" /> Import JSON
                   </button>
                 </div>
               </div>
               <div className="mt-4 grid gap-3 sm:grid-cols-3">
                 {ROUND_PRESETS.map(preset => (
-                  <div key={preset.id} className="rounded-xl border border-white/10 bg-black/40 p-4 hover:border-amber-500/40 transition-all group">
+                  <div key={preset.id} className="rounded-xl border border-[#a68a56]/20 bg-[#050504]/70 p-4 hover:border-[#d4af37] transition-all group">
                     <div className="flex items-center justify-between">
-                      <span className="font-mono text-xs font-bold text-white group-hover:text-amber-400 transition-colors">{preset.name.split(':')[0]}</span>
-                      <span className="rounded bg-white/10 px-2 py-0.5 font-mono text-[10px] text-gray-400">{preset.durationMinutes}m · {preset.questions.length} Qs</span>
+                      <span className="font-cinzel text-xs font-bold text-[#ebe4d5] group-hover:text-[#f3d38c] transition-colors">{preset.name.split(':')[0]}</span>
+                      <span className="rounded border border-[#a68a56]/20 bg-[#1c160e] px-2 py-0.5 font-nautical-mono text-[10px] text-[#a68a56]">{preset.durationMinutes}m · {preset.questions.length} Scrolls</span>
                     </div>
-                    <p className="mt-1 text-[11px] text-gray-400 line-clamp-2">{preset.description}</p>
-                    <button onClick={() => handleLoadPreset(preset)} className="mt-3 w-full rounded-lg border border-amber-500/30 bg-amber-950/20 py-1.5 font-mono text-xs text-amber-300 hover:bg-amber-500 hover:text-black transition-all">
+                    <p className="mt-1 text-[11px] text-[#ebe4d5]/70 line-clamp-2">{preset.description}</p>
+                    <button onClick={() => handleLoadPreset(preset)} className="mt-3 w-full rounded-lg border border-[#d4af37]/30 bg-[#1c160e] py-1.5 font-cinzel text-xs font-semibold text-[#f3d38c] hover:bg-[#d4af37] hover:text-[#050504] transition-all bouncy-btn">
                       Load Problem Set
                     </button>
                   </div>
@@ -645,13 +662,13 @@ export default function AdminPage() {
             </div>
 
             {/* LeetCode importer */}
-            <div className="rounded-2xl border border-cyan-500/30 bg-gradient-to-r from-cyan-950/20 to-[#0a0f18] p-6">
-              <h3 className="font-mono text-sm font-bold text-cyan-300 flex items-center gap-2"><ExternalLink className="h-4 w-4" /> LeetCode Importer</h3>
+            <div className="rounded-2xl border border-[#a68a56]/25 bg-gradient-to-r from-[#1c160e] to-[#090704] p-6 shadow-xl">
+              <h3 className="font-cinzel text-sm font-bold text-[#f3d38c] flex items-center gap-2"><ExternalLink className="h-4 w-4 text-[#d4af37]" /> Remote Scroll Ingestion (LeetCode)</h3>
               <div className="mt-3 flex gap-2">
                 <input type="text" value={leetcodeSlug} onChange={e => setLeetcodeSlug(e.target.value)} placeholder="e.g. two-sum" onKeyDown={e => e.key === 'Enter' && handleImportLeetCode()}
-                  className="flex-1 max-w-xs rounded-xl border border-white/10 bg-black/50 px-3 py-2 font-mono text-xs text-white focus:border-cyan-400 focus:outline-none" />
-                <button onClick={handleImportLeetCode} disabled={importLoading} className="rounded-xl bg-cyan-500 px-4 py-2 font-mono text-xs font-bold text-black hover:bg-cyan-400 disabled:opacity-50">
-                  {importLoading ? 'Importing...' : 'Fetch'}
+                  className="flex-1 max-w-xs rounded-xl border border-[#a68a56]/30 bg-[#050504] px-3 py-2 font-nautical-mono text-xs text-[#ebe4d5] focus:border-[#d4af37] focus:outline-none" />
+                <button onClick={handleImportLeetCode} disabled={importLoading} className="rounded-xl bg-gradient-to-r from-[#d4af37] to-[#f3d38c] px-4 py-2 font-cinzel text-xs font-bold text-[#050504] hover:brightness-110 disabled:opacity-50 bouncy-btn">
+                  {importLoading ? 'Ingesting...' : 'Fetch'}
                 </button>
               </div>
             </div>
@@ -659,43 +676,43 @@ export default function AdminPage() {
             {/* Questions list */}
             <div>
               <div className="flex items-center justify-between mb-4">
-                <h3 className="font-mono text-lg font-bold text-white">
-                  Questions for: <span className="text-amber-400">{viewingSession?.label}</span>
-                  <span className="ml-2 text-sm font-normal text-gray-500">({questions.length} problems)</span>
+                <h3 className="font-cinzel text-lg font-bold text-[#ebe4d5]">
+                  Scrolls for: <span className="text-[#f3d38c]">{viewingSession?.label}</span>
+                  <span className="ml-2 font-nautical-mono text-sm font-normal text-[#a68a56]">({questions.length} problems)</span>
                 </h3>
                 <button onClick={() => { setEditingQuestion({ title: '', category: 'Algorithms', difficulty: 'Medium', points: 400, scenario: '', inputFormat: '', outputFormat: '', constraints: '', starterTemplates: { c: '', python: '', java: '' }, testCases: [{ id: 'tc-1', input: '', expectedOutput: '', isHidden: false }] }); setShowQuestionModal(true); }}
-                  className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 px-4 py-2 font-mono text-xs font-bold text-black hover:brightness-110">
-                  <Plus className="h-4 w-4" /> Create Question
+                  className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-[#d4af37] via-[#f3d38c] to-[#a68a56] px-4 py-2 font-cinzel text-xs font-bold text-[#050504] hover:brightness-110 bouncy-btn shadow-[0_0_15px_rgba(212,175,55,0.2)]">
+                  <Plus className="h-4 w-4" /> Inscribe New Scroll
                 </button>
               </div>
 
               {questions.length === 0 ? (
-                <div className="rounded-2xl border border-dashed border-white/10 bg-[#0a0f18]/50 p-12 text-center text-gray-500 font-mono text-sm">
-                  No questions yet. Import a preset, JSON, or create one manually.
+                <div className="rounded-2xl border border-dashed border-[#a68a56]/30 bg-[#090704]/50 p-12 text-center text-[#a68a56] font-cinzel text-sm">
+                  No scrolls found. Load a preset or inscribe a new question above.
                 </div>
               ) : (
                 <div className="grid gap-4 md:grid-cols-2">
                   {questions.map((q, idx) => (
-                    <div key={q.id} className="rounded-2xl border border-white/10 bg-[#0a0f18] p-5 space-y-3">
+                    <div key={q.id} className="rounded-2xl border border-[#a68a56]/25 bg-[#090704] p-5 space-y-3 shadow-lg">
                       <div className="flex items-start justify-between">
                         <div>
                           <div className="flex items-center gap-2">
-                            <span className="font-mono font-bold text-sm text-emerald-400">Q{idx + 1}</span>
-                            <span className="rounded bg-white/10 px-2 py-0.5 font-mono text-[10px] text-gray-300">{q.difficulty}</span>
-                            <span className="font-mono text-xs text-amber-300 font-semibold">{q.points} pts</span>
+                            <span className="font-cinzel font-bold text-sm text-[#f3d38c]">Q{idx + 1}</span>
+                            <span className="rounded border border-[#a68a56]/20 bg-[#1c160e] px-2 py-0.5 font-cinzel text-[10px] text-[#ebe4d5]">{q.difficulty}</span>
+                            <span className="font-nautical-mono text-xs text-[#d4af37] font-semibold">{q.points} pts</span>
                           </div>
-                          <h4 className="mt-1 font-mono text-base font-bold text-white">{q.title}</h4>
-                          <p className="font-mono text-xs text-gray-500">{q.category}</p>
+                          <h4 className="mt-1 font-cinzel text-base font-bold text-[#ebe4d5]">{q.title}</h4>
+                          <p className="font-nautical-mono text-xs text-[#a68a56]">{q.category}</p>
                         </div>
                         <div className="flex items-center gap-1.5">
-                          <button onClick={() => { setEditingQuestion(q); setShowQuestionModal(true); }} className="rounded p-1.5 text-gray-400 hover:bg-white/10 hover:text-white" title="Edit"><FileCode className="h-4 w-4" /></button>
+                          <button onClick={() => { setEditingQuestion(q); setShowQuestionModal(true); }} className="rounded p-1.5 text-[#a68a56] hover:bg-[#1c160e] hover:text-[#f3d38c]" title="Edit"><FileCode className="h-4 w-4" /></button>
                           <button onClick={() => handleDeleteQuestion(q.id)} className="rounded p-1.5 text-red-400 hover:bg-red-950/40" title="Delete"><Trash2 className="h-4 w-4" /></button>
                         </div>
                       </div>
-                      <p className="line-clamp-2 text-xs text-gray-400">{q.scenario}</p>
-                      <div className="border-t border-white/[0.08] pt-2 flex justify-between font-mono text-xs text-gray-500">
-                        <span>{q.testCases.length} test cases ({q.testCases.filter(t => t.isHidden).length} hidden)</span>
-                        <span className="text-cyan-400">C · Python · Java</span>
+                      <p className="line-clamp-2 text-xs text-[#ebe4d5]/70">{q.scenario}</p>
+                      <div className="border-t border-[#a68a56]/15 pt-2 flex justify-between font-nautical-mono text-xs text-[#a68a56]">
+                        <span>{q.testCases.length} trials ({q.testCases.filter(t => t.isHidden).length} hidden)</span>
+                        <span className="text-[#f3d38c]">C · Python · Java</span>
                       </div>
                     </div>
                   ))}
@@ -710,32 +727,32 @@ export default function AdminPage() {
         ═══════════════════════════════════════════════════════════════════ */}
         {activeTab === 'registration' && (
           <div className="space-y-6">
-            <div className="rounded-2xl border border-white/10 bg-[#0a0f18] p-6">
-              <h3 className="font-mono text-sm font-bold text-orange-400 flex items-center gap-2">
-                <Radio className="h-4 w-4" /> Registration Window Control
+            <div className="rounded-2xl border border-[#a68a56]/25 bg-[#090704] p-6 shadow-xl">
+              <h3 className="font-cinzel text-sm font-bold text-[#f3d38c] flex items-center gap-2">
+                <Radio className="h-4 w-4 text-[#d4af37]" /> Voyage Muster Window Control
               </h3>
 
               {phase === 'setup' && (
                 <div className="mt-6 space-y-4">
                   <div className="grid gap-4 sm:grid-cols-2">
                     <div>
-                      <label className="block font-mono text-xs text-gray-400 mb-1">Registration Duration (minutes)</label>
+                      <label className="block font-cinzel text-xs text-[#a68a56] mb-1">Muster Duration (minutes)</label>
                       <input type="number" value={regDurationMin} onChange={e => setRegDurationMin(+e.target.value)} min={1} max={30}
-                        className="w-full rounded-xl border border-white/10 bg-black/40 px-3 py-2 font-mono text-sm text-white focus:border-orange-500 focus:outline-none" />
+                        className="w-full rounded-xl border border-[#a68a56]/30 bg-[#050504] px-3 py-2 font-nautical-mono text-sm text-[#ebe4d5] focus:border-[#d4af37] focus:outline-none" />
                     </div>
                     <div className="flex items-end">
                       <div className="flex items-center gap-3">
-                        <span className="font-mono text-xs text-gray-400">Auto-Start Challenge When Closed</span>
+                        <span className="font-cinzel text-xs text-[#a68a56]">Auto-Start Voyage Upon Muster Close</span>
                         <button onClick={() => setAutoStartReg(v => !v)}
-                          className={`relative h-5 w-9 rounded-full transition-colors ${autoStartReg ? 'bg-emerald-500' : 'bg-gray-700'}`}>
+                          className={`relative h-5 w-9 rounded-full transition-colors cursor-pointer ${autoStartReg ? 'bg-[#d4af37]' : 'bg-[#2a2218]'}`}>
                           <span className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform ${autoStartReg ? 'translate-x-4' : 'translate-x-0.5'}`} />
                         </button>
                       </div>
                     </div>
                   </div>
                   <button onClick={() => contestAction('openRegistration', { durationMinutes: regDurationMin, autoStart: autoStartReg })}
-                    className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 px-6 py-3 font-mono text-sm font-bold text-black hover:brightness-110 active:scale-95">
-                    <Zap className="h-4 w-4 fill-black" /> Open Registration Now
+                    className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#d4af37] via-[#f3d38c] to-[#a68a56] px-6 py-3 font-cinzel text-sm font-bold text-[#050504] hover:brightness-110 active:scale-95 shadow-[0_0_20px_rgba(212,175,55,0.25)] bouncy-btn">
+                    <Zap className="h-4 w-4 fill-[#050504]" /> Open Muster Portal Now
                   </button>
                 </div>
               )}
@@ -743,29 +760,29 @@ export default function AdminPage() {
               {phase === 'registration' && (
                 <div className="mt-6 space-y-6">
                   {/* Live countdown */}
-                  <div className="flex items-center justify-between rounded-2xl border border-amber-500/30 bg-amber-950/20 p-5">
+                  <div className="flex items-center justify-between rounded-2xl border border-[#d4af37]/40 bg-[#1c160e] p-5 shadow-lg">
                     <div>
-                      <div className="font-mono text-xs text-amber-300 mb-1">Registration closes in</div>
-                      <div className="font-mono text-4xl font-black tabular-nums text-amber-400">{regCountdown}</div>
+                      <div className="font-cinzel text-xs text-[#a68a56] mb-1">Muster Window Closes In</div>
+                      <div className="font-nautical-mono text-4xl font-black tabular-nums text-[#d4af37]">{regCountdown}</div>
                     </div>
                     <div className="text-right">
-                      <div className="font-mono text-xs text-gray-400 mb-1">Registered</div>
-                      <div className="font-mono text-3xl font-bold text-white">{participants.length}</div>
-                      <div className="font-mono text-xs text-gray-500">/ {currentSession?.max_participants ?? 200}</div>
+                      <div className="font-cinzel text-xs text-[#a68a56] mb-1">Enrolled Navigators</div>
+                      <div className="font-nautical-mono text-3xl font-bold text-[#ebe4d5]">{participants.length}</div>
+                      <div className="font-nautical-mono text-xs text-[#a68a56]">/ {currentSession?.max_participants ?? 200}</div>
                     </div>
                   </div>
 
                   {/* Auto start live toggle button */}
-                  <div className="flex items-center justify-between rounded-xl border border-white/10 bg-black/30 p-3">
-                    <div className="flex items-center gap-2 font-mono text-xs">
-                      <CheckCircle2 className={`h-4 w-4 ${currentSession?.auto_start_on_reg_close ? 'text-emerald-400' : 'text-gray-500'}`} />
-                      <span className={currentSession?.auto_start_on_reg_close ? 'text-emerald-300 font-semibold' : 'text-gray-400'}>
-                        Auto-Start on Timeout: {currentSession?.auto_start_on_reg_close ? 'ENABLED (Starts automatically)' : 'DISABLED (Manual start required)'}
+                  <div className="flex items-center justify-between rounded-xl border border-[#a68a56]/20 bg-[#050504] p-3">
+                    <div className="flex items-center gap-2 font-nautical-mono text-xs">
+                      <CheckCircle2 className={`h-4 w-4 ${currentSession?.auto_start_on_reg_close ? 'text-[#d4af37]' : 'text-[#6b5535]'}`} />
+                      <span className={currentSession?.auto_start_on_reg_close ? 'text-[#f3d38c] font-semibold' : 'text-[#a68a56]'}>
+                        Auto-Start Voyage on Timeout: {currentSession?.auto_start_on_reg_close ? 'ENABLED (Immediate Launch)' : 'DISABLED (Manual Deck Command)'}
                       </span>
                     </div>
                     <button
                       onClick={() => contestAction('updateConfig', { autoStartOnRegClose: !currentSession?.auto_start_on_reg_close })}
-                      className={`relative h-6 w-11 rounded-full transition-colors cursor-pointer ${currentSession?.auto_start_on_reg_close ? 'bg-emerald-500' : 'bg-gray-700'}`}
+                      className={`relative h-6 w-11 rounded-full transition-colors cursor-pointer ${currentSession?.auto_start_on_reg_close ? 'bg-[#d4af37]' : 'bg-[#2a2218]'}`}
                       title="Click to toggle auto-start behavior"
                     >
                       <span className={`absolute top-1 h-4 w-4 rounded-full bg-white shadow transition-transform ${currentSession?.auto_start_on_reg_close ? 'translate-x-6' : 'translate-x-1'}`} />
@@ -774,42 +791,42 @@ export default function AdminPage() {
 
                   {/* Extend buttons */}
                   <div className="flex flex-wrap gap-2">
-                    <button onClick={() => contestAction('extendRegistration', { extraMinutes: 1 })} className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 font-mono text-xs text-gray-300 hover:bg-white/10">+1 min</button>
-                    <button onClick={() => contestAction('extendRegistration', { extraMinutes: 3 })} className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 font-mono text-xs text-gray-300 hover:bg-white/10">+3 min</button>
-                    <button onClick={() => contestAction('extendRegistration', { extraMinutes: 5 })} className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 font-mono text-xs text-gray-300 hover:bg-white/10">+5 min</button>
-                    <button onClick={() => { if (confirm('Close registration now?')) contestAction('closeRegistration'); }} className="rounded-xl border border-red-500/40 bg-red-950/30 px-4 py-2 font-mono text-xs text-red-300 hover:bg-red-900/40">Close Now</button>
+                    <button onClick={() => contestAction('extendRegistration', { extraMinutes: 1 })} className="rounded-xl border border-[#a68a56]/30 bg-[#1c160e]/50 px-4 py-2 font-cinzel text-xs text-[#ebe4d5] hover:border-[#d4af37] bouncy-btn">+1 min</button>
+                    <button onClick={() => contestAction('extendRegistration', { extraMinutes: 3 })} className="rounded-xl border border-[#a68a56]/30 bg-[#1c160e]/50 px-4 py-2 font-cinzel text-xs text-[#ebe4d5] hover:border-[#d4af37] bouncy-btn">+3 min</button>
+                    <button onClick={() => contestAction('extendRegistration', { extraMinutes: 5 })} className="rounded-xl border border-[#a68a56]/30 bg-[#1c160e]/50 px-4 py-2 font-cinzel text-xs text-[#ebe4d5] hover:border-[#d4af37] bouncy-btn">+5 min</button>
+                    <button onClick={() => { if (confirm('Close registration now?')) contestAction('closeRegistration'); }} className="rounded-xl border border-red-500/40 bg-red-950/30 px-4 py-2 font-cinzel text-xs text-red-300 hover:bg-red-900/40 bouncy-btn">Close Now</button>
                     <button onClick={() => { if (confirm('Start challenge immediately?')) contestAction('startChallenge', { durationMinutes: challengeDurationMin }); }}
-                      className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 px-4 py-2 font-mono text-xs font-bold text-black hover:brightness-110">
-                      <Play className="h-3.5 w-3.5 fill-black" /> Start Challenge Now
+                      className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#d4af37] via-[#f3d38c] to-[#a68a56] px-4 py-2 font-cinzel text-xs font-bold text-[#050504] hover:brightness-110 shadow-[0_0_15px_rgba(212,175,55,0.25)] bouncy-btn">
+                      <Play className="h-3.5 w-3.5 fill-[#050504]" /> Launch Voyage Now
                     </button>
                   </div>
                 </div>
               )}
 
               {(phase === 'active' || phase === 'paused' || phase === 'ended' || phase === 'reveal') && (
-                <div className="mt-4 rounded-xl border border-white/10 bg-black/30 p-4 font-mono text-sm text-gray-400 text-center">
-                  Registration window is closed. Contest is in <span className="text-white font-semibold">{PHASE_LABELS[phase]}</span> phase.
+                <div className="mt-4 rounded-xl border border-[#a68a56]/20 bg-[#050504] p-4 font-cinzel text-sm text-[#a68a56] text-center">
+                  Muster window is closed. Voyage is in <span className="text-[#f3d38c] font-semibold">{PHASE_LABELS[phase]}</span> phase.
                 </div>
               )}
             </div>
 
             {/* Live registered list */}
             {(phase === 'setup' || phase === 'registration') && participants.length > 0 && (
-              <div className="rounded-2xl border border-white/10 bg-[#0a0f18] overflow-hidden">
-                <div className="px-5 py-3 border-b border-white/[0.08] font-mono text-xs text-gray-400 uppercase tracking-wider">
-                  Registered Participants ({participants.length})
+              <div className="rounded-2xl border border-[#a68a56]/25 bg-[#090704] overflow-hidden shadow-xl">
+                <div className="px-5 py-3 border-b border-[#a68a56]/20 bg-[#140f0a] font-cinzel text-xs text-[#d4af37] uppercase tracking-wider">
+                  Enrolled Navigators ({participants.length})
                 </div>
-                <div className="divide-y divide-white/[0.05]">
+                <div className="divide-y divide-[#a68a56]/15">
                   {participants.map((p, i) => (
-                    <div key={p.id} className="flex items-center justify-between px-5 py-2.5 font-mono text-xs">
+                    <div key={p.id} className="flex items-center justify-between px-5 py-2.5 font-nautical-mono text-xs">
                       <div className="flex items-center gap-3">
-                        <span className="text-gray-500 w-6">{i + 1}.</span>
+                        <span className="text-[#a68a56] w-6">{i + 1}.</span>
                         <div>
-                          <div className="font-semibold text-white">{p.name}</div>
-                          <div className="text-gray-500">{p.rollNumber} · {p.terminalId}</div>
+                          <div className="font-semibold text-[#ebe4d5]">{p.name}</div>
+                          <div className="text-[#a68a56]">{p.rollNumber} · {p.terminalId}</div>
                         </div>
                       </div>
-                      <span className="text-gray-500">{new Date(p.registeredAt).toLocaleTimeString()}</span>
+                      <span className="text-[#a68a56]">{new Date(p.registeredAt).toLocaleTimeString()}</span>
                     </div>
                   ))}
                 </div>
@@ -824,32 +841,32 @@ export default function AdminPage() {
         {activeTab === 'live' && (
           <div className="space-y-6">
             {!isLive && phase !== 'ended' && phase !== 'reveal' ? (
-              <div className="rounded-2xl border border-white/10 bg-[#0a0f18] p-10 text-center">
-                <Zap className="h-10 w-10 text-gray-600 mx-auto mb-3" />
-                <p className="font-mono text-sm text-gray-400">Live controls are only available during an active or paused challenge.</p>
-                <p className="font-mono text-xs text-gray-500 mt-1">Current phase: <span className="text-white">{PHASE_LABELS[phase]}</span></p>
+              <div className="rounded-2xl border border-[#a68a56]/25 bg-[#090704] p-10 text-center shadow-xl">
+                <Zap className="h-10 w-10 text-[#6b5535] mx-auto mb-3" />
+                <p className="font-cinzel text-sm text-[#ebe4d5]">Live controls are only engaged during an active or paused voyage.</p>
+                <p className="font-nautical-mono text-xs text-[#a68a56] mt-1">Current state: <span className="text-[#f3d38c]">{PHASE_LABELS[phase]}</span></p>
                 {(phase === 'setup' || phase === 'registration') && (
                   <button onClick={() => contestAction('startChallenge', { durationMinutes: challengeDurationMin })}
-                    className="mt-4 flex items-center gap-2 mx-auto rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 px-5 py-2.5 font-mono text-sm font-bold text-black hover:brightness-110">
-                    <Play className="h-4 w-4 fill-black" /> Start Challenge Directly
+                    className="mt-4 flex items-center gap-2 mx-auto rounded-xl bg-gradient-to-r from-[#d4af37] via-[#f3d38c] to-[#a68a56] px-5 py-2.5 font-cinzel text-sm font-bold text-[#050504] hover:brightness-110 shadow-[0_0_20px_rgba(212,175,55,0.25)] bouncy-btn">
+                    <Play className="h-4 w-4 fill-[#050504]" /> Launch Voyage Directly
                   </button>
                 )}
               </div>
             ) : (
               <>
                 {/* Challenge status card */}
-                <div className="rounded-2xl border border-white/10 bg-[#0a0f18] p-6">
+                <div className="rounded-2xl border border-[#a68a56]/25 bg-[#090704] p-6 shadow-xl">
                   <div className="flex flex-wrap items-center justify-between gap-4">
                     <div>
                       <PhaseBadge phase={phase} />
                       {currentSession?.challenge_starts_at && (
-                        <p className="mt-1 font-mono text-xs text-gray-400">
-                          Started: {new Date(currentSession.challenge_starts_at).toLocaleTimeString()} ·
-                          Ends: {currentSession.challenge_ends_at ? new Date(currentSession.challenge_ends_at).toLocaleTimeString() : 'TBD'}
+                        <p className="mt-1 font-nautical-mono text-xs text-[#a68a56]">
+                          Commenced: {new Date(currentSession.challenge_starts_at).toLocaleTimeString()} ·
+                          Concludes: {currentSession.challenge_ends_at ? new Date(currentSession.challenge_ends_at).toLocaleTimeString() : 'TBD'}
                         </p>
                       )}
                     </div>
-                    <div className="font-mono text-5xl font-black tabular-nums text-emerald-400">
+                    <div className="font-nautical-mono text-5xl font-black tabular-nums text-[#d4af37]">
                       {challengeCountdown || '00:00'}
                     </div>
                   </div>
@@ -860,54 +877,54 @@ export default function AdminPage() {
                     const elapsed = Date.now() - currentSession.challenge_starts_at;
                     const pct = Math.min(100, Math.max(0, (elapsed / total) * 100));
                     return (
-                      <div className="mt-4 h-2 rounded-full bg-white/5 overflow-hidden">
-                        <div className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-teal-500 transition-all duration-1000" style={{ width: `${pct}%` }} />
+                      <div className="mt-4 h-2 rounded-full bg-[#1c160e] overflow-hidden border border-[#a68a56]/20">
+                        <div className="h-full rounded-full bg-gradient-to-r from-[#d4af37] to-[#f3d38c] transition-all duration-1000" style={{ width: `${pct}%` }} />
                       </div>
                     );
                   })()}
 
                   <div className="mt-5 flex flex-wrap gap-3">
                     {phase === 'active' && (
-                      <button onClick={() => contestAction('pause')} className="flex items-center gap-2 rounded-xl border border-amber-500/40 bg-amber-950/30 px-4 py-2.5 font-mono text-xs font-semibold text-amber-300 hover:bg-amber-900/40">
-                        <Pause className="h-4 w-4" /> Pause Challenge
+                      <button onClick={() => contestAction('pause')} className="flex items-center gap-2 rounded-xl border border-[#d4af37]/40 bg-[#1c160e] px-4 py-2.5 font-cinzel text-xs font-semibold text-[#f3d38c] hover:border-[#d4af37] bouncy-btn">
+                        <Pause className="h-4 w-4" /> Pause Voyage
                       </button>
                     )}
                     {phase === 'paused' && (
-                      <button onClick={() => contestAction('resume')} className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 px-4 py-2.5 font-mono text-xs font-bold text-black hover:brightness-110">
-                        <Play className="h-4 w-4 fill-black" /> Resume
+                      <button onClick={() => contestAction('resume')} className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#d4af37] via-[#f3d38c] to-[#a68a56] px-4 py-2.5 font-cinzel text-xs font-bold text-[#050504] hover:brightness-110 bouncy-btn">
+                        <Play className="h-4 w-4 fill-[#050504]" /> Resume Voyage
                       </button>
                     )}
-                    <button onClick={() => contestAction('extend', { extraMinutes: 1 })} className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 font-mono text-xs text-gray-300 hover:bg-white/10">+1 min</button>
-                    <button onClick={() => contestAction('extend', { extraMinutes: 5 })} className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 font-mono text-xs text-gray-300 hover:bg-white/10">+5 min</button>
-                    <button onClick={() => contestAction('extend', { extraMinutes: 10 })} className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 font-mono text-xs text-gray-300 hover:bg-white/10">+10 min</button>
+                    <button onClick={() => contestAction('extend', { extraMinutes: 1 })} className="rounded-xl border border-[#a68a56]/30 bg-[#1c160e]/50 px-3 py-2 font-cinzel text-xs text-[#ebe4d5] hover:border-[#d4af37] bouncy-btn">+1 min</button>
+                    <button onClick={() => contestAction('extend', { extraMinutes: 5 })} className="rounded-xl border border-[#a68a56]/30 bg-[#1c160e]/50 px-3 py-2 font-cinzel text-xs text-[#ebe4d5] hover:border-[#d4af37] bouncy-btn">+5 min</button>
+                    <button onClick={() => contestAction('extend', { extraMinutes: 10 })} className="rounded-xl border border-[#a68a56]/30 bg-[#1c160e]/50 px-3 py-2 font-cinzel text-xs text-[#ebe4d5] hover:border-[#d4af37] bouncy-btn">+10 min</button>
                     {(phase === 'active' || phase === 'paused') && (
                       <button onClick={() => { if (confirm('End the challenge now? Auto-submit will still work for participants.')) contestAction('endChallenge'); }}
-                        className="flex items-center gap-2 rounded-xl border border-red-500/40 bg-red-950/30 px-4 py-2.5 font-mono text-xs font-semibold text-red-300 hover:bg-red-900/40">
-                        <StopCircle className="h-4 w-4" /> End Challenge Now
+                        className="flex items-center gap-2 rounded-xl border border-red-500/40 bg-red-950/30 px-4 py-2.5 font-cinzel text-xs font-semibold text-red-300 hover:bg-red-900/40 bouncy-btn">
+                        <StopCircle className="h-4 w-4" /> End Voyage Now
                       </button>
                     )}
                   </div>
 
-                  <div className="mt-4 rounded-xl border border-amber-500/20 bg-amber-950/10 p-3 font-mono text-xs text-amber-300 flex items-center gap-2">
-                    <Timer className="h-4 w-4 shrink-0" />
-                    Auto-submit fires in <strong className="text-amber-400 tabular-nums">{challengeCountdown}</strong> — all editors lock automatically at 00:00
+                  <div className="mt-4 rounded-xl border border-[#d4af37]/30 bg-[#1c160e]/80 p-3 font-nautical-mono text-xs text-[#f3d38c] flex items-center gap-2">
+                    <Timer className="h-4 w-4 shrink-0 text-[#d4af37]" />
+                    Auto-submit fires in <strong className="text-[#d4af37] tabular-nums">{challengeCountdown}</strong> — all parchment scrolls lock automatically at 00:00
                   </div>
                 </div>
 
                 {/* Broadcast */}
-                <div className="rounded-2xl border border-white/10 bg-[#0a0f18] p-6">
-                  <h3 className="font-mono text-sm font-bold text-cyan-400 flex items-center gap-2"><Megaphone className="h-4 w-4" /> Broadcast Announcement</h3>
+                <div className="rounded-2xl border border-[#a68a56]/25 bg-[#090704] p-6 shadow-xl">
+                  <h3 className="font-cinzel text-sm font-bold text-[#f3d38c] flex items-center gap-2"><Megaphone className="h-4 w-4 text-[#d4af37]" /> Broadcast Admiralty Decree</h3>
                   <div className="mt-3 flex gap-2">
-                    <textarea value={announcementText} onChange={e => setAnnouncementText(e.target.value)} placeholder="e.g. '10 minutes remaining! Final push!'" rows={2}
-                      className="flex-1 rounded-xl border border-white/10 bg-black/40 p-3 font-mono text-xs text-white placeholder-gray-500 focus:border-cyan-500 focus:outline-none" />
+                    <textarea value={announcementText} onChange={e => setAnnouncementText(e.target.value)} placeholder="e.g. '10 minutes remaining! Final push on Question 3!'" rows={2}
+                      className="flex-1 rounded-xl border border-[#a68a56]/30 bg-[#050504] p-3 font-nautical-mono text-xs text-[#ebe4d5] placeholder-[#a68a56]/50 focus:border-[#d4af37] focus:outline-none" />
                     <button onClick={() => contestAction('announcement', { announcement: announcementText })}
-                      className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 px-4 py-2 font-mono text-xs font-bold text-black hover:brightness-110">
-                      <Send className="h-4 w-4" /> Send
+                      className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#d4af37] via-[#f3d38c] to-[#a68a56] px-4 py-2 font-cinzel text-xs font-bold text-[#050504] hover:brightness-110 shadow-[0_0_15px_rgba(212,175,55,0.25)] bouncy-btn">
+                      <Send className="h-4 w-4" /> Broadcast
                     </button>
                   </div>
                   {currentSession?.announcement && (
-                    <div className="mt-2 rounded-lg border border-cyan-500/20 bg-cyan-950/10 p-2 font-mono text-xs text-cyan-300">
-                      Current: {currentSession.announcement}
+                    <div className="mt-2 rounded-lg border border-[#d4af37]/30 bg-[#1c160e] p-2 font-nautical-mono text-xs text-[#f3d38c]">
+                      Current Decree: {currentSession.announcement}
                     </div>
                   )}
                 </div>
@@ -915,32 +932,32 @@ export default function AdminPage() {
                 {/* KPIs */}
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                   {[
-                    { label: 'Enrolled', value: participants.length, color: 'text-white' },
-                    { label: 'Submissions', value: submissions.length, color: 'text-cyan-400' },
-                    { label: 'Auto-Submits', value: submissions.filter(s => s.isAutoSubmit).length, color: 'text-amber-400' },
-                    { label: 'Locked Out', value: participants.filter(p => p.isLockedOut).length, color: 'text-red-400' },
+                    { label: 'Enrolled Navigators', value: participants.length, color: 'text-[#ebe4d5]' },
+                    { label: 'Scrolls Submitted', value: submissions.length, color: 'text-[#f3d38c]' },
+                    { label: 'Auto-Submissions', value: submissions.filter(s => s.isAutoSubmit).length, color: 'text-[#d4af37]' },
+                    { label: 'Sanctuary Locks', value: participants.filter(p => p.isLockedOut).length, color: 'text-red-400' },
                   ].map(k => (
-                    <div key={k.label} className="rounded-xl border border-white/5 bg-[#0a0f18] p-4">
-                      <div className="font-mono text-[11px] text-gray-400">{k.label}</div>
-                      <div className={`font-mono text-2xl font-bold mt-1 ${k.color}`}>{k.value}</div>
+                    <div key={k.label} className="rounded-xl border border-[#a68a56]/20 bg-[#090704] p-4 shadow-lg">
+                      <div className="font-cinzel text-[11px] text-[#a68a56]">{k.label}</div>
+                      <div className={`font-nautical-mono text-2xl font-bold mt-1 ${k.color}`}>{k.value}</div>
                     </div>
                   ))}
                 </div>
 
                 {/* Export / Reveal */}
-                <div className="rounded-2xl border border-white/10 bg-[#0a0f18] p-5 flex flex-wrap gap-3 items-center justify-between">
+                <div className="rounded-2xl border border-[#a68a56]/25 bg-[#090704] p-5 flex flex-wrap gap-3 items-center justify-between shadow-xl">
                   <div className="flex gap-3">
-                    <button onClick={exportCSV} className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 px-4 py-2.5 font-mono text-xs font-bold text-black hover:brightness-110">
-                      <FileSpreadsheet className="h-4 w-4" /> Export CSV
+                    <button onClick={exportCSV} className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#d4af37] via-[#f3d38c] to-[#a68a56] px-4 py-2.5 font-cinzel text-xs font-bold text-[#050504] hover:brightness-110 shadow-[0_0_15px_rgba(212,175,55,0.25)] bouncy-btn">
+                      <FileSpreadsheet className="h-4 w-4" /> Export CSV Ledger
                     </button>
-                    <button onClick={exportAuditJSON} className="flex items-center gap-2 rounded-xl border border-white/15 bg-white/5 px-4 py-2.5 font-mono text-xs text-gray-300 hover:bg-white/10">
-                      <Download className="h-4 w-4" /> Audit JSON
+                    <button onClick={exportAuditJSON} className="flex items-center gap-2 rounded-xl border border-[#a68a56]/30 bg-[#1c160e]/50 px-4 py-2.5 font-cinzel text-xs text-[#ebe4d5] hover:border-[#d4af37] bouncy-btn">
+                      <Download className="h-4 w-4 text-[#d4af37]" /> Audit Archive JSON
                     </button>
                   </div>
                   <button onClick={() => contestAction('toggleReveal')}
-                    className={`flex items-center gap-2 rounded-xl border px-4 py-2.5 font-mono text-xs font-bold transition-all ${currentSession?.is_reveal_mode ? 'border-purple-400 bg-purple-400 text-black' : 'border-purple-500/40 bg-purple-950/30 text-purple-300 hover:bg-purple-900/40'}`}>
-                    <Sparkles className="h-4 w-4" />
-                    {currentSession?.is_reveal_mode ? 'Disable Stage Reveal' : 'Trigger Stage Reveal'}
+                    className={`flex items-center gap-2 rounded-xl border px-4 py-2.5 font-cinzel text-xs font-bold transition-all bouncy-btn ${currentSession?.is_reveal_mode ? 'border-[#d4af37] bg-[#d4af37] text-[#050504]' : 'border-[#d4af37]/40 bg-[#1c160e] text-[#f3d38c] hover:border-[#d4af37]'}`}>
+                    <Sparkles className="h-4 w-4 text-[#d4af37]" />
+                    {currentSession?.is_reveal_mode ? 'Conceal Stage Reveal' : 'Trigger Grand Stage Reveal'}
                   </button>
                 </div>
               </>
@@ -954,58 +971,58 @@ export default function AdminPage() {
         {activeTab === 'participants' && (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <div className="font-mono text-xs text-gray-400">{participants.length} participants · Session: <span className="text-white">{viewingSession?.label}</span></div>
-              <button onClick={exportCSV} className="flex items-center gap-1.5 rounded-xl border border-white/10 bg-white/5 px-3 py-1.5 font-mono text-xs text-gray-300 hover:bg-white/10">
-                <Download className="h-3.5 w-3.5" /> Export CSV
+              <div className="font-nautical-mono text-xs text-[#a68a56]">{participants.length} navigators registered · Voyage: <span className="text-[#f3d38c] font-cinzel">{viewingSession?.label}</span></div>
+              <button onClick={exportCSV} className="flex items-center gap-1.5 rounded-xl border border-[#a68a56]/30 bg-[#1c160e]/50 px-3 py-1.5 font-cinzel text-xs text-[#ebe4d5] hover:border-[#d4af37] bouncy-btn">
+                <Download className="h-3.5 w-3.5 text-[#d4af37]" /> Export Ledger CSV
               </button>
             </div>
-            <div className="overflow-hidden rounded-2xl border border-white/10 bg-[#0a0f18]">
+            <div className="overflow-hidden rounded-2xl border border-[#a68a56]/25 bg-[#090704] shadow-xl">
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="border-b border-white/[0.08] bg-black/40 font-mono text-[11px] text-gray-400 uppercase">
-                    <th className="py-3 px-4">Candidate</th>
+                  <tr className="border-b border-[#a68a56]/20 bg-[#140f0a] font-cinzel text-[11px] text-[#d4af37] uppercase tracking-wider">
+                    <th className="py-3 px-4">Navigator</th>
                     <th className="py-3 px-4 hidden sm:table-cell">Terminal</th>
-                    <th className="py-3 px-4 hidden md:table-cell">Language</th>
-                    <th className="py-3 px-4">Strikes</th>
+                    <th className="py-3 px-4 hidden md:table-cell">Cipher</th>
+                    <th className="py-3 px-4">Penalties</th>
                     <th className="py-3 px-4">Status</th>
-                    <th className="py-3 px-4 hidden lg:table-cell">Last Active</th>
-                    <th className="py-3 px-4 text-right">Actions</th>
+                    <th className="py-3 px-4 hidden lg:table-cell">Last Inscription</th>
+                    <th className="py-3 px-4 text-right">Admiralty Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-white/[0.06] font-mono text-xs">
+                <tbody className="divide-y divide-[#a68a56]/15 font-nautical-mono text-xs">
                   {participants.length === 0 ? (
-                    <tr><td colSpan={7} className="py-8 text-center text-gray-500">No participants registered yet.</td></tr>
+                    <tr><td colSpan={7} className="py-8 text-center text-[#a68a56]">No navigators mustered yet.</td></tr>
                   ) : participants.map((p) => (
-                    <tr key={p.id} className="hover:bg-white/[0.03]">
+                    <tr key={p.id} className="hover:bg-[#1c160e]/30">
                       <td className="py-3 px-4">
-                        <div className="font-bold text-white">{p.name}</div>
-                        <div className="text-[11px] text-gray-400">{p.rollNumber}</div>
+                        <div className="font-bold text-[#ebe4d5] font-cinzel">{p.name}</div>
+                        <div className="text-[11px] text-[#a68a56]">{p.rollNumber}</div>
                       </td>
-                      <td className="py-3 px-4 hidden sm:table-cell text-cyan-300">{p.terminalId}</td>
-                      <td className="py-3 px-4 hidden md:table-cell uppercase text-gray-300">{p.activeLanguage || '—'}</td>
+                      <td className="py-3 px-4 hidden sm:table-cell text-[#f3d38c]">{p.terminalId}</td>
+                      <td className="py-3 px-4 hidden md:table-cell uppercase text-[#a68a56]">{p.activeLanguage || '—'}</td>
                       <td className="py-3 px-4">
-                        <span className={`font-bold ${p.strikes >= 3 ? 'text-red-400' : p.strikes > 0 ? 'text-amber-400' : 'text-gray-400'}`}>{p.strikes}/3</span>
+                        <span className={`font-bold ${p.strikes >= 3 ? 'text-red-400' : p.strikes > 0 ? 'text-[#d4af37]' : 'text-[#a68a56]'}`}>{p.strikes}/3</span>
                       </td>
                       <td className="py-3 px-4">
-                        <span className={`rounded border px-2 py-0.5 text-[10px] ${p.isLockedOut ? 'border-red-500/40 bg-red-950/60 text-red-300' : 'border-emerald-500/40 bg-emerald-950/60 text-emerald-300'}`}>
-                          {p.isLockedOut ? 'Locked' : 'Active'}
+                        <span className={`rounded border px-2 py-0.5 text-[10px] font-cinzel ${p.isLockedOut ? 'border-red-500/40 bg-red-950/60 text-red-300' : 'border-[#d4af37]/40 bg-[#1c160e] text-[#f3d38c]'}`}>
+                          {p.isLockedOut ? 'Sealed' : 'Active'}
                         </span>
                       </td>
-                      <td className="py-3 px-4 hidden lg:table-cell text-gray-400">{new Date(p.lastActiveAt).toLocaleTimeString()}</td>
+                      <td className="py-3 px-4 hidden lg:table-cell text-[#a68a56]">{new Date(p.lastActiveAt).toLocaleTimeString()}</td>
                       <td className="py-3 px-4 text-right">
                         <div className="flex items-center justify-end gap-1">
                           {p.strikes > 0 && (
-                            <button onClick={() => participantAction(p.id, 'reset_strikes')} className="flex items-center gap-1 rounded border border-emerald-500/30 bg-emerald-950/40 px-1.5 py-1 text-[11px] text-emerald-300 hover:bg-emerald-900/50" title="Pardon — reset strikes">
+                            <button onClick={() => participantAction(p.id, 'reset_strikes')} className="flex items-center gap-1 rounded border border-[#d4af37]/30 bg-[#1c160e] px-1.5 py-1 text-[11px] text-[#f3d38c] hover:border-[#d4af37] bouncy-btn" title="Pardon — reset penalties">
                               <Undo2 className="h-3 w-3" /> Pardon
                             </button>
                           )}
-                          <button onClick={() => participantAction(p.id, 'add_strike')} className="flex items-center gap-1 rounded border border-amber-500/30 bg-amber-950/40 px-1.5 py-1 text-[11px] text-amber-300 hover:bg-amber-900/50">
-                            <ShieldAlert className="h-3 w-3" /> +Strike
+                          <button onClick={() => participantAction(p.id, 'add_strike')} className="flex items-center gap-1 rounded border border-[#a68a56]/30 bg-[#1c160e]/50 px-1.5 py-1 text-[11px] text-[#f3d38c] hover:border-[#d4af37] bouncy-btn">
+                            <ShieldAlert className="h-3 w-3 text-[#d4af37]" /> +Strike
                           </button>
-                          <button onClick={() => participantAction(p.id, 'toggle_lockout')} className={`flex items-center gap-1 rounded border px-1.5 py-1 text-[11px] ${p.isLockedOut ? 'border-emerald-500/30 bg-emerald-950/40 text-emerald-300' : 'border-red-500/30 bg-red-950/40 text-red-300'}`}>
-                            <Lock className="h-3 w-3" /> {p.isLockedOut ? 'Unlock' : 'Lock'}
+                          <button onClick={() => participantAction(p.id, 'toggle_lockout')} className={`flex items-center gap-1 rounded border px-1.5 py-1 text-[11px] font-cinzel bouncy-btn ${p.isLockedOut ? 'border-[#d4af37]/40 bg-[#1c160e] text-[#f3d38c]' : 'border-red-500/30 bg-red-950/40 text-red-300'}`}>
+                            <Lock className="h-3 w-3" /> {p.isLockedOut ? 'Unseal' : 'Seal'}
                           </button>
-                          <button onClick={() => { if (confirm(`Remove ${p.name}?`)) participantAction(p.id, 'delete'); }} className="rounded border border-white/10 bg-white/5 p-1 text-gray-400 hover:text-red-400">
+                          <button onClick={() => { if (confirm(`Remove ${p.name}?`)) participantAction(p.id, 'delete'); }} className="rounded border border-[#a68a56]/20 bg-[#050504] p-1 text-[#a68a56] hover:text-red-400 bouncy-btn">
                             <Trash2 className="h-3.5 w-3.5" />
                           </button>
                         </div>
@@ -1016,17 +1033,17 @@ export default function AdminPage() {
               </table>
             </div>
             {violations.length > 0 && (
-              <div className="rounded-2xl border border-red-500/20 bg-[#0a0f18] p-5">
-                <h4 className="font-mono text-sm font-bold text-red-400 mb-3 flex items-center gap-2"><AlertTriangle className="h-4 w-4" /> Anti-Cheat Log ({violations.length})</h4>
+              <div className="rounded-2xl border border-red-500/30 bg-[#0f0906] p-5 shadow-xl">
+                <h4 className="font-cinzel text-sm font-bold text-red-400 mb-3 flex items-center gap-2"><AlertTriangle className="h-4 w-4" /> Aegis Infringement Log ({violations.length})</h4>
                 <div className="space-y-2 max-h-48 overflow-y-auto">
                   {violations.slice(0, 20).map(v => (
-                    <div key={v.id} className="flex items-center justify-between rounded-lg border border-red-500/10 bg-red-950/10 px-3 py-2 font-mono text-xs">
+                    <div key={v.id} className="flex items-center justify-between rounded-lg border border-red-500/20 bg-red-950/20 px-3 py-2 font-nautical-mono text-xs">
                       <div>
                         <span className="font-bold text-red-300">{v.participantName}</span>
-                        <span className="text-gray-400 ml-2">{v.type}</span>
-                        {v.details && <span className="text-gray-500 ml-2">— {v.details}</span>}
+                        <span className="text-[#ebe4d5]/70 ml-2">{v.type}</span>
+                        {v.details && <span className="text-[#a68a56] ml-2">— {v.details}</span>}
                       </div>
-                      <div className="text-gray-500">{new Date(v.timestamp).toLocaleTimeString()} · Strike {v.strikeCount}</div>
+                      <div className="text-[#a68a56]">{new Date(v.timestamp).toLocaleTimeString()} · Penalty {v.strikeCount}</div>
                     </div>
                   ))}
                 </div>
@@ -1041,52 +1058,52 @@ export default function AdminPage() {
         {activeTab === 'submissions' && (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <div className="font-mono text-xs text-gray-400">{submissions.length} submissions · <span className="text-amber-300">{submissions.filter(s => s.isAutoSubmit).length} auto-submitted</span></div>
-              <button onClick={exportAuditJSON} className="flex items-center gap-1.5 rounded-xl border border-white/10 bg-white/5 px-3 py-1.5 font-mono text-xs text-gray-300 hover:bg-white/10">
-                <Download className="h-3.5 w-3.5" /> Audit JSON
+              <div className="font-nautical-mono text-xs text-[#a68a56]">{submissions.length} scrolls received · <span className="text-[#d4af37] font-semibold">{submissions.filter(s => s.isAutoSubmit).length} auto-sealed</span></div>
+              <button onClick={exportAuditJSON} className="flex items-center gap-1.5 rounded-xl border border-[#a68a56]/30 bg-[#1c160e]/50 px-3 py-1.5 font-cinzel text-xs text-[#ebe4d5] hover:border-[#d4af37] bouncy-btn">
+                <Download className="h-3.5 w-3.5 text-[#d4af37]" /> Audit Archive JSON
               </button>
             </div>
-            <div className="overflow-hidden rounded-2xl border border-white/10 bg-[#0a0f18]">
+            <div className="overflow-hidden rounded-2xl border border-[#a68a56]/25 bg-[#090704] shadow-xl">
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="border-b border-white/[0.08] bg-black/40 font-mono text-[11px] text-gray-400 uppercase">
-                    <th className="py-3 px-4">Candidate</th>
-                    <th className="py-3 px-4 hidden sm:table-cell">Question</th>
-                    <th className="py-3 px-4">Lang</th>
-                    <th className="py-3 px-4">Score</th>
-                    <th className="py-3 px-4 hidden md:table-cell">Tests</th>
-                    <th className="py-3 px-4 hidden lg:table-cell">Submitted</th>
-                    <th className="py-3 px-4 text-right">Actions</th>
+                  <tr className="border-b border-[#a68a56]/20 bg-[#140f0a] font-cinzel text-[11px] text-[#d4af37] uppercase tracking-wider">
+                    <th className="py-3 px-4">Navigator</th>
+                    <th className="py-3 px-4 hidden sm:table-cell">Scroll</th>
+                    <th className="py-3 px-4">Cipher</th>
+                    <th className="py-3 px-4">Bounty</th>
+                    <th className="py-3 px-4 hidden md:table-cell">Trials</th>
+                    <th className="py-3 px-4 hidden lg:table-cell">Sealed At</th>
+                    <th className="py-3 px-4 text-right">Admiralty Action</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-white/[0.06] font-mono text-xs">
+                <tbody className="divide-y divide-[#a68a56]/15 font-nautical-mono text-xs">
                   {submissions.length === 0 ? (
-                    <tr><td colSpan={7} className="py-8 text-center text-gray-500">No submissions yet.</td></tr>
+                    <tr><td colSpan={7} className="py-8 text-center text-[#a68a56]">No scrolls submitted yet.</td></tr>
                   ) : submissions.map(s => (
-                    <tr key={s.id} className="hover:bg-white/[0.03]">
+                    <tr key={s.id} className="hover:bg-[#1c160e]/30">
                       <td className="py-3 px-4">
-                        <div className="font-bold text-white">{s.participantName}</div>
-                        <div className="text-[11px] text-gray-400">{s.participantRoll}</div>
+                        <div className="font-bold text-[#ebe4d5] font-cinzel">{s.participantName}</div>
+                        <div className="text-[11px] text-[#a68a56]">{s.participantRoll}</div>
                       </td>
                       <td className="py-3 px-4 hidden sm:table-cell">
-                        <div className="text-gray-200">{s.questionTitle}</div>
-                        {s.isAutoSubmit && <span className="rounded bg-amber-950/60 border border-amber-500/30 px-1.5 py-0.5 text-[10px] text-amber-300">AUTO</span>}
+                        <div className="text-[#ebe4d5]">{s.questionTitle}</div>
+                        {s.isAutoSubmit && <span className="rounded bg-[#1c160e] border border-[#d4af37]/40 px-1.5 py-0.5 text-[10px] text-[#f3d38c] font-cinzel">AUTO</span>}
                       </td>
-                      <td className="py-3 px-4 uppercase text-gray-300">{s.language}</td>
+                      <td className="py-3 px-4 uppercase text-[#a68a56]">{s.language}</td>
                       <td className="py-3 px-4">
-                        <span className={`font-bold ${s.score > 0 ? 'text-emerald-400' : 'text-gray-400'}`}>{s.score}</span>
-                        {s.speedBonus > 0 && <span className="ml-1 text-cyan-400 text-[10px]">+{s.speedBonus}</span>}
+                        <span className={`font-bold ${s.score > 0 ? 'text-[#d4af37]' : 'text-[#a68a56]'}`}>{s.score}</span>
+                        {s.speedBonus > 0 && <span className="ml-1 text-[#f3d38c] text-[10px]">+{s.speedBonus}</span>}
                       </td>
-                      <td className="py-3 px-4 hidden md:table-cell text-gray-300">{s.testCasesPassed}/{s.totalTestCases}</td>
-                      <td className="py-3 px-4 hidden lg:table-cell text-gray-400">{new Date(s.submittedAt).toLocaleTimeString()}</td>
+                      <td className="py-3 px-4 hidden md:table-cell text-[#ebe4d5]/80">{s.testCasesPassed}/{s.totalTestCases}</td>
+                      <td className="py-3 px-4 hidden lg:table-cell text-[#a68a56]">{new Date(s.submittedAt).toLocaleTimeString()}</td>
                       <td className="py-3 px-4 text-right">
                         <div className="flex items-center justify-end gap-1.5">
-                          <button onClick={() => setInspectedSubmission(s)} className="flex items-center gap-1 rounded border border-white/10 bg-white/5 px-2 py-1 text-[11px] text-gray-300 hover:text-white">
-                            <Eye className="h-3 w-3" /> View
+                          <button onClick={() => setInspectedSubmission(s)} className="flex items-center gap-1 rounded border border-[#a68a56]/30 bg-[#1c160e]/50 px-2 py-1 text-[11px] text-[#ebe4d5] hover:border-[#d4af37] bouncy-btn">
+                            <Eye className="h-3 w-3 text-[#d4af37]" /> Inspect
                           </button>
-                          <button onClick={() => handleRejudge(s.id)} disabled={rejudging === s.id} className="flex items-center gap-1 rounded border border-indigo-500/30 bg-indigo-950/40 px-2 py-1 text-[11px] text-indigo-300 hover:bg-indigo-900/40 disabled:opacity-50">
-                            {rejudging === s.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />}
-                            Re-judge
+                          <button onClick={() => handleRejudge(s.id)} disabled={rejudging === s.id} className="flex items-center gap-1 rounded border border-[#d4af37]/40 bg-[#1c160e] px-2 py-1 text-[11px] text-[#f3d38c] hover:border-[#d4af37] disabled:opacity-50 bouncy-btn">
+                            {rejudging === s.id ? <Loader2 className="h-3 w-3 animate-spin text-[#d4af37]" /> : <RefreshCw className="h-3 w-3 text-[#d4af37]" />}
+                            Re-adjudicate
                           </button>
                         </div>
                       </td>
@@ -1103,38 +1120,37 @@ export default function AdminPage() {
         ═══════════════════════════════════════════════════════════════════ */}
         {activeTab === 'history' && (
           <div className="space-y-4">
-            <h2 className="font-mono text-lg font-bold text-white">All Contest Sessions</h2>
+            <h2 className="font-cinzel text-lg font-bold text-[#ebe4d5]">Voyage Annals & Historic Sessions</h2>
             {sessions.length === 0 ? (
-              <div className="rounded-2xl border border-dashed border-white/10 p-12 text-center text-gray-500 font-mono text-sm">No sessions created yet.</div>
+              <div className="rounded-2xl border border-dashed border-[#a68a56]/30 p-12 text-center text-[#a68a56] font-cinzel text-sm">No recorded voyages yet.</div>
             ) : (
               <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                 {sessions.map(s => {
-                  // Quick stats (only available for viewed session; for others we show label + phase)
                   const isViewed = s.id === viewingSessionId;
                   return (
-                    <div key={s.id} className={`rounded-2xl border bg-[#0a0f18] p-5 space-y-3 transition-all ${isViewed ? 'border-amber-500/40 shadow-lg shadow-amber-500/5' : 'border-white/10 hover:border-white/20'}`}>
+                    <div key={s.id} className={`rounded-2xl border bg-[#090704] p-5 space-y-3 transition-all bouncy-card ${isViewed ? 'border-[#d4af37] shadow-[0_0_25px_rgba(212,175,55,0.15)] ring-1 ring-[#d4af37]/30' : 'border-[#a68a56]/25 hover:border-[#a68a56]/50'}`}>
                       <div className="flex items-start justify-between gap-2">
                         <div>
-                          <h3 className="font-mono text-sm font-bold text-white">{s.label}</h3>
+                          <h3 className="font-cinzel text-sm font-bold text-[#ebe4d5]">{s.label}</h3>
                           {s.scheduled_at && (
-                            <p className="font-mono text-xs text-gray-400 flex items-center gap-1 mt-0.5">
-                              <Calendar className="h-3 w-3" /> {new Date(s.scheduled_at).toLocaleString()}
+                            <p className="font-nautical-mono text-xs text-[#a68a56] flex items-center gap-1 mt-0.5">
+                              <Calendar className="h-3 w-3 text-[#d4af37]" /> {new Date(s.scheduled_at).toLocaleString()}
                             </p>
                           )}
-                          {s.notes && <p className="text-xs text-gray-500 mt-1 italic">{s.notes}</p>}
+                          {s.notes && <p className="text-xs text-[#a68a56] mt-1 italic">{s.notes}</p>}
                         </div>
                         <PhaseBadge phase={s.phase} />
                       </div>
 
                       {s.challenge_starts_at && (
-                        <div className="grid grid-cols-2 gap-2 border-t border-white/[0.06] pt-3">
-                          <div className="rounded-lg bg-black/30 p-2 text-center">
-                            <div className="font-mono text-[10px] text-gray-500">Duration</div>
-                            <div className="font-mono text-sm font-bold text-white">{Math.round((s.challenge_duration_ms ?? 3000000) / 60000)} min</div>
+                        <div className="grid grid-cols-2 gap-2 border-t border-[#a68a56]/15 pt-3">
+                          <div className="rounded-lg bg-[#050504] border border-[#a68a56]/15 p-2 text-center">
+                            <div className="font-cinzel text-[10px] text-[#a68a56]">Duration</div>
+                            <div className="font-nautical-mono text-sm font-bold text-[#f3d38c]">{Math.round((s.challenge_duration_ms ?? 3000000) / 60000)} min</div>
                           </div>
-                          <div className="rounded-lg bg-black/30 p-2 text-center">
-                            <div className="font-mono text-[10px] text-gray-500">Started</div>
-                            <div className="font-mono text-sm font-bold text-white">{new Date(s.challenge_starts_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+                          <div className="rounded-lg bg-[#050504] border border-[#a68a56]/15 p-2 text-center">
+                            <div className="font-cinzel text-[10px] text-[#a68a56]">Commenced</div>
+                            <div className="font-nautical-mono text-sm font-bold text-[#ebe4d5]">{new Date(s.challenge_starts_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
                           </div>
                         </div>
                       )}
@@ -1142,15 +1158,15 @@ export default function AdminPage() {
                       <div className="flex gap-2">
                         <button
                           onClick={() => { setViewingSessionId(s.id); setActiveTab('submissions'); }}
-                          className="flex-1 rounded-lg border border-white/10 bg-white/5 py-1.5 font-mono text-xs text-gray-300 hover:text-white text-center"
+                          className="flex-1 rounded-lg border border-[#a68a56]/30 bg-[#1c160e]/50 py-1.5 font-cinzel text-xs text-[#ebe4d5] hover:border-[#d4af37] text-center bouncy-btn"
                         >
-                          View Submissions
+                          View Scrolls
                         </button>
                         <button
                           onClick={() => { setViewingSessionId(s.id); setActiveTab('participants'); }}
-                          className="flex-1 rounded-lg border border-white/10 bg-white/5 py-1.5 font-mono text-xs text-gray-300 hover:text-white text-center"
+                          className="flex-1 rounded-lg border border-[#a68a56]/30 bg-[#1c160e]/50 py-1.5 font-cinzel text-xs text-[#ebe4d5] hover:border-[#d4af37] text-center bouncy-btn"
                         >
-                          Participants
+                          Navigators
                         </button>
                       </div>
                     </div>
@@ -1160,8 +1176,8 @@ export default function AdminPage() {
             )}
 
             {/* New session CTA */}
-            <button onClick={() => setShowNewSessionModal(true)} className="flex items-center gap-2 rounded-xl border border-dashed border-white/20 bg-white/5 px-5 py-3 font-mono text-sm text-gray-400 hover:text-white hover:border-white/30 transition-all">
-              <PlusCircle className="h-5 w-5" /> Create New Contest Session
+            <button onClick={() => setShowNewSessionModal(true)} className="flex items-center gap-2 rounded-xl border border-dashed border-[#d4af37]/40 bg-[#1c160e]/40 px-5 py-3 font-cinzel text-sm text-[#f3d38c] hover:border-[#d4af37] transition-all bouncy-btn">
+              <PlusCircle className="h-5 w-5 text-[#d4af37]" /> Inscribe New Voyage Session
             </button>
           </div>
         )}
@@ -1171,18 +1187,18 @@ export default function AdminPage() {
         ═══════════════════════════════════════════════════════════════════ */}
         {activeTab === 'plagiarism' && (
           <div className="space-y-6">
-            <div className="rounded-2xl border border-white/10 bg-[#0a0f18] p-6">
-              <h3 className="font-mono text-sm font-bold text-red-400 flex items-center gap-2"><GitCompare className="h-4 w-4" /> Code Plagiarism Scanner</h3>
+            <div className="rounded-2xl border border-[#a68a56]/25 bg-[#090704] p-6 shadow-xl">
+              <h3 className="font-cinzel text-sm font-bold text-[#f3d38c] flex items-center gap-2"><GitCompare className="h-4 w-4 text-[#d4af37]" /> Cipher Duplication & Similarity Scanner</h3>
               <div className="mt-4 flex gap-2">
                 <select value={plagQuestionId} onChange={e => setPlagQuestionId(e.target.value)}
-                  className="flex-1 rounded-xl border border-white/10 bg-black/50 px-3 py-2 font-mono text-xs text-white focus:border-red-400 focus:outline-none">
-                  <option value="">Select a question to scan...</option>
+                  className="flex-1 rounded-xl border border-[#a68a56]/30 bg-[#050504] px-3 py-2 font-nautical-mono text-xs text-[#ebe4d5] focus:border-[#d4af37] focus:outline-none">
+                  <option value="">Select a scroll to inspect for duplicate ciphers...</option>
                   {questions.map(q => (
                     <option key={q.id} value={q.id}>{q.title}</option>
                   ))}
                 </select>
                 <button onClick={() => scanPlagiarism(plagQuestionId)} disabled={!plagQuestionId}
-                  className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-red-500 to-pink-500 px-4 py-2 font-mono text-xs font-bold text-white hover:brightness-110 disabled:opacity-50">
+                  className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#d4af37] via-[#f3d38c] to-[#a68a56] px-4 py-2 font-cinzel text-xs font-bold text-[#050504] hover:brightness-110 disabled:opacity-50 bouncy-btn">
                   <Search className="h-4 w-4" /> Scan All Pairs
                 </button>
               </div>
@@ -1191,31 +1207,31 @@ export default function AdminPage() {
             {suspectPairs.length > 0 && (
               <div className="space-y-3">
                 {suspectPairs.map(({ subA, subB, similarity }, i) => (
-                  <div key={i} className="rounded-2xl border border-red-500/20 bg-[#0a0f18] p-5">
+                  <div key={i} className="rounded-2xl border border-[#a68a56]/25 bg-[#090704] p-5 shadow-xl">
                     <div className="flex items-center justify-between mb-3">
-                      <div className="flex items-center gap-3 font-mono text-xs">
-                        <span className="font-bold text-white">{subA.participantName}</span>
-                        <GitCompare className="h-4 w-4 text-gray-500" />
-                        <span className="font-bold text-white">{subB.participantName}</span>
+                      <div className="flex items-center gap-3 font-cinzel text-xs">
+                        <span className="font-bold text-[#ebe4d5]">{subA.participantName}</span>
+                        <GitCompare className="h-4 w-4 text-[#d4af37]" />
+                        <span className="font-bold text-[#ebe4d5]">{subB.participantName}</span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <div className="h-2 w-24 rounded-full bg-white/10 overflow-hidden">
-                          <div className={`h-full rounded-full ${similarity.similarityScore > 0.8 ? 'bg-red-500' : similarity.similarityScore > 0.5 ? 'bg-amber-500' : 'bg-emerald-500'}`}
+                        <div className="h-2 w-24 rounded-full bg-[#1c160e] overflow-hidden border border-[#a68a56]/20">
+                          <div className={`h-full rounded-full ${similarity.similarityScore > 0.8 ? 'bg-red-500' : similarity.similarityScore > 0.5 ? 'bg-[#d4af37]' : 'bg-[#a68a56]'}`}
                             style={{ width: `${Math.round(similarity.similarityScore * 100)}%` }} />
                         </div>
-                        <span className={`font-mono text-xs font-bold ${similarity.similarityScore > 0.8 ? 'text-red-400' : similarity.similarityScore > 0.5 ? 'text-amber-400' : 'text-emerald-400'}`}>
+                        <span className={`font-nautical-mono text-xs font-bold ${similarity.similarityScore > 0.8 ? 'text-red-400' : similarity.similarityScore > 0.5 ? 'text-[#d4af37]' : 'text-[#f3d38c]'}`}>
                           {Math.round(similarity.similarityScore * 100)}%
                         </span>
                       </div>
                     </div>
                     <div className="grid grid-cols-2 gap-3">
                       <div>
-                        <div className="font-mono text-[10px] text-gray-500 mb-1">{subA.participantName} ({subA.language.toUpperCase()})</div>
-                        <pre className="rounded-lg bg-black/40 p-3 font-mono text-[10px] text-gray-300 overflow-auto max-h-32">{subA.code.slice(0, 400)}{subA.code.length > 400 ? '...' : ''}</pre>
+                        <div className="font-cinzel text-[10px] text-[#a68a56] mb-1">{subA.participantName} ({subA.language.toUpperCase()})</div>
+                        <pre className="rounded-lg border border-[#a68a56]/15 bg-[#050504] p-3 font-nautical-mono text-[10px] text-[#ebe4d5]/90 overflow-auto max-h-32">{subA.code.slice(0, 400)}{subA.code.length > 400 ? '...' : ''}</pre>
                       </div>
                       <div>
-                        <div className="font-mono text-[10px] text-gray-500 mb-1">{subB.participantName} ({subB.language.toUpperCase()})</div>
-                        <pre className="rounded-lg bg-black/40 p-3 font-mono text-[10px] text-gray-300 overflow-auto max-h-32">{subB.code.slice(0, 400)}{subB.code.length > 400 ? '...' : ''}</pre>
+                        <div className="font-cinzel text-[10px] text-[#a68a56] mb-1">{subB.participantName} ({subB.language.toUpperCase()})</div>
+                        <pre className="rounded-lg border border-[#a68a56]/15 bg-[#050504] p-3 font-nautical-mono text-[10px] text-[#ebe4d5]/90 overflow-auto max-h-32">{subB.code.slice(0, 400)}{subB.code.length > 400 ? '...' : ''}</pre>
                       </div>
                     </div>
                   </div>
@@ -1232,45 +1248,45 @@ export default function AdminPage() {
 
       {/* New Session Modal */}
       {showNewSessionModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-md">
-          <div className="w-full max-w-lg rounded-2xl border border-white/10 bg-[#0d1420] p-6 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="font-mono text-lg font-bold text-white">New Contest Session</h3>
-              <button onClick={() => setShowNewSessionModal(false)} className="text-gray-400 hover:text-white"><X className="h-5 w-5" /></button>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4 backdrop-blur-md">
+          <div className="w-full max-w-lg rounded-2xl border border-[#d4af37]/40 bg-[#0c0906] p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-[#a68a56]/20 pb-3">
+              <h3 className="font-cinzel text-lg font-bold text-[#f3d38c]">Initiate Voyage Session</h3>
+              <button onClick={() => setShowNewSessionModal(false)} className="text-[#a68a56] hover:text-[#ebe4d5]"><X className="h-5 w-5" /></button>
             </div>
 
             <div className="space-y-3">
               <div>
-                <label className="block font-mono text-xs text-gray-400 mb-1">Session Label *</label>
+                <label className="block font-cinzel text-xs text-[#a68a56] mb-1">Session Inscription *</label>
                 <input type="text" value={newSessionLabel} onChange={e => setNewSessionLabel(e.target.value)} placeholder="e.g. Trial Run 2, Chapter 2 Final"
-                  className="w-full rounded-xl border border-white/10 bg-black/40 px-3 py-2 font-mono text-sm text-white focus:border-emerald-500 focus:outline-none" />
+                  className="w-full rounded-xl border border-[#a68a56]/30 bg-[#050504] px-3 py-2 font-nautical-mono text-sm text-[#ebe4d5] focus:border-[#d4af37] focus:outline-none" />
               </div>
               <div>
-                <label className="block font-mono text-xs text-gray-400 mb-1">Scheduled At (optional)</label>
+                <label className="block font-cinzel text-xs text-[#a68a56] mb-1">Scheduled Date & Time (optional)</label>
                 <input type="datetime-local" value={newSessionScheduled} onChange={e => setNewSessionScheduled(e.target.value)}
-                  className="w-full rounded-xl border border-white/10 bg-black/40 px-3 py-2 font-mono text-sm text-white focus:border-emerald-500 focus:outline-none" />
+                  className="w-full rounded-xl border border-[#a68a56]/30 bg-[#050504] px-3 py-2 font-nautical-mono text-sm text-[#ebe4d5] focus:border-[#d4af37] focus:outline-none" />
               </div>
               <div>
-                <label className="block font-mono text-xs text-gray-400 mb-1">Notes (optional)</label>
-                <textarea value={newSessionNotes} onChange={e => setNewSessionNotes(e.target.value)} placeholder="e.g. Dry run with 20 students" rows={2}
-                  className="w-full rounded-xl border border-white/10 bg-black/40 px-3 py-2 font-mono text-sm text-white focus:border-emerald-500 focus:outline-none resize-none" />
+                <label className="block font-cinzel text-xs text-[#a68a56] mb-1">Admiralty Log Notes (optional)</label>
+                <textarea value={newSessionNotes} onChange={e => setNewSessionNotes(e.target.value)} placeholder="e.g. Trial run with 20 navigators" rows={2}
+                  className="w-full rounded-xl border border-[#a68a56]/30 bg-[#050504] px-3 py-2 font-nautical-mono text-sm text-[#ebe4d5] focus:border-[#d4af37] focus:outline-none resize-none" />
               </div>
               <div>
-                <label className="block font-mono text-xs text-gray-400 mb-1">Copy Questions From</label>
+                <label className="block font-cinzel text-xs text-[#a68a56] mb-1">Copy Scrolls From Session</label>
                 <select value={newSessionCopyFrom ?? ''} onChange={e => setNewSessionCopyFrom(e.target.value || null)}
-                  className="w-full rounded-xl border border-white/10 bg-black/40 px-3 py-2 font-mono text-sm text-white focus:border-emerald-500 focus:outline-none">
-                  <option value="">— Start blank —</option>
+                  className="w-full rounded-xl border border-[#a68a56]/30 bg-[#050504] px-3 py-2 font-nautical-mono text-sm text-[#ebe4d5] focus:border-[#d4af37] focus:outline-none">
+                  <option value="">— Start with blank parchment —</option>
                   {sessions.map(s => <option key={s.id} value={s.id}>{s.label} ({s.phase})</option>)}
                 </select>
               </div>
             </div>
 
             <div className="flex justify-end gap-3 pt-2">
-              <button onClick={() => setShowNewSessionModal(false)} className="rounded-xl border border-white/10 px-4 py-2 font-mono text-xs text-gray-300 hover:bg-white/5">Cancel</button>
+              <button onClick={() => setShowNewSessionModal(false)} className="rounded-xl border border-[#a68a56]/30 px-4 py-2 font-cinzel text-xs text-[#ebe4d5] hover:bg-[#1c160e]">Cancel</button>
               <button onClick={handleCreateSession} disabled={newSessionCreating}
-                className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 px-5 py-2 font-mono text-xs font-bold text-black hover:brightness-110 disabled:opacity-50">
+                className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#d4af37] via-[#f3d38c] to-[#a68a56] px-5 py-2 font-cinzel text-xs font-bold text-[#050504] hover:brightness-110 disabled:opacity-50 bouncy-btn shadow-[0_0_15px_rgba(212,175,55,0.25)]">
                 {newSessionCreating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <PlusCircle className="h-3.5 w-3.5" />}
-                Create Session
+                Seal Session
               </button>
             </div>
           </div>
@@ -1280,96 +1296,96 @@ export default function AdminPage() {
       {/* Question Editor Modal */}
       {showQuestionModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4 backdrop-blur-md">
-          <div className="w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-2xl border border-white/10 bg-[#0d1420] shadow-2xl">
-            <div className="sticky top-0 z-10 flex items-center justify-between border-b border-white/[0.08] bg-[#0d1420] px-6 py-4">
-              <h3 className="font-mono text-sm font-bold text-white">{editingQuestion.id ? 'Edit Question' : 'Create Question'}</h3>
-              <button onClick={() => setShowQuestionModal(false)} className="text-gray-400 hover:text-white"><X className="h-5 w-5" /></button>
+          <div className="w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-2xl border border-[#d4af37]/40 bg-[#0c0906] shadow-2xl">
+            <div className="sticky top-0 z-10 flex items-center justify-between border-b border-[#a68a56]/20 bg-[#0c0906] px-6 py-4">
+              <h3 className="font-cinzel text-base font-bold text-[#f3d38c]">{editingQuestion.id ? 'Refine Trial Scroll' : 'Inscribe New Trial Scroll'}</h3>
+              <button onClick={() => setShowQuestionModal(false)} className="text-[#a68a56] hover:text-[#ebe4d5]"><X className="h-5 w-5" /></button>
             </div>
 
             <div className="p-6 space-y-4">
               <div className="grid gap-4 sm:grid-cols-3">
                 <div className="sm:col-span-2">
-                  <label className="block font-mono text-xs text-gray-400 mb-1">Title *</label>
+                  <label className="block font-cinzel text-xs text-[#a68a56] mb-1">Scroll Title *</label>
                   <input type="text" value={editingQuestion.title ?? ''} onChange={e => setEditingQuestion(q => ({ ...q, title: e.target.value }))}
-                    className="w-full rounded-xl border border-white/10 bg-black/40 px-3 py-2 font-mono text-sm text-white focus:border-cyan-500 focus:outline-none" />
+                    className="w-full rounded-xl border border-[#a68a56]/30 bg-[#050504] px-3 py-2 font-cinzel text-sm text-[#ebe4d5] focus:border-[#d4af37] focus:outline-none" />
                 </div>
                 <div>
-                  <label className="block font-mono text-xs text-gray-400 mb-1">Points</label>
+                  <label className="block font-cinzel text-xs text-[#a68a56] mb-1">Bounty Points</label>
                   <input type="number" value={editingQuestion.points ?? 400} onChange={e => setEditingQuestion(q => ({ ...q, points: +e.target.value }))}
-                    className="w-full rounded-xl border border-white/10 bg-black/40 px-3 py-2 font-mono text-sm text-white focus:border-cyan-500 focus:outline-none" />
+                    className="w-full rounded-xl border border-[#a68a56]/30 bg-[#050504] px-3 py-2 font-nautical-mono text-sm text-[#ebe4d5] focus:border-[#d4af37] focus:outline-none" />
                 </div>
               </div>
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
-                  <label className="block font-mono text-xs text-gray-400 mb-1">Category</label>
+                  <label className="block font-cinzel text-xs text-[#a68a56] mb-1">Category</label>
                   <input type="text" value={editingQuestion.category ?? ''} onChange={e => setEditingQuestion(q => ({ ...q, category: e.target.value }))}
-                    className="w-full rounded-xl border border-white/10 bg-black/40 px-3 py-2 font-mono text-sm text-white focus:border-cyan-500 focus:outline-none" />
+                    className="w-full rounded-xl border border-[#a68a56]/30 bg-[#050504] px-3 py-2 font-nautical-mono text-sm text-[#ebe4d5] focus:border-[#d4af37] focus:outline-none" />
                 </div>
                 <div>
-                  <label className="block font-mono text-xs text-gray-400 mb-1">Difficulty</label>
+                  <label className="block font-cinzel text-xs text-[#a68a56] mb-1">Difficulty</label>
                   <select value={editingQuestion.difficulty ?? 'Medium'} onChange={e => setEditingQuestion(q => ({ ...q, difficulty: e.target.value as any }))}
-                    className="w-full rounded-xl border border-white/10 bg-black/40 px-3 py-2 font-mono text-sm text-white focus:border-cyan-500 focus:outline-none">
+                    className="w-full rounded-xl border border-[#a68a56]/30 bg-[#050504] px-3 py-2 font-cinzel text-sm text-[#ebe4d5] focus:border-[#d4af37] focus:outline-none">
                     <option>Easy</option><option>Medium</option><option>Hard</option>
                   </select>
                 </div>
               </div>
 
               {[
-                { key: 'scenario', label: 'Scenario Description' },
-                { key: 'inputFormat', label: 'Input Format' },
-                { key: 'outputFormat', label: 'Output Format' },
-                { key: 'constraints', label: 'Constraints' },
+                { key: 'scenario', label: 'Scenario Charter' },
+                { key: 'inputFormat', label: 'Input Inscription' },
+                { key: 'outputFormat', label: 'Output Vessel' },
+                { key: 'constraints', label: 'Voyage Constraints' },
               ].map(({ key, label }) => (
                 <div key={key}>
-                  <label className="block font-mono text-xs text-gray-400 mb-1">{label}</label>
+                  <label className="block font-cinzel text-xs text-[#a68a56] mb-1">{label}</label>
                   <textarea value={(editingQuestion as any)[key] ?? ''} onChange={e => setEditingQuestion(q => ({ ...q, [key]: e.target.value }))} rows={3}
-                    className="w-full rounded-xl border border-white/10 bg-black/40 px-3 py-2 font-mono text-xs text-white focus:border-cyan-500 focus:outline-none resize-y" />
+                    className="w-full rounded-xl border border-[#a68a56]/30 bg-[#050504] px-3 py-2 font-nautical-mono text-xs text-[#ebe4d5] focus:border-[#d4af37] focus:outline-none resize-y" />
                 </div>
               ))}
 
               {/* Test Cases */}
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <label className="font-mono text-xs text-gray-400">Test Cases</label>
+                  <label className="font-cinzel text-xs text-[#a68a56]">Public & Sealed Trials</label>
                   <button onClick={() => setEditingQuestion(q => ({ ...q, testCases: [...(q.testCases ?? []), { id: `tc-${Date.now()}`, input: '', expectedOutput: '', isHidden: false }] }))}
-                    className="flex items-center gap-1 rounded-lg bg-white/5 border border-white/10 px-2 py-1 font-mono text-[11px] text-gray-300 hover:bg-white/10">
-                    <Plus className="h-3 w-3" /> Add
+                    className="flex items-center gap-1 rounded-lg bg-[#1c160e] border border-[#a68a56]/30 px-2.5 py-1 font-cinzel text-[11px] text-[#f3d38c] hover:border-[#d4af37] bouncy-btn">
+                    <Plus className="h-3 w-3" /> Add Trial
                   </button>
                 </div>
                 <div className="space-y-3">
                   {(editingQuestion.testCases ?? []).map((tc, i) => (
-                    <div key={tc.id} className="rounded-xl border border-white/10 bg-black/30 p-3 space-y-2">
+                    <div key={tc.id} className="rounded-xl border border-[#a68a56]/20 bg-[#050504] p-3 space-y-2">
                       <div className="flex items-center justify-between">
-                        <span className="font-mono text-[11px] text-gray-500">Test {i + 1}</span>
+                        <span className="font-cinzel text-[11px] text-[#d4af37]">Trial {i + 1}</span>
                         <div className="flex items-center gap-3">
-                          <label className="flex items-center gap-1.5 font-mono text-[11px] text-gray-400 cursor-pointer">
+                          <label className="flex items-center gap-1.5 font-cinzel text-[11px] text-[#a68a56] cursor-pointer">
                             <input type="checkbox" checked={tc.isHidden} onChange={e => {
                               const tcs = [...(editingQuestion.testCases ?? [])];
                               tcs[i] = { ...tcs[i], isHidden: e.target.checked };
                               setEditingQuestion(q => ({ ...q, testCases: tcs }));
-                            }} className="accent-amber-400" />
-                            Hidden
+                            }} className="accent-[#d4af37]" />
+                            Sealed (Hidden)
                           </label>
                           <button onClick={() => setEditingQuestion(q => ({ ...q, testCases: (q.testCases ?? []).filter((_, idx) => idx !== i) }))} className="text-red-400 hover:text-red-300"><Trash2 className="h-3.5 w-3.5" /></button>
                         </div>
                       </div>
                       <div className="grid grid-cols-2 gap-2">
                         <div>
-                          <div className="font-mono text-[10px] text-gray-500 mb-1">Input</div>
+                          <div className="font-nautical-mono text-[10px] text-[#a68a56] mb-1">Input</div>
                           <textarea value={tc.input} onChange={e => {
                             const tcs = [...(editingQuestion.testCases ?? [])];
                             tcs[i] = { ...tcs[i], input: e.target.value };
                             setEditingQuestion(q => ({ ...q, testCases: tcs }));
-                          }} rows={2} className="w-full rounded-lg border border-white/10 bg-black/50 px-2 py-1 font-mono text-xs text-emerald-300 focus:outline-none resize-none" />
+                          }} rows={2} className="w-full rounded-lg border border-[#a68a56]/20 bg-[#090704] px-2 py-1 font-nautical-mono text-xs text-[#f3d38c] focus:outline-none resize-none" />
                         </div>
                         <div>
-                          <div className="font-mono text-[10px] text-gray-500 mb-1">Expected Output</div>
+                          <div className="font-nautical-mono text-[10px] text-[#a68a56] mb-1">Expected Output</div>
                           <textarea value={tc.expectedOutput} onChange={e => {
                             const tcs = [...(editingQuestion.testCases ?? [])];
                             tcs[i] = { ...tcs[i], expectedOutput: e.target.value };
                             setEditingQuestion(q => ({ ...q, testCases: tcs }));
-                          }} rows={2} className="w-full rounded-lg border border-white/10 bg-black/50 px-2 py-1 font-mono text-xs text-cyan-300 focus:outline-none resize-none" />
+                          }} rows={2} className="w-full rounded-lg border border-[#a68a56]/20 bg-[#090704] px-2 py-1 font-nautical-mono text-xs text-[#d4af37] focus:outline-none resize-none" />
                         </div>
                       </div>
                     </div>
@@ -1377,10 +1393,10 @@ export default function AdminPage() {
                 </div>
               </div>
 
-              <div className="flex justify-end gap-3 border-t border-white/[0.08] pt-4">
-                <button onClick={() => setShowQuestionModal(false)} className="rounded-xl border border-white/10 px-4 py-2 font-mono text-xs text-gray-300 hover:bg-white/5">Cancel</button>
-                <button onClick={handleSaveQuestion} className="rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 px-5 py-2 font-mono text-xs font-bold text-black hover:brightness-110">
-                  {editingQuestion.id ? 'Save Changes' : 'Create Question'}
+              <div className="flex justify-end gap-3 border-t border-[#a68a56]/20 pt-4">
+                <button onClick={() => setShowQuestionModal(false)} className="rounded-xl border border-[#a68a56]/30 px-4 py-2 font-cinzel text-xs text-[#ebe4d5] hover:bg-[#1c160e]">Cancel</button>
+                <button onClick={handleSaveQuestion} className="rounded-xl bg-gradient-to-r from-[#d4af37] via-[#f3d38c] to-[#a68a56] px-5 py-2 font-cinzel text-xs font-bold text-[#050504] hover:brightness-110 shadow-[0_0_15px_rgba(212,175,55,0.25)] bouncy-btn">
+                  {editingQuestion.id ? 'Save Inscription' : 'Inscribe Scroll'}
                 </button>
               </div>
             </div>
@@ -1390,17 +1406,17 @@ export default function AdminPage() {
 
       {/* Import JSON Modal */}
       {showImportJsonModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-md">
-          <div className="w-full max-w-xl rounded-2xl border border-white/10 bg-[#0d1420] p-6 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="font-mono text-sm font-bold text-white">Import Questions JSON</h3>
-              <button onClick={() => setShowImportJsonModal(false)} className="text-gray-400 hover:text-white"><X className="h-5 w-5" /></button>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4 backdrop-blur-md">
+          <div className="w-full max-w-xl rounded-2xl border border-[#d4af37]/40 bg-[#0c0906] p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-[#a68a56]/20 pb-3">
+              <h3 className="font-cinzel text-sm font-bold text-[#f3d38c]">Import Scrolls JSON Parchment</h3>
+              <button onClick={() => setShowImportJsonModal(false)} className="text-[#a68a56] hover:text-[#ebe4d5]"><X className="h-5 w-5" /></button>
             </div>
             <textarea value={importJsonText} onChange={e => setImportJsonText(e.target.value)} placeholder='[{"title":"...", "testCases":[...]}]' rows={10}
-              className="w-full rounded-xl border border-white/10 bg-black/50 p-3 font-mono text-xs text-white focus:border-cyan-500 focus:outline-none resize-y" />
+              className="w-full rounded-xl border border-[#a68a56]/30 bg-[#050504] p-3 font-nautical-mono text-xs text-[#ebe4d5] focus:border-[#d4af37] focus:outline-none resize-y" />
             <div className="flex justify-end gap-3">
-              <button onClick={() => setShowImportJsonModal(false)} className="rounded-xl border border-white/10 px-4 py-2 font-mono text-xs text-gray-300">Cancel</button>
-              <button onClick={handleImportQuestionsJSON} className="rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 px-5 py-2 font-mono text-xs font-bold text-black hover:brightness-110">Import</button>
+              <button onClick={() => setShowImportJsonModal(false)} className="rounded-xl border border-[#a68a56]/30 px-4 py-2 font-cinzel text-xs text-[#ebe4d5] hover:bg-[#1c160e]">Cancel</button>
+              <button onClick={handleImportQuestionsJSON} className="rounded-xl bg-gradient-to-r from-[#d4af37] via-[#f3d38c] to-[#a68a56] px-5 py-2 font-cinzel text-xs font-bold text-[#050504] hover:brightness-110 bouncy-btn">Import Scrolls</button>
             </div>
           </div>
         </div>
@@ -1409,16 +1425,16 @@ export default function AdminPage() {
       {/* Code Inspector Modal */}
       {inspectedSubmission && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4 backdrop-blur-md">
-          <div className="w-full max-w-4xl max-h-[90vh] flex flex-col rounded-2xl border border-white/10 bg-[#0d1420] shadow-2xl overflow-hidden">
-            <div className="flex items-center justify-between border-b border-white/[0.08] px-6 py-4">
+          <div className="w-full max-w-4xl max-h-[90vh] flex flex-col rounded-2xl border border-[#d4af37]/40 bg-[#0c0906] shadow-2xl overflow-hidden">
+            <div className="flex items-center justify-between border-b border-[#a68a56]/20 px-6 py-4">
               <div>
-                <div className="font-mono text-sm font-bold text-white">{inspectedSubmission.participantName} — {inspectedSubmission.questionTitle}</div>
-                <div className="font-mono text-xs text-gray-400 mt-0.5">
+                <div className="font-cinzel text-sm font-bold text-[#ebe4d5]">{inspectedSubmission.participantName} — {inspectedSubmission.questionTitle}</div>
+                <div className="font-nautical-mono text-xs text-[#a68a56] mt-0.5">
                   {inspectedSubmission.language.toUpperCase()} · Score: {inspectedSubmission.score} · {inspectedSubmission.testCasesPassed}/{inspectedSubmission.totalTestCases} passed
-                  {inspectedSubmission.isAutoSubmit && <span className="ml-2 rounded bg-amber-950/60 border border-amber-500/30 px-1.5 py-0.5 text-[10px] text-amber-300">AUTO-SUBMITTED</span>}
+                  {inspectedSubmission.isAutoSubmit && <span className="ml-2 rounded bg-[#1c160e] border border-[#d4af37]/40 px-1.5 py-0.5 text-[10px] text-[#f3d38c] font-cinzel">AUTO-SUBMITTED</span>}
                 </div>
               </div>
-              <button onClick={() => setInspectedSubmission(null)} className="text-gray-400 hover:text-white"><X className="h-5 w-5" /></button>
+              <button onClick={() => setInspectedSubmission(null)} className="text-[#a68a56] hover:text-[#ebe4d5]"><X className="h-5 w-5" /></button>
             </div>
             <div className="flex-1 overflow-hidden">
               <Editor height="60vh" language={inspectedSubmission.language === 'c' ? 'c' : inspectedSubmission.language}

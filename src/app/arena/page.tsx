@@ -342,7 +342,7 @@ export default function ArenaPage() {
   }
 
   return (
-    <div className="relative flex flex-1 flex-col overflow-hidden bg-[#06090e]">
+    <div className="relative flex flex-1 flex-col overflow-hidden bg-[#050504]">
       {/* Anti-Cheat Shield with Fullscreen & Watermark Matrix */}
       <AntiCheatShield
         participantName={participant.name}
@@ -358,25 +358,25 @@ export default function ArenaPage() {
       />
 
       {/* Global Arena Top Bar */}
-      <div className="flex flex-wrap items-center justify-between border-b border-white/[0.08] bg-[#090e17] px-4 py-2.5 sm:px-6">
+      <div className="flex flex-wrap items-center justify-between border-b border-[#a68a56]/20 bg-[#090806]/95 px-4 py-2 sm:px-6">
         {/* Left: Participant info & terminal badge */}
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 rounded-lg border border-emerald-500/30 bg-emerald-950/20 px-2.5 py-1 font-mono text-xs text-emerald-300">
-            <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+          <div className="flex items-center gap-2 rounded-lg border border-[#a68a56]/30 bg-[#1c160e]/80 px-2.5 py-1 font-nautical-mono text-xs text-[#f3d38c]">
+            <span className="h-2 w-2 rounded-full bg-[#d4af37] animate-pulse" />
             <span>{participant.name} ({participant.rollNumber})</span>
-            <span className="text-gray-500">·</span>
-            <span className="text-gray-400">{participant.terminalId}</span>
+            <span className="text-[#a68a56]">·</span>
+            <span className="text-[#ebe4d5]/80">{participant.terminalId}</span>
           </div>
 
-          <div className="hidden md:flex items-center gap-1.5 font-mono text-xs text-gray-400">
-            <ShieldAlert className="h-3.5 w-3.5 text-amber-400" />
-            <span>Strikes: <strong className={strikes > 0 ? 'text-red-400' : 'text-gray-300'}>{strikes}/3</strong></span>
+          <div className="hidden md:flex items-center gap-1.5 font-nautical-mono text-xs text-[#a68a56]">
+            <ShieldAlert className="h-3.5 w-3.5 text-[#d4af37]" />
+            <span>Strikes: <strong className={strikes > 0 ? 'text-red-400' : 'text-[#f3d38c]'}>{strikes}/3</strong></span>
           </div>
 
           {/* Network Health Indicator */}
-          <div className="hidden sm:flex items-center gap-1.5 font-mono text-xs text-gray-400">
+          <div className="hidden sm:flex items-center gap-1.5 font-nautical-mono text-xs text-[#a68a56]">
             {isOnline ? (
-              <span className="flex items-center gap-1 text-emerald-400 text-[11px]">
+              <span className="flex items-center gap-1 text-[#d4af37] text-[11px]">
                 <Wifi className="h-3 w-3" /> Online
               </span>
             ) : (
@@ -389,23 +389,23 @@ export default function ArenaPage() {
 
         {/* Right: Timer, Save status, Font Controls, and Submit Action */}
         <div className="flex items-center gap-3">
-          <span className="hidden lg:inline-block font-mono text-[11px] text-gray-400">
+          <span className="hidden lg:inline-block font-nautical-mono text-[11px] text-[#a68a56]">
             {savedStatus}
           </span>
 
           {/* Font Resizer */}
-          <div className="hidden sm:flex items-center border border-white/10 rounded-lg bg-black/40 p-0.5 font-mono text-xs">
+          <div className="hidden sm:flex items-center border border-[#a68a56]/20 rounded-lg bg-[#050504]/60 p-0.5 font-nautical-mono text-xs">
             <button
               onClick={() => setEditorFontSize((prev) => Math.max(12, prev - 1))}
-              className="p-1 text-gray-400 hover:text-white"
+              className="p-1 text-[#a68a56] hover:text-[#f3d38c]"
               title="Decrease Font Size"
             >
               <ZoomOut className="h-3.5 w-3.5" />
             </button>
-            <span className="px-1.5 text-[11px] text-gray-300">{editorFontSize}px</span>
+            <span className="px-1.5 text-[11px] text-[#ebe4d5]">{editorFontSize}px</span>
             <button
               onClick={() => setEditorFontSize((prev) => Math.min(20, prev + 1))}
-              className="p-1 text-gray-400 hover:text-white"
+              className="p-1 text-[#a68a56] hover:text-[#f3d38c]"
               title="Increase Font Size"
             >
               <ZoomIn className="h-3.5 w-3.5" />
@@ -421,22 +421,22 @@ export default function ArenaPage() {
           <button
             onClick={() => setShowConfirmModal(true)}
             disabled={submitting || isLockedOut || isContestOver || !isFullscreen}
-            className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 px-4 py-1.5 font-mono text-xs font-bold text-black shadow-lg shadow-emerald-500/20 transition-all hover:brightness-110 active:scale-95 disabled:opacity-50"
+            className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-[#d4af37] via-[#f3d38c] to-[#a68a56] px-4 py-1.5 font-cinzel text-xs font-bold tracking-wider text-[#050504] shadow-[0_0_20px_rgba(212,175,55,0.25)] transition-all hover:brightness-110 active:scale-95 disabled:opacity-50 bouncy-btn"
           >
             <Send className="h-3.5 w-3.5" />
-            <span>{submittedQuestions[activeQuestion.id] ? 'Update Submission' : 'Submit Solution'}</span>
+            <span>{submittedQuestions[activeQuestion.id] ? 'UPDATE SUBMISSION' : 'LOCK & SUBMIT'}</span>
           </button>
         </div>
       </div>
 
       {/* Submission Feedback Banner */}
       {submissionFeedback && (
-        <div className="flex items-center justify-between border-b border-emerald-500/40 bg-emerald-950/30 px-4 py-2 font-mono text-xs text-emerald-300 animate-fade-in">
+        <div className="flex items-center justify-between border-b border-[#d4af37]/40 bg-[#1c160e]/95 px-4 py-2 font-nautical-mono text-xs text-[#f3d38c] animate-fade-in">
           <div className="flex items-center gap-2">
-            <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+            <CheckCircle2 className="h-4 w-4 text-[#d4af37]" />
             <span>{submissionFeedback}</span>
           </div>
-          <button onClick={() => setSubmissionFeedback(null)} className="text-gray-400 hover:text-white">
+          <button onClick={() => setSubmissionFeedback(null)} className="text-[#a68a56] hover:text-white">
             <X className="h-3.5 w-3.5" />
           </button>
         </div>
@@ -446,9 +446,9 @@ export default function ArenaPage() {
       <div className="flex flex-1 flex-col lg:flex-row overflow-hidden">
         {/* Left Drawer: Problem Description & Multi-Question Tabs */}
         {!isDrawerCollapsed && (
-          <div className="w-full lg:w-[450px] xl:w-[500px] flex flex-col border-b lg:border-b-0 lg:border-r border-white/[0.08] bg-[#080d16] overflow-y-auto">
+          <div className="w-full lg:w-[450px] xl:w-[500px] flex flex-col border-b lg:border-b-0 lg:border-r border-[#a68a56]/20 bg-[#090806]/95 overflow-y-auto">
             {/* Question Switcher Tabs */}
-            <div className="sticky top-0 z-10 flex border-b border-white/[0.08] bg-[#080d16] p-2 gap-1.5 overflow-x-auto justify-between items-center">
+            <div className="sticky top-0 z-10 flex border-b border-[#a68a56]/20 bg-[#090806] p-2 gap-1.5 overflow-x-auto justify-between items-center">
               <div className="flex gap-1.5 overflow-x-auto">
                 {questions.map((q, idx) => {
                   const isSelected = idx === activeQuestionIndex;
@@ -457,18 +457,18 @@ export default function ArenaPage() {
                     <button
                       key={q.id}
                       onClick={() => setActiveQuestionIndex(idx)}
-                      className={`flex items-center gap-2 rounded-lg px-3 py-1.5 font-mono text-xs transition-all whitespace-nowrap ${
+                      className={`flex items-center gap-2 rounded-lg px-3 py-1.5 font-nautical-mono text-xs transition-all whitespace-nowrap bouncy-btn ${
                         isSelected
-                          ? 'border border-cyan-500/50 bg-cyan-950/40 text-cyan-300 font-bold'
+                          ? 'border border-[#d4af37] bg-[#1c160e] text-[#f3d38c] font-bold shadow-[0_0_12px_rgba(212,175,55,0.2)]'
                           : isDone
-                          ? 'border border-emerald-500/30 bg-emerald-950/20 text-emerald-300'
-                          : 'border border-white/5 bg-white/5 text-gray-400 hover:bg-white/10'
+                          ? 'border border-[#a68a56]/40 bg-[#1c160e]/50 text-[#d4af37]'
+                          : 'border border-[#a68a56]/15 bg-[#050504]/50 text-[#a68a56] hover:bg-[#1c160e]/30 hover:text-[#ebe4d5]'
                       }`}
                     >
                       {isDone ? (
-                        <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
+                        <CheckCircle2 className="h-3.5 w-3.5 text-[#d4af37]" />
                       ) : (
-                        <span className="h-2 w-2 rounded-full bg-gray-500" />
+                        <span className="h-2 w-2 rounded-full bg-[#6b5535]" />
                       )}
                       <span>Q{idx + 1} ({q.points}pts)</span>
                     </button>
@@ -490,47 +490,47 @@ export default function ArenaPage() {
             <div className="p-5 space-y-6">
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="rounded bg-white/10 px-2 py-0.5 font-mono text-[10px] font-semibold text-emerald-400">
+                  <span className="rounded border border-[#d4af37]/30 bg-[#1c160e] px-2 py-0.5 font-cinzel text-[10px] font-semibold text-[#f3d38c]">
                     {activeQuestion.difficulty}
                   </span>
-                  <span className="font-mono text-xs text-gray-400">
+                  <span className="font-nautical-mono text-xs text-[#a68a56]">
                     {activeQuestion.category} · {activeQuestion.points} Points
                   </span>
                 </div>
-                <h2 className="mt-2 font-mono text-xl font-bold tracking-tight text-white">
+                <h2 className="mt-2 font-cinzel text-xl font-bold tracking-tight text-[#ebe4d5]">
                   {activeQuestion.title}
                 </h2>
               </div>
 
               {/* Scenario Story */}
               <div className="space-y-2">
-                <h3 className="font-mono text-xs font-semibold uppercase tracking-wider text-gray-400">
-                  Scenario Description
+                <h3 className="font-cinzel text-xs font-semibold uppercase tracking-wider text-[#d4af37]">
+                  Scenario Charter
                 </h3>
-                <div className="rounded-xl border border-white/5 bg-black/30 p-4 font-sans text-sm leading-relaxed text-gray-300 whitespace-pre-line">
+                <div className="rounded-xl border border-[#a68a56]/20 bg-[#050504]/60 p-4 font-sans text-sm leading-relaxed text-[#ebe4d5]/90 whitespace-pre-line">
                   {activeQuestion.scenario}
                 </div>
               </div>
 
               {/* Input & Output Format */}
               <div className="grid gap-3">
-                <div className="rounded-xl border border-white/5 bg-black/20 p-3">
-                  <h4 className="font-mono text-xs font-semibold text-cyan-400">Input Format</h4>
-                  <p className="mt-1 font-mono text-xs text-gray-300 whitespace-pre-line">
+                <div className="rounded-xl border border-[#a68a56]/20 bg-[#050504]/40 p-3">
+                  <h4 className="font-cinzel text-xs font-semibold text-[#f3d38c]">Input Inscription</h4>
+                  <p className="mt-1 font-nautical-mono text-xs text-[#ebe4d5]/80 whitespace-pre-line">
                     {activeQuestion.inputFormat}
                   </p>
                 </div>
 
-                <div className="rounded-xl border border-white/5 bg-black/20 p-3">
-                  <h4 className="font-mono text-xs font-semibold text-cyan-400">Output Format</h4>
-                  <p className="mt-1 font-mono text-xs text-gray-300 whitespace-pre-line">
+                <div className="rounded-xl border border-[#a68a56]/20 bg-[#050504]/40 p-3">
+                  <h4 className="font-cinzel text-xs font-semibold text-[#f3d38c]">Output Vessel</h4>
+                  <p className="mt-1 font-nautical-mono text-xs text-[#ebe4d5]/80 whitespace-pre-line">
                     {activeQuestion.outputFormat}
                   </p>
                 </div>
 
-                <div className="rounded-xl border border-white/5 bg-black/20 p-3">
-                  <h4 className="font-mono text-xs font-semibold text-amber-400">Constraints</h4>
-                  <p className="mt-1 font-mono text-xs text-gray-300 whitespace-pre-line">
+                <div className="rounded-xl border border-[#a68a56]/20 bg-[#050504]/40 p-3">
+                  <h4 className="font-cinzel text-xs font-semibold text-[#d4af37]">Voyage Constraints</h4>
+                  <p className="mt-1 font-nautical-mono text-xs text-[#ebe4d5]/80 whitespace-pre-line">
                     {activeQuestion.constraints}
                   </p>
                 </div>
@@ -539,35 +539,35 @@ export default function ArenaPage() {
               {/* Sample Public Test Cases */}
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <h3 className="font-mono text-xs font-semibold uppercase tracking-wider text-gray-400">
-                    Sample Test Cases (Public)
+                  <h3 className="font-cinzel text-xs font-semibold uppercase tracking-wider text-[#d4af37]">
+                    Public Trials
                   </h3>
-                  <span className="font-mono text-[10px] text-gray-500">
-                    Hidden cases evaluated after submission
+                  <span className="font-nautical-mono text-[10px] text-[#a68a56]">
+                    Hidden seals tested upon stage reveal
                   </span>
                 </div>
 
                 {activeQuestion.testCases.map((tc, idx) => (
                   <div
                     key={tc.id}
-                    className="rounded-xl border border-white/10 bg-[#0c121d] p-3 font-mono text-xs space-y-2 select-none"
+                    className="rounded-xl border border-[#a68a56]/25 bg-[#0e0b07] p-3 font-nautical-mono text-xs space-y-2 select-none"
                   >
-                    <div className="text-[11px] font-bold text-gray-400">Example {idx + 1}</div>
+                    <div className="text-[11px] font-cinzel font-bold text-[#f3d38c]">Trial {idx + 1}</div>
                     <div>
-                      <span className="text-gray-500">Input:</span>
-                      <pre className="mt-0.5 rounded bg-black/40 p-2 text-emerald-300 overflow-x-auto">
+                      <span className="text-[#a68a56]">Input:</span>
+                      <pre className="mt-0.5 rounded border border-[#a68a56]/15 bg-[#050504] p-2 text-[#f3d38c] overflow-x-auto">
                         {tc.input}
                       </pre>
                     </div>
                     <div>
-                      <span className="text-gray-500">Expected Output:</span>
-                      <pre className="mt-0.5 rounded bg-black/40 p-2 text-cyan-300 overflow-x-auto">
+                      <span className="text-[#a68a56]">Expected Output:</span>
+                      <pre className="mt-0.5 rounded border border-[#a68a56]/15 bg-[#050504] p-2 text-[#d4af37] overflow-x-auto">
                         {tc.expectedOutput}
                       </pre>
                     </div>
                     {tc.explanation && (
-                      <div className="text-[11px] text-gray-400 italic">
-                        Note: {tc.explanation}
+                      <div className="text-[11px] text-[#a68a56] italic">
+                        Log: {tc.explanation}
                       </div>
                     )}
                   </div>
@@ -580,24 +580,24 @@ export default function ArenaPage() {
         {/* Right Workspace: Blind Monaco Code Editor */}
         <div className="flex flex-1 flex-col overflow-hidden">
           {/* Editor Header: Expand drawer, Language selector, and Reset */}
-          <div className="flex items-center justify-between border-b border-white/[0.08] bg-[#0a0f19] px-4 py-2">
+          <div className="flex items-center justify-between border-b border-[#a68a56]/20 bg-[#0c0906] px-4 py-2">
             <div className="flex items-center gap-3">
               {isDrawerCollapsed && (
                 <button
                   onClick={() => setIsDrawerCollapsed(false)}
-                  className="flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-2.5 py-1 font-mono text-xs text-cyan-300 hover:bg-white/10"
+                  className="flex items-center gap-1.5 rounded-lg border border-[#a68a56]/30 bg-[#1c160e]/50 px-2.5 py-1 font-cinzel text-xs text-[#f3d38c] hover:border-[#d4af37]"
                 >
                   <PanelLeftOpen className="h-4 w-4" />
-                  <span>Show Problem</span>
+                  <span>Inspect Scroll</span>
                 </button>
               )}
 
               <div className="flex items-center gap-2">
-                <label className="font-mono text-xs text-gray-400">Language:</label>
+                <label className="font-cinzel text-xs text-[#a68a56]">Cipher:</label>
                 <select
                   value={language}
                   onChange={(e) => setLanguage(e.target.value as Language)}
-                  className="rounded-lg border border-white/15 bg-black/50 px-3 py-1 font-mono text-xs font-semibold text-white focus:border-cyan-500 focus:outline-none"
+                  className="rounded-lg border border-[#a68a56]/30 bg-[#050504] px-3 py-1 font-nautical-mono text-xs font-semibold text-[#f3d38c] focus:border-[#d4af37] focus:outline-none"
                 >
                   <option value="python">Python 3 (3.12)</option>
                   <option value="c">C (GCC 14)</option>
@@ -607,29 +607,29 @@ export default function ArenaPage() {
             </div>
 
             <div className="flex items-center gap-3">
-              <span className="hidden sm:inline font-mono text-[11px] text-gray-500">
-                Shortcut: <code className="text-gray-400">Ctrl+S</code> to save · <code className="text-gray-400">Ctrl+Enter</code> to submit
+              <span className="hidden sm:inline font-nautical-mono text-[11px] text-[#a68a56]">
+                Keys: <code className="text-[#f3d38c]">Ctrl+S</code> save · <code className="text-[#f3d38c]">Ctrl+Enter</code> submit
               </span>
 
               <button
                 onClick={handleResetStarter}
-                className="flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-2.5 py-1 font-mono text-xs text-gray-400 hover:bg-white/10 hover:text-white transition-all"
+                className="flex items-center gap-1.5 rounded-lg border border-[#a68a56]/30 bg-[#1c160e]/50 px-2.5 py-1 font-nautical-mono text-xs text-[#a68a56] hover:bg-[#1c160e] hover:text-[#f3d38c] hover:border-[#d4af37] transition-all bouncy-btn"
                 title="Reset to starter template"
               >
                 <RotateCcw className="h-3.5 w-3.5" />
-                <span>Reset Starter</span>
+                <span>Reset Parchment</span>
               </button>
             </div>
           </div>
 
           {/* Monaco Editor Container */}
-          <div className="relative flex-1 p-2 bg-[#06090e]">
+          <div className="relative flex-1 p-2 bg-[#050504]">
             {!isFullscreen && (
-              <div className="absolute inset-0 z-30 flex items-center justify-center bg-[#070b12]/95 backdrop-blur-md select-none pointer-events-auto">
-                <div className="flex flex-col items-center gap-2 p-6 text-center font-mono text-xs text-amber-400">
-                  <ShieldAlert className="h-8 w-8 animate-pulse text-amber-400" />
-                  <span className="font-bold text-sm">TERMINAL LOCKED: FULLSCREEN REQUIRED</span>
-                  <span className="text-gray-400 max-w-xs">All code editing and input is strictly disabled outside of presentation fullscreen mode.</span>
+              <div className="absolute inset-0 z-30 flex items-center justify-center bg-[#050504]/95 backdrop-blur-md select-none pointer-events-auto">
+                <div className="flex flex-col items-center gap-3 p-6 text-center font-cinzel text-xs text-[#d4af37]">
+                  <ShieldAlert className="h-8 w-8 animate-pulse text-[#d4af37]" />
+                  <span className="font-bold text-sm tracking-wider">CHAMBER SEALED · FULLSCREEN REQUIRED</span>
+                  <span className="text-[#a68a56] max-w-xs font-nautical-mono text-xs">All ink and editing is strictly forbidden outside presentation fullscreen sanctuary.</span>
                 </div>
               </div>
             )}
@@ -646,39 +646,39 @@ export default function ArenaPage() {
 
       {/* Confirmation Modal Before Submission */}
       {showConfirmModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-6 backdrop-blur-md">
-          <div className="max-w-md rounded-2xl border border-emerald-500/40 bg-[#0d1420] p-6 shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-6 backdrop-blur-md">
+          <div className="max-w-md rounded-2xl border border-[#d4af37]/40 bg-[#0c0906] p-6 shadow-[0_0_50px_rgba(0,0,0,0.9)]">
             <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400">
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#d4af37]/10 border border-[#d4af37]/30 text-[#d4af37]">
                 <Send className="h-5 w-5" />
               </div>
               <div>
-                <h3 className="font-mono text-lg font-bold text-white">
-                  Confirm Code Submission
+                <h3 className="font-cinzel text-lg font-bold text-[#f3d38c]">
+                  Seal and Submit Solution
                 </h3>
-                <p className="text-xs text-gray-400">
+                <p className="text-xs font-nautical-mono text-[#a68a56]">
                   {activeQuestion.title} ({language.toUpperCase()})
                 </p>
               </div>
             </div>
 
-            <p className="mt-4 text-sm leading-relaxed text-gray-300">
-              Under <strong>Code In The Dark rules</strong>, your code will be securely submitted to the sandbox. 
+            <p className="mt-4 text-sm leading-relaxed text-[#ebe4d5]/90">
+              Under <strong>Code In The Dark rules</strong>, your code will be securely submitted to the sanctuary. 
               Execution outputs remain strictly hidden until the stage evaluation reveal.
             </p>
 
             <div className="mt-6 flex items-center justify-end gap-3">
               <button
                 onClick={() => setShowConfirmModal(false)}
-                className="rounded-xl border border-white/10 px-4 py-2 font-mono text-xs text-gray-300 hover:bg-white/5"
+                className="rounded-xl border border-[#a68a56]/30 px-4 py-2 font-cinzel text-xs text-[#ebe4d5] hover:bg-[#1c160e]"
               >
-                Cancel
+                Return
               </button>
               <button
                 onClick={handleSubmitSolution}
-                className="rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 px-5 py-2 font-mono text-xs font-bold text-black shadow-lg shadow-emerald-500/20 hover:brightness-110 active:scale-95"
+                className="rounded-xl bg-gradient-to-r from-[#d4af37] via-[#f3d38c] to-[#a68a56] px-5 py-2 font-cinzel text-xs font-bold text-[#050504] shadow-[0_0_20px_rgba(212,175,55,0.3)] hover:brightness-110 active:scale-95 bouncy-btn"
               >
-                Confirm & Submit
+                Confirm & Seal
               </button>
             </div>
           </div>
@@ -687,57 +687,57 @@ export default function ArenaPage() {
 
       {/* Phase 4 Digital Submission Receipt Modal */}
       {activeReceipt && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-6 backdrop-blur-md">
-          <div className="max-w-md w-full rounded-2xl border border-cyan-500/40 bg-[#0c1320] p-6 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between border-b border-white/[0.08] pb-3">
-              <div className="flex items-center gap-2 text-cyan-400 font-mono text-sm font-bold">
-                <FileCheck className="h-5 w-5" />
-                <span>OFFICIAL SUBMISSION RECEIPT</span>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-6 backdrop-blur-md">
+          <div className="max-w-md w-full rounded-2xl border border-[#d4af37]/40 bg-[#0c0906] p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-[#a68a56]/20 pb-3">
+              <div className="flex items-center gap-2 text-[#f3d38c] font-cinzel text-sm font-bold tracking-wider">
+                <FileCheck className="h-5 w-5 text-[#d4af37]" />
+                <span>OFFICIAL SUBMISSION CHARTER</span>
               </div>
               <button
                 onClick={() => setActiveReceipt(null)}
-                className="text-gray-400 hover:text-white"
+                className="text-[#a68a56] hover:text-[#ebe4d5]"
               >
                 <X className="h-4 w-4" />
               </button>
             </div>
 
-            <div className="rounded-xl border border-white/10 bg-black/50 p-4 font-mono text-xs space-y-2.5">
-              <div className="flex justify-between text-gray-400">
-                <span>Receipt Token:</span>
-                <span className="font-bold text-white">{activeReceipt.receiptId}</span>
+            <div className="rounded-xl border border-[#a68a56]/25 bg-[#050504]/70 p-4 font-nautical-mono text-xs space-y-2.5">
+              <div className="flex justify-between text-[#a68a56]">
+                <span>Charter Token:</span>
+                <span className="font-bold text-[#f3d38c]">{activeReceipt.receiptId}</span>
               </div>
-              <div className="flex justify-between text-gray-400">
-                <span>Candidate:</span>
-                <span className="text-emerald-300 font-semibold">{participant.name} ({participant.rollNumber})</span>
+              <div className="flex justify-between text-[#a68a56]">
+                <span>Navigator:</span>
+                <span className="text-[#ebe4d5] font-semibold">{participant.name} ({participant.rollNumber})</span>
               </div>
-              <div className="flex justify-between text-gray-400">
-                <span>Question:</span>
-                <span className="text-cyan-300">{activeReceipt.questionTitle}</span>
+              <div className="flex justify-between text-[#a68a56]">
+                <span>Challenge:</span>
+                <span className="text-[#f3d38c]">{activeReceipt.questionTitle}</span>
               </div>
-              <div className="flex justify-between text-gray-400">
-                <span>Language:</span>
-                <span className="uppercase text-amber-300">{activeReceipt.language}</span>
+              <div className="flex justify-between text-[#a68a56]">
+                <span>Cipher:</span>
+                <span className="uppercase text-[#d4af37]">{activeReceipt.language}</span>
               </div>
-              <div className="flex justify-between text-gray-400">
+              <div className="flex justify-between text-[#a68a56]">
                 <span>Timestamp:</span>
-                <span className="text-gray-300">{activeReceipt.submittedAt}</span>
+                <span className="text-[#ebe4d5]/80">{activeReceipt.submittedAt}</span>
               </div>
-              <div className="flex justify-between text-gray-400">
-                <span>Code Size:</span>
-                <span className="text-gray-300">{activeReceipt.lineCount} lines · {activeReceipt.charCount} bytes</span>
+              <div className="flex justify-between text-[#a68a56]">
+                <span>Dimensions:</span>
+                <span className="text-[#ebe4d5]/80">{activeReceipt.lineCount} lines · {activeReceipt.charCount} bytes</span>
               </div>
             </div>
 
-            <p className="text-[11px] text-gray-400 text-center italic">
-              Your code has been locked and timestamped. Output is strictly sealed until the host triggers stage reveal.
+            <p className="text-[11px] text-[#a68a56] text-center italic">
+              Your code has been sealed and timestamped. Output is strictly concealed until the grand stage reveal.
             </p>
 
             <button
               onClick={() => setActiveReceipt(null)}
-              className="w-full rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 py-2.5 font-mono text-xs font-bold text-black hover:brightness-110"
+              className="w-full rounded-xl bg-gradient-to-r from-[#d4af37] via-[#f3d38c] to-[#a68a56] py-2.5 font-cinzel text-xs font-bold tracking-wider text-[#050504] hover:brightness-110 bouncy-btn"
             >
-              Close Receipt & Continue Coding
+              Close Charter & Resume Navigation
             </button>
           </div>
         </div>
