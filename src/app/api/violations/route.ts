@@ -47,6 +47,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       success: true,
       strikes: newStrikes,
+      strikeCount: newStrikes,
       isLockedOut,
       message: isLockedOut
         ? 'STRIKE 3: Participant locked out due to repeated anti-cheat violations.'

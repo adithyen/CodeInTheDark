@@ -21,7 +21,7 @@ export async function getActiveSession(): Promise<ContestSession | null> {
 
   if (live) return live as ContestSession;
 
-  // Fallback: latest setup session
+  // Fallback 1: latest setup session
   const { data: setup } = await supabase
     .from('contest_sessions')
     .select('*')
@@ -30,7 +30,17 @@ export async function getActiveSession(): Promise<ContestSession | null> {
     .limit(1)
     .single();
 
-  return (setup as ContestSession) || null;
+  if (setup) return setup as ContestSession;
+
+  // Fallback 2: most recent session (e.g. ended / reveal)
+  const { data: latest } = await supabase
+    .from('contest_sessions')
+    .select('*')
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .single();
+
+  return (latest as ContestSession) || null;
 }
 
 export async function getSessionById(id: string): Promise<ContestSession | null> {

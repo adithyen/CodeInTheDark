@@ -51,29 +51,16 @@ export default function RegisterPage() {
     return () => clearInterval(interval);
   }, [fetchContestState]);
 
-  // Auto-redirect when phase transitions to active
-  useEffect(() => {
-    if (gateStatus === 'active') {
-      const saved = localStorage.getItem('cid_participant');
-      if (saved) {
-        try {
-          const p = JSON.parse(saved);
-          // Check if this participant belongs to current session
-          if (p.sessionId === session?.id) {
-            router.push('/arena');
-          }
-        } catch { /* ignore */ }
-      }
-    }
-  }, [gateStatus, session, router]);
+  const [registeredParticipant, setRegisteredParticipant] = useState<any>(null);
 
-  // Check if already registered in this session
+  // Check if already registered in this session and redirect if active
   useEffect(() => {
     const saved = localStorage.getItem('cid_participant');
     if (saved) {
       try {
         const p = JSON.parse(saved);
         if (p.id && p.sessionId && session && p.sessionId === session.id) {
+          setRegisteredParticipant(p);
           if (gateStatus === 'active') {
             router.push('/arena');
           }
@@ -136,11 +123,14 @@ export default function RegisterPage() {
         return;
       }
 
-      // Persist participant + session ID in localStorage
-      localStorage.setItem('cid_participant', JSON.stringify({
+      const pData = {
         ...data.participant,
         sessionId: session?.id,
-      }));
+      };
+
+      // Persist participant + session ID in localStorage
+      localStorage.setItem('cid_participant', JSON.stringify(pData));
+      setRegisteredParticipant(pData);
 
       // Attempt fullscreen
       try {
@@ -149,7 +139,9 @@ export default function RegisterPage() {
         }
       } catch { /* arena will prompt */ }
 
-      router.push('/arena');
+      if (session?.phase === 'active' || session?.phase === 'paused') {
+        router.push('/arena');
+      }
     } catch {
       setError('Network connection failed. Please check your connection and try again.');
       setLoading(false);
@@ -164,6 +156,78 @@ export default function RegisterPage() {
         <div className="flex flex-col items-center gap-3 font-mono text-sm text-gray-400">
           <Loader2 className="h-7 w-7 animate-spin text-emerald-400" />
           <span>Checking contest status...</span>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Waiting Lobby (Registered Participant waiting for challenge to start) ──
+  if (registeredParticipant && gateStatus !== 'ended' && gateStatus !== 'active') {
+    return (
+      <div className="relative flex flex-1 items-center justify-center p-4 sm:p-6 bg-grid-cyber">
+        <div className="pointer-events-none absolute h-[400px] w-[600px] radial-glow-emerald" />
+        <div className="w-full max-w-lg rounded-2xl border border-emerald-500/30 bg-[#0c121d]/90 p-8 backdrop-blur-2xl shadow-2xl text-center space-y-6">
+          <div className="flex h-16 w-16 mx-auto items-center justify-center rounded-2xl border border-emerald-500/40 bg-emerald-500/10 text-emerald-400 shadow-lg shadow-emerald-500/10">
+            <CheckCircle2 className="h-8 w-8" />
+          </div>
+          <div>
+            <span className="inline-block rounded-full bg-emerald-500/10 border border-emerald-500/30 px-3 py-1 font-mono text-xs font-semibold text-emerald-300 mb-2">
+              Registration Confirmed
+            </span>
+            <h1 className="font-mono text-2xl font-bold text-white tracking-tight">
+              Welcome, {registeredParticipant.name}
+            </h1>
+            <p className="mt-1 font-mono text-xs text-gray-400">
+              Terminal: <span className="text-amber-400 font-bold">{registeredParticipant.terminalId || 'AUTO-ASSIGNED'}</span> · Roll No: <span className="text-cyan-400 font-bold">{registeredParticipant.rollNumber}</span>
+            </p>
+          </div>
+
+          {/* Countdown card */}
+          <div className="rounded-2xl border border-amber-500/30 bg-amber-950/20 p-6 space-y-2">
+            <div className="flex items-center justify-center gap-2 font-mono text-xs text-amber-300">
+              <Clock className="h-4 w-4 animate-spin text-amber-400" />
+              <span>Contest Starts In</span>
+            </div>
+            <div className="font-mono text-5xl font-black tabular-nums text-amber-400 tracking-wider">
+              {countdown || '--:--'}
+            </div>
+            <p className="text-[11px] font-mono text-gray-400">
+              {session?.auto_start_on_reg_close
+                ? 'Arena will automatically unlock and launch when the timer expires.'
+                : 'Waiting for the organizer to initiate the contest countdown.'}
+            </p>
+          </div>
+
+          {/* Readiness Indicators */}
+          <div className="rounded-xl border border-white/5 bg-black/40 p-4 text-left font-mono text-xs space-y-2">
+            <div className="flex items-center justify-between text-emerald-300">
+              <span className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-emerald-400" /> Anti-Cheat Lockdown</span>
+              <span className="text-[10px] text-gray-500">ARMED</span>
+            </div>
+            <div className="flex items-center justify-between text-cyan-300">
+              <span className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-cyan-400" /> C / Python / Java Runpack</span>
+              <span className="text-[10px] text-gray-500">READY</span>
+            </div>
+            <div className="flex items-center justify-between text-amber-300">
+              <span className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-amber-400" /> Database Persistence</span>
+              <span className="text-[10px] text-gray-500">SUPABASE LIVE</span>
+            </div>
+          </div>
+
+          <div className="pt-2">
+            <button
+              onClick={async () => {
+                try {
+                  if (!document.fullscreenElement) {
+                    await document.documentElement.requestFullscreen();
+                  }
+                } catch {}
+              }}
+              className="w-full rounded-xl border border-white/10 bg-white/5 py-3 font-mono text-xs text-gray-300 hover:bg-white/10 transition-colors"
+            >
+              Enter Fullscreen Now (Recommended)
+            </button>
+          </div>
         </div>
       </div>
     );
