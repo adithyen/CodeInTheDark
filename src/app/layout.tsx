@@ -2,6 +2,8 @@ import type { Metadata } from 'next';
 import './globals.css';
 import Navbar from '@/components/Navbar';
 import CelestialBackground from '@/components/CelestialBackground';
+import StarfieldCanvas from '@/components/StarfieldCanvas';
+import FloatingAstrolabe from '@/components/FloatingAstrolabe';
 
 export const metadata: Metadata = {
   title: '11:11 Chapter 2 | Code In The Dark',
@@ -19,10 +21,17 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark">
       <body className="min-h-screen bg-[#050504] text-[#ebe4d5] flex flex-col font-nautical-mono antialiased selection:bg-[#d4af37]/30 selection:text-[#f3d38c]">
+        {/* Starfield Particles & Celestial Atmosphere */}
+        <StarfieldCanvas />
         <CelestialBackground />
+        
+        {/* Dynamic Wandering Astrolabe Compass */}
+        <FloatingAstrolabe />
+
         <Navbar />
         <main className="relative z-10 flex-1 flex flex-col">{children}</main>
       </body>
     </html>
   );
 }
+
