@@ -5,24 +5,11 @@ import confetti from 'canvas-confetti';
 import { 
   Trophy, 
   Medal, 
-  Flame, 
-  ShieldAlert, 
   Sparkles, 
-  Maximize, 
-  Minimize, 
-  RefreshCw, 
-  CheckCircle2, 
   Clock,
-  Volume2,
-  VolumeX,
-  Play,
-  Pause,
-  FastForward,
   RotateCcw,
   Crown,
   Megaphone,
-  Eye,
-  EyeOff,
   GraduationCap
 } from 'lucide-react';
 import { LeaderboardEntry, ContestState } from '@/types';
@@ -93,45 +80,23 @@ function playContestBuzzer() {
 export default function LeaderboardPage() {
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [contest, setContest] = useState<ContestState | null>(null);
-  const [totalQuestions, setTotalQuestions] = useState(4);
   const [contestTitle, setContestTitle] = useState('11:11 Chapter 2 — Code In The Dark');
   const [isRevealMode, setIsRevealMode] = useState(false);
   const [contestPhase, setContestPhase] = useState<string>('setup');
   const [lastUpdated, setLastUpdated] = useState<string>('');
   const [loading, setLoading] = useState(true);
 
-  // Audio state
-  const [audioEnabled, setAudioEnabled] = useState(true);
+  // Audio alert state
   const [hasBuzzed, setHasBuzzed] = useState(false);
 
-  // Fullscreen state
-  const [isFullscreen, setIsFullscreen] = useState(false);
-
-  // Dramatic Stage Reveal Sequence State
-  const [revealedCount, setRevealedCount] = useState(0);
-  const [autoRevealActive, setAutoRevealActive] = useState(false);
-  const autoRevealTimerRef = useRef<NodeJS.Timeout | null>(null);
-
-  // Sync fullscreen state
-  useEffect(() => {
-    const handleFsChange = () => {
-      setIsFullscreen(!!document.fullscreenElement);
-    };
-    document.addEventListener('fullscreenchange', handleFsChange);
-    return () => document.removeEventListener('fullscreenchange', handleFsChange);
-  }, []);
-
-  // Keyboard shortcut F or P for Fullscreen Projector mode
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
-      if (e.key === 'f' || e.key === 'F' || e.key === 'p' || e.key === 'P') {
-        toggleFullscreen();
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
+  // Automated Reveal Sequence State:
+  // 0 = Initial (All positions masked in mist)
+  // 1 = 1st Place Revealed (@ 1.5s)
+  // 2 = 2nd Place Revealed (@ 3.0s)
+  // 3 = 3rd Place Revealed (@ 4.5s)
+  // 4 = Complete: All positions (1st to last) available for all participants (@ 6.0s)
+  const [revealStage, setRevealStage] = useState(4);
+  const [revealTrigger, setRevealTrigger] = useState(0);
 
   const fetchLeaderboard = useCallback(async () => {
     try {
@@ -143,16 +108,13 @@ export default function LeaderboardPage() {
       if (lRes.ok) {
         const data = await lRes.json();
         setLeaderboard(data.leaderboard || []);
-        setTotalQuestions(data.totalQuestions || 4);
         setContestTitle(data.contestTitle || '11:11 Chapter 2 — Code In The Dark');
         setContestPhase(data.phase || 'setup');
         
         if (data.isRevealMode && !isRevealMode) {
           setIsRevealMode(true);
-          setRevealedCount(0);
         } else if (!data.isRevealMode && isRevealMode) {
           setIsRevealMode(false);
-          setAutoRevealActive(false);
         }
         setLastUpdated(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
       }
@@ -165,7 +127,7 @@ export default function LeaderboardPage() {
           const timeLeftMs = cState.endTime - Date.now();
           if (timeLeftMs <= 0 && !hasBuzzed) {
             setHasBuzzed(true);
-            if (audioEnabled) playContestBuzzer();
+            playContestBuzzer();
           }
         }
       }
@@ -174,7 +136,7 @@ export default function LeaderboardPage() {
     } finally {
       setLoading(false);
     }
-  }, [isRevealMode, hasBuzzed, audioEnabled]);
+  }, [isRevealMode, hasBuzzed]);
 
   useEffect(() => {
     fetchLeaderboard();
@@ -182,67 +144,82 @@ export default function LeaderboardPage() {
     return () => clearInterval(interval);
   }, [fetchLeaderboard]);
 
-  // Auto-Reveal step logic
+  // Automated Timed Reveal Sequence:
+  // 1.5s for 1st position
+  // 3.0s (1.5 * 2) for 2nd position
+  // 4.5s (1.5 * 3) for 3rd position
+  // 6.0s ((1.5 * 3 = 4.5) + 1.5 = 6.0) for 1st to last all available!
   useEffect(() => {
-    if (autoRevealActive && isRevealMode) {
-      autoRevealTimerRef.current = setInterval(() => {
-        setRevealedCount((prev) => {
-          const next = prev + 1;
-          if (next >= leaderboard.length) {
-            setAutoRevealActive(false);
-            // Trigger Grand Champion celebration
-            if (audioEnabled) playVictoryFanfare();
-            confetti({
-              particleCount: 180,
-              spread: 100,
-              origin: { y: 0.5 },
-              colors: ['#FFD700', '#FFA500', '#00E676', '#00B0FF'],
-            });
-            return leaderboard.length;
-          }
-          return next;
-        });
-      }, 2500);
-    } else {
-      if (autoRevealTimerRef.current) clearInterval(autoRevealTimerRef.current);
+    if (!isRevealMode) {
+      setRevealStage(4);
+      return;
     }
+
+    const alreadySeen = typeof window !== 'undefined' && sessionStorage.getItem('cid_reveal_done') === 'true';
+    if (alreadySeen) {
+      setRevealStage(4);
+      return;
+    }
+
+    // Begin timed auto-reveal from stage 0
+    setRevealStage(0);
+
+    // t = 1.5s -> 1st position revealed
+    const t1 = setTimeout(() => {
+      setRevealStage(1);
+      playVictoryFanfare();
+    }, 1500);
+
+    // t = 3.0s -> 2nd position revealed
+    const t2 = setTimeout(() => {
+      setRevealStage(2);
+      playAudioTone(587.33, 880, 0.4, 'triangle');
+    }, 3000);
+
+    // t = 4.5s -> 3rd position revealed
+    const t3 = setTimeout(() => {
+      setRevealStage(3);
+      playAudioTone(523.25, 783.99, 0.4, 'triangle');
+    }, 4500);
+
+    // t = 6.0s -> All positions from 1st to last available!
+    const t4 = setTimeout(() => {
+      setRevealStage(4);
+      playVictoryFanfare();
+      confetti({
+        particleCount: 220,
+        spread: 120,
+        origin: { y: 0.5 },
+        colors: ['#FFD700', '#FFA500', '#00E676', '#00B0FF', '#E040FB'],
+      });
+      try {
+        sessionStorage.setItem('cid_reveal_done', 'true');
+      } catch (e) {}
+    }, 6000);
+
     return () => {
-      if (autoRevealTimerRef.current) clearInterval(autoRevealTimerRef.current);
+      clearTimeout(t1);
+      clearTimeout(t2);
+      clearTimeout(t3);
+      clearTimeout(t4);
     };
-  }, [autoRevealActive, isRevealMode, leaderboard.length, audioEnabled]);
+  }, [isRevealMode, revealTrigger]);
 
-  const toggleFullscreen = () => {
-    if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen().catch(() => {});
-    } else {
-      document.exitFullscreen().catch(() => {});
-    }
+  const restartReveal = () => {
+    try {
+      sessionStorage.removeItem('cid_reveal_done');
+    } catch (e) {}
+    setRevealTrigger((prev) => prev + 1);
   };
 
-  // Reveal mode helpers
-  // Rank index 0 = 1st, 1 = 2nd, ..., N-1 = last
-  // If revealedCount = 1, rank N-1 is revealed.
-  // When revealedCount = N, rank 0 (Champion) is revealed.
-  const isRankRevealed = (rankIndex: number) => {
-    if (!isRevealMode) return true;
-    const N = leaderboard.length;
-    return revealedCount >= (N - rankIndex);
-  };
-
-  const handleNextReveal = () => {
-    setRevealedCount((prev) => {
-      const next = Math.min(leaderboard.length, prev + 1);
-      if (next === leaderboard.length) {
-        if (audioEnabled) playVictoryFanfare();
-        confetti({
-          particleCount: 200,
-          spread: 110,
-          origin: { y: 0.5 },
-          colors: ['#FFD700', '#FFA500', '#00E676', '#00B0FF', '#E040FB'],
-        });
-      }
-      return next;
-    });
+  // Rank check:
+  // rankIndex 0 = 1st, 1 = 2nd, 2 = 3rd, >= 3 = rest
+  const isRankRevealed = (rankIndex: number): boolean => {
+    if (!isRevealMode || revealStage >= 4) return true;
+    if (rankIndex === 0) return revealStage >= 1;
+    if (rankIndex === 1) return revealStage >= 2;
+    if (rankIndex === 2) return revealStage >= 3;
+    return false;
   };
 
   const top3 = leaderboard.slice(0, 3);
@@ -255,8 +232,8 @@ export default function LeaderboardPage() {
   const seconds = remainingSeconds % 60;
   const isUnder5Min = remainingSeconds > 0 && remainingSeconds <= 300;
 
-  // Gate: if contest is fully ended (phase=ended, not reveal), show "no contest" screen
-  if (!loading && contestPhase === 'ended' && !isRevealMode) {
+  // Gate: if contest is fully ended, not reveal mode, and no leaderboard data
+  if (!loading && contestPhase === 'ended' && !isRevealMode && leaderboard.length === 0) {
     return (
       <div className="relative flex min-h-screen flex-1 flex-col items-center justify-center overflow-hidden bg-[#050504] p-6 text-center">
         <div className="pointer-events-none absolute inset-0">
@@ -268,10 +245,7 @@ export default function LeaderboardPage() {
           </div>
           <h1 className="font-cinzel text-3xl font-extrabold text-[#ebe4d5]">Contest Concluded</h1>
           <p className="font-nautical-mono text-sm text-[#a68a56]">
-            The voyage has ended. No active contest is running at this moment.
-          </p>
-          <p className="font-nautical-mono text-xs text-[#6b5535]">
-            Results were revealed on stage. Contact the Admiralty for archived records.
+            The voyage has concluded. Results will be unsealed during stage ceremony.
           </p>
         </div>
       </div>
@@ -279,7 +253,7 @@ export default function LeaderboardPage() {
   }
 
   return (
-    <div className={`relative flex min-h-screen flex-1 flex-col overflow-hidden bg-[#050504] p-4 sm:p-6 lg:p-8 bg-grid-cyber ${isFullscreen ? 'p-6 lg:p-10' : ''}`}>
+    <div className="relative flex min-h-screen flex-1 flex-col overflow-hidden bg-[#050504] p-4 sm:p-6 lg:p-8 bg-grid-cyber">
       {/* Background Radial Glow */}
       <div className="pointer-events-none absolute -top-40 left-1/2 h-[550px] w-[1000px] -translate-x-1/2 radial-glow-gold opacity-50" />
 
@@ -315,11 +289,11 @@ export default function LeaderboardPage() {
             </span>
           </h1>
           <p className="mt-1 font-nautical-mono text-xs text-[#a68a56]">
-            Real-time multi-question cumulative scores · Chrono-speed bonuses active
+            Official participant standings and cumulative bounty scores
           </p>
         </div>
 
-        {/* Status Indicators & Stage Controls */}
+        {/* Status Indicators */}
         <div className="flex flex-wrap items-center gap-3">
           {/* Contest Timer Widget */}
           {contest?.isActive && (
@@ -335,35 +309,6 @@ export default function LeaderboardPage() {
             </div>
           )}
 
-          {/* Sound Toggle */}
-          <button
-            onClick={() => {
-              setAudioEnabled(!audioEnabled);
-              if (!audioEnabled) {
-                playAudioTone(440, 880, 0.2, 'sine');
-              }
-            }}
-            className={`flex items-center gap-1.5 rounded-xl border px-3 py-1.5 font-cinzel text-xs transition-all cursor-pointer bouncy-btn ${
-              audioEnabled
-                ? 'border-[#d4af37]/40 bg-[#1c160e] text-[#f3d38c]'
-                : 'border-[#a68a56]/20 bg-[#050504]/50 text-[#a68a56]'
-            }`}
-            title="Toggle Stage Chimes & Fanfare"
-          >
-            {audioEnabled ? <Volume2 className="h-4 w-4 text-[#d4af37]" /> : <VolumeX className="h-4 w-4" />}
-            <span className="hidden sm:inline">{audioEnabled ? 'Chimes Active' : 'Muted'}</span>
-          </button>
-
-          {/* Fullscreen TV / Projector Mode Toggle */}
-          <button
-            onClick={toggleFullscreen}
-            className="flex items-center gap-1.5 rounded-xl border border-[#a68a56]/30 bg-[#1c160e]/50 px-3 py-1.5 font-cinzel text-xs text-[#f3d38c] hover:border-[#d4af37] transition-all cursor-pointer bouncy-btn"
-            title="Toggle Projector Fullscreen Mode (Press F)"
-          >
-            {isFullscreen ? <Minimize className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}
-            <span className="hidden sm:inline">{isFullscreen ? 'Exit TV Mode' : 'Projector View (F)'}</span>
-          </button>
-
           <div className="flex items-center gap-2 rounded-xl border border-[#a68a56]/20 bg-[#050504]/60 px-3 py-1.5 font-nautical-mono text-xs text-[#a68a56]">
             <span className="h-2 w-2 rounded-full bg-[#d4af37] animate-ping" />
             <span>Updated {lastUpdated || 'Live'}</span>
@@ -371,86 +316,57 @@ export default function LeaderboardPage() {
         </div>
       </div>
 
-      {/* Dramatic Stage Reveal Mode Controller Bar */}
-      {isRevealMode && (
-        <div className="mx-auto mt-6 w-full max-w-7xl rounded-2xl border border-[#d4af37]/40 bg-gradient-to-r from-[#1c160e] via-[#0e0b07] to-[#1c160e] p-4 sm:p-5 shadow-[0_0_40px_rgba(212,175,55,0.15)] backdrop-blur-xl">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      {/* Automated Stage Reveal Banner during sequence */}
+      {isRevealMode && revealStage < 4 && (
+        <div className="mx-auto mt-6 w-full max-w-7xl rounded-2xl border border-[#d4af37]/40 bg-gradient-to-r from-[#1c160e] via-[#0e0b07] to-[#1c160e] p-4 sm:p-5 shadow-[0_0_35px_rgba(212,175,55,0.18)] backdrop-blur-xl animate-fade-in">
+          <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-[#d4af37] to-[#f3d38c] text-[#050504] shadow-lg shadow-[#d4af37]/30">
-                <Crown className="h-6 w-6" />
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-[#d4af37] to-[#f3d38c] text-[#050504] shadow-md shadow-[#d4af37]/30">
+                <Crown className="h-6 w-6 animate-pulse" />
               </div>
               <div>
                 <div className="flex items-center gap-2 font-cinzel text-xs font-bold uppercase tracking-wider text-[#d4af37]">
-                  <Sparkles className="h-3.5 w-3.5" />
-                  <span>DRAMATIC STAGE UNVEILING PROTOCOL</span>
+                  <Sparkles className="h-3.5 w-3.5 text-[#d4af37] animate-spin" />
+                  <span>Grand Admiralty Unveiling</span>
                 </div>
                 <h3 className="font-cinzel text-base font-extrabold text-[#ebe4d5]">
-                  {revealedCount >= leaderboard.length
-                    ? '⚔️ ALL SEALS UNVEILED — SALUTE TO THE GRAND CHAMPIONS!'
-                    : `Unmasking Admiralty Roster: ${revealedCount} of ${leaderboard.length} Navigators Revealed`}
+                  {revealStage === 0 && 'Unveiling 1st Place Champion...'}
+                  {revealStage === 1 && '🥇 1st Place Revealed — Unveiling 2nd Place...'}
+                  {revealStage === 2 && '🥈 2nd Place Revealed — Unveiling 3rd Place...'}
+                  {revealStage === 3 && '🥉 3rd Place Revealed — Revealing Full Leaderboard...'}
                 </h3>
               </div>
             </div>
-
-            {/* Emcee Controls */}
-            <div className="flex flex-wrap items-center gap-2">
-              <button
-                onClick={handleNextReveal}
-                disabled={revealedCount >= leaderboard.length}
-                className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-[#d4af37] via-[#f3d38c] to-[#a68a56] px-4 py-2 font-cinzel text-xs font-bold text-[#050504] shadow-lg shadow-[#d4af37]/25 hover:brightness-110 active:scale-95 disabled:opacity-40 transition-all cursor-pointer bouncy-btn"
-              >
-                <Eye className="h-4 w-4" />
-                <span>Next Reveal</span>
-              </button>
-
-              <button
-                onClick={() => setAutoRevealActive(!autoRevealActive)}
-                disabled={revealedCount >= leaderboard.length}
-                className={`flex items-center gap-1.5 rounded-xl border px-3.5 py-2 font-cinzel text-xs font-semibold transition-all cursor-pointer bouncy-btn ${
-                  autoRevealActive
-                    ? 'border-[#d4af37] bg-[#1c160e] text-[#f3d38c]'
-                    : 'border-[#a68a56]/30 bg-[#050504]/50 text-[#a68a56] hover:text-[#ebe4d5]'
-                }`}
-              >
-                {autoRevealActive ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />}
-                <span>{autoRevealActive ? 'Halt Sequence' : 'Auto Unmask (2.5s)'}</span>
-              </button>
-
-              <button
-                onClick={() => {
-                  setRevealedCount(leaderboard.length);
-                  if (audioEnabled) playVictoryFanfare();
-                  confetti({
-                    particleCount: 200,
-                    spread: 120,
-                    origin: { y: 0.5 },
-                    colors: ['#D4AF37', '#F3D38C', '#A68A56', '#FFFFFF', '#EBE4D5'],
-                  });
-                }}
-                className="flex items-center gap-1 rounded-xl border border-[#a68a56]/30 bg-[#1c160e]/50 px-3 py-2 font-cinzel text-xs text-[#a68a56] hover:text-[#f3d38c] hover:border-[#d4af37] transition-all cursor-pointer bouncy-btn"
-              >
-                <FastForward className="h-3.5 w-3.5" />
-                <span>Unmask All</span>
-              </button>
-
-              <button
-                onClick={() => {
-                  setRevealedCount(0);
-                  setAutoRevealActive(false);
-                }}
-                className="flex items-center gap-1 rounded-xl border border-[#a68a56]/30 bg-[#1c160e]/50 p-2 font-cinzel text-xs text-[#a68a56] hover:text-red-400 hover:border-red-500/40 transition-all cursor-pointer bouncy-btn"
-                title="Reset Stage Reveal"
-              >
-                <RotateCcw className="h-4 w-4" />
-              </button>
+            <div className="flex items-center gap-2 font-nautical-mono text-xs text-[#d4af37]">
+              <span className="h-2 w-2 rounded-full bg-[#d4af37] animate-ping" />
+              <span>Auto-Unveiling Active</span>
             </div>
           </div>
         </div>
       )}
 
+      {/* Completed Reveal Indicator with replay option */}
+      {isRevealMode && revealStage >= 4 && (
+        <div className="mx-auto mt-6 w-full max-w-7xl rounded-2xl border border-[#d4af37]/30 bg-[#1c160e]/80 p-3.5 sm:p-4 shadow-[0_0_20px_rgba(212,175,55,0.1)] backdrop-blur-xl flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <Trophy className="h-5 w-5 text-[#d4af37]" />
+            <span className="font-cinzel text-sm font-bold text-[#ebe4d5]">
+              Official Admiralty Roster · All Positions Unsealed
+            </span>
+          </div>
+          <button
+            onClick={restartReveal}
+            className="flex items-center gap-1.5 rounded-lg border border-[#a68a56]/30 bg-[#050504]/50 px-3 py-1 font-cinzel text-xs text-[#a68a56] hover:text-[#f3d38c] hover:border-[#d4af37] transition-all cursor-pointer bouncy-btn"
+          >
+            <RotateCcw className="h-3.5 w-3.5" />
+            <span>Replay Reveal</span>
+          </button>
+        </div>
+      )}
+
       {/* Main Leaderboard Body */}
       <div className="mx-auto mt-8 w-full max-w-7xl flex-1">
-        {/* Podium Top 3 Cards (Rendered when not in reveal mode OR when top 3 are unmasked) */}
+        {/* Podium Top 3 Cards (Rendered when revealed) */}
         {leaderboard.length > 0 && (!isRevealMode || isRankRevealed(0) || isRankRevealed(1) || isRankRevealed(2)) && (
           <div className="mb-10 grid gap-4 sm:grid-cols-3">
             {/* Rank 2 - Brass / Silver */}
@@ -472,9 +388,6 @@ export default function LeaderboardPage() {
                 <div className="mt-4 flex items-baseline gap-2">
                   <span className="font-nautical-mono text-3xl font-extrabold text-[#f3d38c]">{top3[1].totalScore}</span>
                   <span className="font-cinzel text-xs text-[#a68a56]">PTS</span>
-                </div>
-                <div className="mt-2 font-nautical-mono text-xs text-[#d4af37]">
-                  {top3[1].questionsSolved} solved · {top3[1].partialSolved} partial
                 </div>
               </div>
             )}
@@ -503,9 +416,6 @@ export default function LeaderboardPage() {
                   <span className="font-nautical-mono text-4xl font-extrabold text-[#d4af37]">{top3[0].totalScore}</span>
                   <span className="font-cinzel text-xs font-semibold text-[#f3d38c]">PTS</span>
                 </div>
-                <div className="mt-2 font-nautical-mono text-xs text-[#f3d38c]">
-                  {top3[0].questionsSolved} solved · {top3[0].partialSolved} partial
-                </div>
               </div>
             )}
 
@@ -529,32 +439,26 @@ export default function LeaderboardPage() {
                   <span className="font-nautical-mono text-3xl font-extrabold text-[#f3d38c]">{top3[2].totalScore}</span>
                   <span className="font-cinzel text-xs text-[#a68a56]">PTS</span>
                 </div>
-                <div className="mt-2 font-nautical-mono text-xs text-[#d4af37]">
-                  {top3[2].questionsSolved} solved · {top3[2].partialSolved} partial
-                </div>
               </div>
             )}
           </div>
         )}
 
-        {/* Complete Leaderboard Table */}
+        {/* Clean Participant Leaderboard Table: Rank, Navigator (Name & College), Score */}
         <div className="overflow-hidden rounded-2xl border border-[#a68a56]/25 bg-[#090704]/90 backdrop-blur-xl shadow-2xl">
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="border-b border-[#a68a56]/20 bg-[#140f0a] font-cinzel text-xs text-[#d4af37] uppercase tracking-wider">
-                  <th className="py-4 px-6">Rank</th>
+                  <th className="py-4 px-6 w-24">Rank</th>
                   <th className="py-4 px-6">Navigator</th>
-                  <th className="py-4 px-6">Bounty Score</th>
-                  <th className="py-4 px-6">Scrolls Solved</th>
-                  <th className="py-4 px-6">Trial Breakdown</th>
-                  <th className="py-4 px-6">Penalties</th>
+                  <th className="py-4 px-6 text-right w-44">Score</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#a68a56]/15 font-nautical-mono text-sm">
                 {leaderboard.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="py-12 text-center text-[#a68a56]">
+                    <td colSpan={3} className="py-12 text-center text-[#a68a56]">
                       Waiting for participants to join and submit solutions...
                     </td>
                   </tr>
@@ -563,7 +467,7 @@ export default function LeaderboardPage() {
                     const revealed = isRankRevealed(idx);
 
                     if (!revealed) {
-                      // Shrouded confidential row for stage suspense
+                      // Shrouded confidential row for suspense
                       return (
                         <tr key={entry.participantId} className="bg-[#050504]/60 opacity-60">
                           <td className="py-4 px-6 font-bold text-[#a68a56]">
@@ -571,7 +475,7 @@ export default function LeaderboardPage() {
                               #{idx + 1}
                             </span>
                           </td>
-                          <td colSpan={5} className="py-4 px-6">
+                          <td colSpan={2} className="py-4 px-6">
                             <div className="flex items-center gap-3">
                               <span className="h-2 w-2 rounded-full bg-[#d4af37] animate-ping" />
                               <span className="rounded-lg border border-[#a68a56]/20 bg-[#1c160e]/50 px-3 py-1 font-cinzel text-xs text-[#a68a56] uppercase tracking-widest">
@@ -613,7 +517,7 @@ export default function LeaderboardPage() {
                           </span>
                         </td>
 
-                        {/* Candidate */}
+                        {/* Navigator (Name & College) */}
                         <td className="py-4 px-6">
                           <div className="font-bold text-[#ebe4d5] flex items-center gap-2 font-cinzel">
                             <span>{entry.name}</span>
@@ -626,51 +530,11 @@ export default function LeaderboardPage() {
                         </td>
 
                         {/* Total Score */}
-                        <td className="py-4 px-6">
-                          <span className={`text-lg font-extrabold ${idx === 0 ? 'text-[#d4af37]' : 'text-[#f3d38c]'}`}>
+                        <td className="py-4 px-6 text-right">
+                          <span className={`text-xl font-extrabold ${idx === 0 ? 'text-[#d4af37]' : 'text-[#f3d38c]'}`}>
                             {entry.totalScore}
                           </span>
-                          <span className="text-xs text-[#a68a56] ml-1">pts</span>
-                        </td>
-
-                        {/* Solved Ratio */}
-                        <td className="py-4 px-6">
-                          <span className="text-[#f3d38c] font-semibold">{entry.questionsSolved}</span>
-                          <span className="text-[#a68a56]"> / {totalQuestions}</span>
-                          {entry.partialSolved > 0 && (
-                            <span className="text-xs text-[#d4af37] ml-1.5">
-                              (+{entry.partialSolved} partial)
-                            </span>
-                          )}
-                        </td>
-
-                        {/* Per-Question Capsules */}
-                        <td className="py-4 px-6">
-                          <div className="flex flex-wrap gap-1.5">
-                            {Object.entries(entry.perQuestionScores).map(([qId, qData]) => (
-                              <div
-                                key={qId}
-                                className="flex items-center gap-1 rounded bg-[#050504] border border-[#a68a56]/20 px-2 py-0.5 text-xs"
-                                title={`Score: ${qData.score} | Passed: ${qData.passedRatio} | Language: ${qData.language}`}
-                              >
-                                <span className="text-[#a68a56] uppercase text-[10px]">{qData.language}</span>
-                                <span className="font-semibold text-[#f3d38c]">{qData.score}p</span>
-                                <span className="text-[10px] text-[#a68a56]">({qData.passedRatio})</span>
-                              </div>
-                            ))}
-                          </div>
-                        </td>
-
-                        {/* Strikes */}
-                        <td className="py-4 px-6">
-                          {entry.strikes > 0 ? (
-                            <span className="inline-flex items-center gap-1 rounded bg-red-950/40 border border-red-500/30 px-2 py-0.5 text-xs text-red-400 font-bold">
-                              <ShieldAlert className="h-3.5 w-3.5" />
-                              {entry.strikes}
-                            </span>
-                          ) : (
-                            <span className="text-xs text-[#a68a56]">0</span>
-                          )}
+                          <span className="text-xs text-[#a68a56] ml-1.5 font-cinzel">PTS</span>
                         </td>
                       </tr>
                     );
@@ -684,3 +548,4 @@ export default function LeaderboardPage() {
     </div>
   );
 }
+
