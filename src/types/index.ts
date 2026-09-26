@@ -57,7 +57,7 @@ export interface Submission {
   submittedAt: number;       // timestamp of the LATEST submission
   firstSubmittedAt?: number; // timestamp of the FIRST submission — never overwritten (for tiebreaking)
   isAutoSubmit?: boolean;
-  evaluationStatus: 'pending' | 'evaluating' | 'completed' | 'error';
+  evaluationStatus: 'pending' | 'evaluating' | 'completed' | 'error' | 'draft';
   testCasesPassed: number;
   totalTestCases: number;
   score: number;

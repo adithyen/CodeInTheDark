@@ -27,8 +27,8 @@ export default function Navbar() {
     return () => clearInterval(interval);
   }, []);
 
-  // Hide navbar on admin (orbit) and leaderboard — those pages are self-contained
-  if (pathname?.startsWith('/orbit') || pathname === '/leaderboard') return null;
+  // Hide navbar on home ('/'), admin (orbit), and leaderboard — those pages are self-contained
+  if (pathname === '/' || pathname?.startsWith('/orbit') || pathname === '/leaderboard') return null;
 
   return (
     <header className="sticky top-0 z-40 border-b border-[#a68a56]/20 bg-[#050504]/85 backdrop-blur-xl transition-colors">

@@ -440,26 +440,60 @@ function dbRowToParticipant(row: any): Participant {
 // SUBMISSION HELPERS
 // ─────────────────────────────────────────────────────────────────────
 
-export async function getSubmissionsForSession(sessionId: string): Promise<Submission[]> {
-  const { data } = await supabase
+export async function getSubmissionsForSession(sessionId: string, includeDrafts: boolean = false): Promise<Submission[]> {
+  let query = supabase
     .from('submissions')
     .select('*')
-    .eq('session_id', sessionId)
-    .order('submitted_at', { ascending: false });
+    .eq('session_id', sessionId);
+
+  if (!includeDrafts) {
+    query = query.neq('evaluation_status', 'draft');
+  }
+
+  const { data } = await query.order('submitted_at', { ascending: false });
 
   return (data || []).map(dbRowToSubmission);
+}
+
+export async function getParticipantSubmissions(participantId: string, sessionId?: string): Promise<Submission[]> {
+  let query = supabase
+    .from('submissions')
+    .select('*')
+    .eq('participant_id', participantId);
+
+  if (sessionId) {
+    query = query.eq('session_id', sessionId);
+  }
+
+  const { data } = await query;
+  return (data || []).map(dbRowToSubmission);
+}
+
+export async function hasParticipantSubmitted(participantId: string, sessionId?: string): Promise<boolean> {
+  const submissions = await getParticipantSubmissions(participantId, sessionId);
+  return submissions.some(s => s.evaluationStatus === 'completed' && !s.isAutoSubmit ? true : s.evaluationStatus === 'completed');
 }
 
 export async function upsertSubmission(sub: Omit<Submission, 'id'> & { sessionId: string }): Promise<Submission> {
   // Look up existing submission for this participant + question
   const { data: existing } = await supabase
     .from('submissions')
-    .select('id, submitted_at, first_submitted_at')
+    .select('id, submitted_at, first_submitted_at, evaluation_status')
     .eq('participant_id', sub.participantId)
     .eq('question_id', sub.questionId)
     .single();
 
-  const now = sub.submittedAt;
+  const isDraft = sub.evaluationStatus === 'draft';
+  const now = sub.submittedAt || Date.now();
+
+  let firstSubmittedAt: number | null = null;
+  if (!isDraft) {
+    if (existing && existing.evaluation_status !== 'draft' && (existing.first_submitted_at || existing.submitted_at)) {
+      firstSubmittedAt = existing.first_submitted_at ?? existing.submitted_at;
+    } else {
+      firstSubmittedAt = now;
+    }
+  }
 
   const payload: any = {
     session_id: sub.sessionId,
@@ -470,16 +504,15 @@ export async function upsertSubmission(sub: Omit<Submission, 'id'> & { sessionId
     question_title: sub.questionTitle,
     language: sub.language,
     code: sub.code,
-    submitted_at: now,
+    submitted_at: isDraft ? null : now,
     // Preserve the FIRST submission timestamp for tiebreaking.
-    // first_submitted_at is never overwritten once set.
-    first_submitted_at: existing?.first_submitted_at ?? existing?.submitted_at ?? now,
+    first_submitted_at: firstSubmittedAt,
     is_auto_submit: sub.isAutoSubmit ?? false,
     evaluation_status: sub.evaluationStatus,
-    test_cases_passed: sub.testCasesPassed,
-    total_test_cases: sub.totalTestCases,
-    score: sub.score,
-    speed_bonus: sub.speedBonus,
+    test_cases_passed: sub.testCasesPassed ?? 0,
+    total_test_cases: sub.totalTestCases ?? 0,
+    score: sub.score ?? 0,
+    speed_bonus: sub.speedBonus ?? 0,
     exec_time_ms: sub.execTimeMs ?? null,
     status_message: sub.statusMessage ?? '',
     test_case_details: sub.testCaseDetails ?? [],
@@ -598,6 +631,7 @@ export async function buildLeaderboard(sessionId: string) {
   }
 
   for (const sub of submissions) {
+    if (sub.evaluationStatus === 'draft') continue;
     const entry = entriesMap.get(sub.participantId);
     if (!entry) continue;
 

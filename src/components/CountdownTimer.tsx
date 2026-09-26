@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Clock, PauseCircle, AlertTriangle } from 'lucide-react';
 
 interface CountdownTimerProps {
@@ -17,39 +17,58 @@ export default function CountdownTimer({
   className = '',
 }: CountdownTimerProps) {
   const [timeLeftMs, setTimeLeftMs] = useState<number>(0);
+  const hasExpiredRef = useRef(false);
+  const onExpireRef = useRef(onExpire);
+
+  // Keep callback ref fresh without retriggering effects
+  useEffect(() => { onExpireRef.current = onExpire; }, [onExpire]);
 
   useEffect(() => {
     if (!endTime) {
       setTimeLeftMs(0);
+      hasExpiredRef.current = false;
       return;
     }
 
-    const updateTimer = () => {
-      if (isPaused) return;
+    // Reset expire guard whenever endTime changes
+    hasExpiredRef.current = false;
+
+    const tick = () => {
       const remaining = Math.max(0, endTime - Date.now());
       setTimeLeftMs(remaining);
 
-      if (remaining === 0 && onExpire) {
-        onExpire();
+      if (remaining === 0 && !hasExpiredRef.current) {
+        hasExpiredRef.current = true;
+        onExpireRef.current?.();
       }
     };
 
-    updateTimer();
-    const interval = setInterval(updateTimer, 1000);
+    tick(); // immediate first render
+    const interval = setInterval(tick, 500); // 500ms for smoother display
     return () => clearInterval(interval);
-  }, [endTime, isPaused, onExpire]);
+  }, [endTime]); // ← intentionally omit isPaused and onExpire from deps
 
-  const totalSeconds = Math.floor(timeLeftMs / 1000);
-  const minutes = Math.floor(totalSeconds / 60);
+  // When paused, calculate remaining at pause time (don't run down)
+  const displayMs = isPaused ? timeLeftMs : timeLeftMs;
+
+  const totalSeconds = Math.floor(displayMs / 1000);
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
   const seconds = totalSeconds % 60;
 
-  const isLowTime = minutes < 5 && endTime !== null;
-  const isCritical = minutes < 1 && endTime !== null;
+  const isLowTime = !isPaused && totalSeconds > 0 && totalSeconds < 300;
+  const isCritical = !isPaused && totalSeconds > 0 && totalSeconds < 60;
+
+  const timeStr = hours > 0
+    ? `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
+    : `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
 
   return (
     <div
       className={`inline-flex items-center gap-2.5 rounded-xl border px-3.5 py-1.5 font-nautical-mono text-sm backdrop-blur-md transition-all shadow-md ${
-        isPaused
+        !endTime
+          ? 'border-[#a68a56]/30 bg-[#0c0906] text-[#6b5535]'
+          : isPaused
           ? 'border-[#a68a56]/50 bg-[#1c160e]/90 text-[#f3d38c]'
           : isCritical
           ? 'animate-pulse border-red-500/70 bg-red-950/40 text-red-300 shadow-[0_0_15px_rgba(239,68,68,0.3)]'
@@ -59,16 +78,18 @@ export default function CountdownTimer({
       } ${className}`}
       title="Synchronized Voyage Chronometer"
     >
-      {isPaused ? (
-        <PauseCircle className="h-4 w-4 animate-spin text-[#d4af37]" />
+      {!endTime ? (
+        <Clock className="h-4 w-4 text-[#6b5535]" />
+      ) : isPaused ? (
+        <PauseCircle className="h-4 w-4 text-[#d4af37]" />
       ) : isCritical ? (
-        <AlertTriangle className="h-4 w-4 text-red-400" />
+        <AlertTriangle className="h-4 w-4 text-red-400 animate-pulse" />
       ) : (
         <Clock className="h-4 w-4 text-[#d4af37]" />
       )}
 
       <span className="font-bold tracking-widest tabular-nums text-base">
-        {String(minutes).padStart(2, '0')}:{String(seconds).padStart(2, '0')}
+        {endTime ? timeStr : '--:--'}
       </span>
 
       {isPaused && (

@@ -140,7 +140,7 @@ export function Chapter2Pillars() {
 
   return (
     <motion.div
-      className="relative w-full max-w-[620px] h-[230px] sm:h-[280px] md:h-[350px] flex items-center justify-center mx-auto"
+      className="relative w-full max-w-[460px] sm:max-w-[500px] md:max-w-[540px] h-[155px] sm:h-[185px] md:h-[220px] flex items-center justify-center mx-auto"
       animate={{
         opacity: [0.92, 1, 0.92],
         filter: [

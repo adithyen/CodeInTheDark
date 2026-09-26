@@ -8,27 +8,6 @@ export default function FloatingAstrolabe() {
   const rotateOuter = useTransform(scrollYProgress, [0, 1], [0, 360]);
   const rotateNeedleScroll = useTransform(scrollYProgress, [0, 1], [0, -720]);
 
-  const [mousePos, setMousePos] = useState<{ x: number; y: number } | null>(null);
-  const [isHovering, setIsHovering] = useState(false);
-
-  useEffect(() => {
-    let timeout: NodeJS.Timeout;
-    const handleMouseMove = (e: MouseEvent) => {
-      setMousePos({ x: e.clientX, y: e.clientY });
-      setIsHovering(true);
-      clearTimeout(timeout);
-      timeout = setTimeout(() => {
-        setIsHovering(false);
-      }, 3500);
-    };
-
-    window.addEventListener('mousemove', handleMouseMove);
-    return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      clearTimeout(timeout);
-    };
-  }, []);
-
   const waypointsTop = ['8vh', '55vh', '18vh', '70vh', '30vh', '62vh', '12vh', '45vh', '75vh', '22vh', '8vh'];
   const waypointsLeft = ['6vw', '45vw', '68vw', '15vw', '72vw', '35vw', '58vw', '10vw', '50vw', '78vw', '6vw'];
   const times = [0, 0.09, 0.19, 0.3, 0.41, 0.52, 0.62, 0.72, 0.83, 0.93, 1];
@@ -36,22 +15,17 @@ export default function FloatingAstrolabe() {
   return (
     <motion.div
       className="hidden sm:block fixed z-[2] opacity-100 pointer-events-none"
-      animate={
-        isHovering && mousePos
-          ? {
-              top: `${mousePos.y - 70}px`,
-              left: `${mousePos.x - 70}px`,
-            }
-          : {
-              top: waypointsTop,
-              left: waypointsLeft,
-            }
-      }
-      transition={
-        isHovering
-          ? { type: 'spring', damping: 28, stiffness: 75, mass: 0.8 }
-          : { duration: 45, ease: 'easeInOut', repeat: Infinity, repeatType: 'loop', times }
-      }
+      animate={{
+        top: waypointsTop,
+        left: waypointsLeft,
+      }}
+      transition={{
+        duration: 45,
+        ease: 'easeInOut',
+        repeat: Infinity,
+        repeatType: 'loop',
+        times,
+      }}
     >
       <div className="relative select-none flex items-center justify-center p-1" title="Compass — synchronized with your journey">
         <motion.div
