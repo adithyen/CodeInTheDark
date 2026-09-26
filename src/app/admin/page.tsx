@@ -3,12 +3,12 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import Editor from '@monaco-editor/react';
 import {
-  ShieldCheck, Play, Pause, Plus, RotateCcw, Clock, Megaphone, Sparkles,
+  ShieldCheck, Play, Pause, Plus, RotateCcw, Clock, Sparkles,
   Users, FileCode, Download, Trash2, ExternalLink, AlertTriangle, Code2,
   CheckCircle2, Eye, Lock, FileSpreadsheet, Layers, Upload,
   RefreshCw, ShieldAlert, Undo2, Search, ChevronDown, PlusCircle,
   Calendar, History, BarChart3, Settings, Radio, Zap, StopCircle,
-  Timer, Send, X, Copy, Check, Loader2, Edit3,
+  Timer, X, Copy, Check, Loader2, Edit3,
 } from 'lucide-react';
 import { Question, ContestSession, ContestPhase, Participant, Submission, Violation, TestCase } from '@/types';
 import { ROUND_PRESETS, RoundPreset } from '@/lib/presets';
@@ -86,7 +86,6 @@ export default function AdminPage() {
   const [activeTab, setActiveTab] = useState<'setup' | 'registration' | 'live' | 'participants' | 'submissions' | 'history'>('setup');
 
   // Control inputs
-  const [announcementText, setAnnouncementText] = useState('');
   const [regDurationMin, setRegDurationMin] = useState(3);
   const [autoStartReg, setAutoStartReg] = useState(true);
   const [challengeDurationMin, setChallengeDurationMin] = useState(50);
@@ -1129,23 +1128,6 @@ export default function AdminPage() {
                   </div>
                 </div>
 
-                {/* Broadcast */}
-                <div className="rounded-2xl border border-[#a68a56]/25 bg-[#090704] p-6 shadow-xl">
-                  <h3 className="font-cinzel text-sm font-bold text-[#f3d38c] flex items-center gap-2"><Megaphone className="h-4 w-4 text-[#d4af37]" /> Broadcast Admiralty Decree</h3>
-                  <div className="mt-3 flex gap-2">
-                    <textarea value={announcementText} onChange={e => setAnnouncementText(e.target.value)} placeholder="e.g. '10 minutes remaining! Final push on Question 3!'" rows={2}
-                      className="flex-1 rounded-xl border border-[#a68a56]/30 bg-[#050504] p-3 font-nautical-mono text-xs text-[#ebe4d5] placeholder-[#a68a56]/50 focus:border-[#d4af37] focus:outline-none" />
-                    <button onClick={() => contestAction('announcement', { announcement: announcementText })}
-                      className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#d4af37] via-[#f3d38c] to-[#a68a56] px-4 py-2 font-cinzel text-xs font-bold text-[#050504] hover:brightness-110 shadow-[0_0_15px_rgba(212,175,55,0.25)] bouncy-btn">
-                      <Send className="h-4 w-4" /> Broadcast
-                    </button>
-                  </div>
-                  {currentSession?.announcement && (
-                    <div className="mt-2 rounded-lg border border-[#d4af37]/30 bg-[#1c160e] p-2 font-nautical-mono text-xs text-[#f3d38c]">
-                      Current Decree: {currentSession.announcement}
-                    </div>
-                  )}
-                </div>
 
                 {/* KPIs */}
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">

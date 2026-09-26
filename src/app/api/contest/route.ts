@@ -202,14 +202,6 @@ export async function POST(req: NextRequest) {
         break;
       }
 
-      // ── ANNOUNCEMENT ──────────────────────────────────────────────────
-      case 'announcement': {
-        session = (await updateSession(targetSessionId, {
-          announcement: body.announcement || '',
-        }))!;
-        break;
-      }
-
       // ── SESSION CONFIG ─────────────────────────────────────────────────
       case 'updateConfig': {
         const updates: any = {};
