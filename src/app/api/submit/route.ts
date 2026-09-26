@@ -263,6 +263,10 @@ export async function POST(req: NextRequest) {
 
       // Persist completed submission
       const questionElapsed = (item as any).elapsedMs || (now - (targetSession?.challenge_starts_at || now));
+      const firstDuration = (item as any).firstDurationMs || questionElapsed;
+      const firstSealedAt = (item as any).firstSealedAt || now;
+      const lastSealedAt = (item as any).lastSealedAt || now;
+
       await upsertSubmission({
         sessionId: targetSessionId,
         participantId,
@@ -272,7 +276,8 @@ export async function POST(req: NextRequest) {
         questionTitle: question.title,
         language: item.language,
         code: item.code || '',
-        submittedAt: now,
+        submittedAt: lastSealedAt,
+        firstSubmittedAt: firstSealedAt,
         isAutoSubmit,
         evaluationStatus: 'completed',
         testCasesPassed: passedCount,
@@ -281,14 +286,17 @@ export async function POST(req: NextRequest) {
         speedBonus,
         testCaseDetails,
         execTimeMs: questionElapsed,
+        firstExecTimeMs: firstDuration,
       });
 
       results.push({
         questionId: item.questionId,
         questionTitle: question.title,
         language: item.language,
-        submittedAt: now,
+        submittedAt: lastSealedAt,
+        firstSubmittedAt: firstSealedAt,
         elapsedMs: questionElapsed,
+        firstDurationMs: firstDuration,
         testCasesPassed: passedCount,
         totalTestCases: totalCount,
         baseScore,

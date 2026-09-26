@@ -94,6 +94,9 @@ export default function ArenaPage() {
   const [questionDurations, setQuestionDurations] = useState<Record<string, number>>({});
   const [questionSealed, setQuestionSealed] = useState<Record<string, boolean>>({});
   const [lastSealedCodes, setLastSealedCodes] = useState<Record<string, string>>({});
+  const [questionFirstSealedAt, setQuestionFirstSealedAt] = useState<Record<string, number>>({});
+  const [questionLastSealedAt, setQuestionLastSealedAt] = useState<Record<string, number>>({});
+  const [questionFirstDurations, setQuestionFirstDurations] = useState<Record<string, number>>({});
   const [currentQElapsedMs, setCurrentQElapsedMs] = useState(0);
 
   // Re-save warning confirmation modal state
@@ -272,6 +275,9 @@ export default function ArenaPage() {
     const restoredSealed: Record<string, boolean> = {};
     const restoredFirstVisit: Record<string, number> = {};
     const restoredCodes: Record<string, string> = {};
+    const restoredFirstSealedAt: Record<string, number> = {};
+    const restoredLastSealedAt: Record<string, number> = {};
+    const restoredFirstDurations: Record<string, number> = {};
 
     questions.forEach(q => {
       const d = localStorage.getItem(`cid_q_duration_${participant.id}_${q.id}`);
@@ -285,12 +291,24 @@ export default function ArenaPage() {
 
       const c = localStorage.getItem(`cid_q_code_${participant.id}_${q.id}`);
       if (c !== null) restoredCodes[q.id] = c;
+
+      const fsa = localStorage.getItem(`cid_q_first_sealed_at_${participant.id}_${q.id}`);
+      if (fsa) restoredFirstSealedAt[q.id] = Number(fsa);
+
+      const lsa = localStorage.getItem(`cid_q_last_sealed_at_${participant.id}_${q.id}`);
+      if (lsa) restoredLastSealedAt[q.id] = Number(lsa);
+
+      const fd = localStorage.getItem(`cid_q_first_duration_${participant.id}_${q.id}`);
+      if (fd) restoredFirstDurations[q.id] = Number(fd);
     });
 
     if (Object.keys(restoredDurations).length > 0) setQuestionDurations(restoredDurations);
     if (Object.keys(restoredSealed).length > 0) setQuestionSealed(restoredSealed);
     if (Object.keys(restoredFirstVisit).length > 0) setFirstVisitedAt(restoredFirstVisit);
     if (Object.keys(restoredCodes).length > 0) setLastSealedCodes(restoredCodes);
+    if (Object.keys(restoredFirstSealedAt).length > 0) setQuestionFirstSealedAt(restoredFirstSealedAt);
+    if (Object.keys(restoredLastSealedAt).length > 0) setQuestionLastSealedAt(restoredLastSealedAt);
+    if (Object.keys(restoredFirstDurations).length > 0) setQuestionFirstDurations(restoredFirstDurations);
   }, [participant?.id, questions.length]);
 
   // ── Mark Active Question as Visited & Initialize Stopwatch ──────────────────
@@ -491,16 +509,41 @@ export default function ArenaPage() {
   // ── Save Question with Recorded Stopwatch Duration ──────────────────────────
   const saveQuestionWithDuration = useCallback((qId: string, isResave: boolean) => {
     if (!participant || !qId) return;
-    const contestStart = contestStartRef.current || contest?.startTime || Date.now();
+    const now = Date.now();
+    const contestStart = contestStartRef.current || contest?.startTime || now;
     let durationMs: number;
 
     if (isResave) {
       // Re-saving modified question: Duration updates to total contest elapsed time (45s + 95s + review/edit time)
-      durationMs = Math.max(1000, Date.now() - contestStart);
+      durationMs = Math.max(1000, now - contestStart);
+
+      // Last sealed timestamp updates to now
+      setQuestionLastSealedAt(prev => {
+        const next = { ...prev, [qId]: now };
+        localStorage.setItem(`cid_q_last_sealed_at_${participant.id}_${qId}`, String(now));
+        return next;
+      });
     } else {
       // First save of this question: Stopwatch duration from when question was first visited
       const firstVisit = firstVisitedAt[qId] || contestStart;
-      durationMs = Math.max(1000, Date.now() - firstVisit);
+      durationMs = Math.max(1000, now - firstVisit);
+
+      // At first, first seal and last seal should be same!
+      setQuestionFirstSealedAt(prev => {
+        const next = { ...prev, [qId]: now };
+        localStorage.setItem(`cid_q_first_sealed_at_${participant.id}_${qId}`, String(now));
+        return next;
+      });
+      setQuestionLastSealedAt(prev => {
+        const next = { ...prev, [qId]: now };
+        localStorage.setItem(`cid_q_last_sealed_at_${participant.id}_${qId}`, String(now));
+        return next;
+      });
+      setQuestionFirstDurations(prev => {
+        const next = { ...prev, [qId]: durationMs };
+        localStorage.setItem(`cid_q_first_duration_${participant.id}_${qId}`, String(durationMs));
+        return next;
+      });
     }
 
     const codeToSave = allCodes[qId] ?? '';
@@ -632,13 +675,20 @@ export default function ArenaPage() {
       const code = allCodes[q.id] ?? q.starterTemplates['python'] ?? '';
       const lang = allLanguages[q.id] ?? 'python';
       const elapsed = questionDurations[q.id] || (firstVisitedAt[q.id] ? now - firstVisitedAt[q.id] : now - contestStart);
+      const isQSealed = Boolean(questionSealed[q.id]);
+      const firstSealedTime = questionFirstSealedAt[q.id] || (isQSealed ? now : null);
+      const lastSealedTime = questionLastSealedAt[q.id] || (isQSealed ? now : null);
+      const firstDur = questionFirstDurations[q.id] || elapsed;
 
       return {
         questionId: q.id,
         language: lang,
         code,
         elapsedMs: elapsed,
-        isSealed: Boolean(questionSealed[q.id]),
+        firstDurationMs: firstDur,
+        firstSealedAt: firstSealedTime,
+        lastSealedAt: lastSealedTime,
+        isSealed: isQSealed,
       };
     });
 

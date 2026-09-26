@@ -526,11 +526,25 @@ export async function upsertSubmission(sub: Omit<Submission, 'id'> & { sessionId
 
   let firstSubmittedAt: number | null = null;
   if (!isDraft) {
-    if (existing && existing.evaluation_status !== 'draft' && (existing.first_submitted_at || existing.submitted_at)) {
+    if (sub.firstSubmittedAt) {
+      firstSubmittedAt = sub.firstSubmittedAt;
+    } else if (existing && existing.evaluation_status !== 'draft' && (existing.first_submitted_at || existing.submitted_at)) {
       firstSubmittedAt = existing.first_submitted_at ?? existing.submitted_at;
     } else {
       firstSubmittedAt = now;
     }
+  }
+
+  let statusMessage = sub.statusMessage || '';
+  if (sub.firstExecTimeMs !== undefined || sub.execTimeMs !== undefined) {
+    try {
+      const parsed = statusMessage.startsWith('{') ? JSON.parse(statusMessage) : {};
+      parsed.firstExecTimeMs = sub.firstExecTimeMs ?? parsed.firstExecTimeMs ?? sub.execTimeMs;
+      parsed.lastExecTimeMs = sub.execTimeMs ?? parsed.lastExecTimeMs;
+      parsed.firstSealedAt = firstSubmittedAt ?? parsed.firstSealedAt ?? now;
+      parsed.lastSealedAt = now;
+      statusMessage = JSON.stringify(parsed);
+    } catch {}
   }
 
   const payload: any = {
@@ -552,7 +566,7 @@ export async function upsertSubmission(sub: Omit<Submission, 'id'> & { sessionId
     score: sub.score ?? 0,
     speed_bonus: sub.speedBonus ?? 0,
     exec_time_ms: sub.execTimeMs ?? null,
-    status_message: sub.statusMessage ?? '',
+    status_message: statusMessage,
     test_case_details: sub.testCaseDetails ?? [],
   };
 
@@ -575,6 +589,19 @@ export async function upsertSubmission(sub: Omit<Submission, 'id'> & { sessionId
 }
 
 function dbRowToSubmission(row: any): Submission {
+  let firstExecTimeMs = row.exec_time_ms;
+  let firstSealedAt = row.first_submitted_at ?? row.submitted_at;
+  let lastSealedAt = row.submitted_at;
+
+  if (row.status_message && typeof row.status_message === 'string' && row.status_message.startsWith('{')) {
+    try {
+      const meta = JSON.parse(row.status_message);
+      if (meta.firstExecTimeMs !== undefined) firstExecTimeMs = meta.firstExecTimeMs;
+      if (meta.firstSealedAt !== undefined) firstSealedAt = meta.firstSealedAt;
+      if (meta.lastSealedAt !== undefined) lastSealedAt = meta.lastSealedAt;
+    } catch {}
+  }
+
   return {
     id: row.id,
     sessionId: row.session_id,
@@ -585,9 +612,9 @@ function dbRowToSubmission(row: any): Submission {
     questionTitle: row.question_title,
     language: row.language as Language,
     code: row.code,
-    submittedAt: row.submitted_at,
+    submittedAt: lastSealedAt,
     // firstSubmittedAt: the original timestamp — never overwritten on resubmit
-    firstSubmittedAt: row.first_submitted_at ?? row.submitted_at,
+    firstSubmittedAt: firstSealedAt,
     isAutoSubmit: row.is_auto_submit,
     evaluationStatus: row.evaluation_status,
     testCasesPassed: row.test_cases_passed,
@@ -595,6 +622,7 @@ function dbRowToSubmission(row: any): Submission {
     score: row.score,
     speedBonus: row.speed_bonus,
     execTimeMs: row.exec_time_ms,
+    firstExecTimeMs,
     statusMessage: row.status_message,
     testCaseDetails: row.test_case_details,
   };

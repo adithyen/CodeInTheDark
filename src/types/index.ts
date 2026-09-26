@@ -67,6 +67,7 @@ export interface Submission {
   score: number;
   speedBonus: number;
   execTimeMs?: number;
+  firstExecTimeMs?: number;
   statusMessage?: string;
   testCaseDetails?: {
     testCaseId: string;

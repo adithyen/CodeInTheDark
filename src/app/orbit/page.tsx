@@ -55,6 +55,15 @@ function fmtCountdown(ms: number) {
   return `${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
 }
 
+function fmtDuration(ms?: number | null): string {
+  if (!ms || ms <= 0) return '0s';
+  const totalSec = Math.round(ms / 1000);
+  if (totalSec < 60) return `${totalSec}s`;
+  const m = Math.floor(totalSec / 60);
+  const s = totalSec % 60;
+  return s > 0 ? `${m}m ${s}s` : `${m}m`;
+}
+
 // ──────────────────────────────────────────────────────────────────────────────
 // Main Admin Component
 // ──────────────────────────────────────────────────────────────────────────────
@@ -1417,7 +1426,7 @@ export default function AdminPage() {
                     <th className="py-3 px-4">Bounty</th>
                     <th className="py-3 px-4 hidden md:table-cell">Trials</th>
                     <th className="py-3 px-4 hidden lg:table-cell">First Sealed</th>
-                    <th className="py-3 px-4 hidden xl:table-cell">Last Update</th>
+                    <th className="py-3 px-4 hidden xl:table-cell">Last Seal</th>
                     <th className="py-3 px-4 text-right">Admiralty Action</th>
                   </tr>
                 </thead>
@@ -1440,14 +1449,52 @@ export default function AdminPage() {
                         {(s as any).speedBonus > 0 && <span className="ml-1 text-[#f3d38c] text-[10px]">+{(s as any).speedBonus}</span>}
                       </td>
                       <td className="py-3 px-4 hidden md:table-cell text-[#ebe4d5]/80">{s.testCasesPassed}/{s.totalTestCases}</td>
+
+                      {/* First Sealed */}
                       <td className="py-3 px-4 hidden lg:table-cell">
-                        <div className="text-[#f3d38c] font-bold">{new Date((s as any).firstSubmittedAt ?? s.submittedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</div>
-                        <div className="text-[10px] text-[#a68a56]">{new Date((s as any).firstSubmittedAt ?? s.submittedAt).toLocaleDateString()}</div>
+                        {(() => {
+                          const firstTs = (s as any).firstSubmittedAt ?? s.submittedAt;
+                          const firstDur = (s as any).firstExecTimeMs || s.execTimeMs;
+                          if (!firstTs) return <span className="text-[#6b5535]">—</span>;
+                          return (
+                            <div>
+                              <div className="text-[#f3d38c] font-bold flex items-center gap-1.5 flex-wrap">
+                                <span>{new Date(firstTs).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</span>
+                                <span className="rounded bg-[#d4af37]/20 border border-[#d4af37]/40 px-1.5 py-0.5 text-[10px] font-bold text-[#f3d38c]">
+                                  {fmtDuration(firstDur)}
+                                </span>
+                              </div>
+                              <div className="text-[10px] text-[#a68a56]">{new Date(firstTs).toLocaleDateString()}</div>
+                            </div>
+                          );
+                        })()}
                       </td>
+
+                      {/* Last Seal */}
                       <td className="py-3 px-4 hidden xl:table-cell">
-                        {(s as any).firstSubmittedAt && (s as any).firstSubmittedAt !== s.submittedAt ? (
-                          <div className="text-[#a68a56]">{new Date(s.submittedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</div>
-                        ) : <span className="text-[#6b5535]">—</span>}
+                        {(() => {
+                          const firstTs = (s as any).firstSubmittedAt ?? s.submittedAt;
+                          const lastTs = s.submittedAt ?? (s as any).firstSubmittedAt;
+                          const firstDur = (s as any).firstExecTimeMs || s.execTimeMs;
+                          const lastDur = s.execTimeMs || (s as any).firstExecTimeMs;
+                          const isUpdated = Boolean(firstTs && lastTs && (firstTs !== lastTs || (firstDur && lastDur && firstDur !== lastDur)));
+
+                          if (!lastTs) return <span className="text-[#6b5535]">—</span>;
+                          return (
+                            <div>
+                              <div className={`font-bold flex items-center gap-1.5 flex-wrap ${isUpdated ? 'text-amber-300' : 'text-[#f3d38c]'}`}>
+                                <span>{new Date(lastTs).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</span>
+                                <span className={`rounded px-1.5 py-0.5 text-[10px] font-bold border ${isUpdated ? 'bg-amber-500/20 text-amber-300 border-amber-500/50' : 'bg-[#d4af37]/20 text-[#f3d38c] border-[#d4af37]/40'}`}>
+                                  {fmtDuration(lastDur)}
+                                </span>
+                              </div>
+                              <div className="text-[10px] text-[#8c7456] flex items-center gap-1">
+                                <span>{new Date(lastTs).toLocaleDateString()}</span>
+                                {isUpdated && <span className="text-amber-400 font-bold">(Updated)</span>}
+                              </div>
+                            </div>
+                          );
+                        })()}
                       </td>
                       <td className="py-3 px-4 text-right">
                         <div className="flex items-center justify-end gap-1.5">
@@ -1865,11 +1912,31 @@ export default function AdminPage() {
                   <span>{inspectedSubmission.testCasesPassed}/{inspectedSubmission.totalTestCases} test cases passed</span>
                   {inspectedSubmission.isAutoSubmit && <span className="rounded bg-[#1c160e] border border-[#d4af37]/40 px-1.5 py-0.5 text-[10px] text-[#f3d38c] font-cinzel">AUTO-SUBMITTED</span>}
                 </div>
-                <div className="mt-1 font-nautical-mono text-[11px] text-[#a68a56] flex gap-4">
-                  <span>🕐 First sealed: <strong className="text-[#f3d38c]">{new Date((inspectedSubmission as any).firstSubmittedAt ?? inspectedSubmission.submittedAt).toLocaleString()}</strong></span>
-                  {(inspectedSubmission as any).firstSubmittedAt && (inspectedSubmission as any).firstSubmittedAt !== inspectedSubmission.submittedAt && (
-                    <span>🔄 Last update: <strong className="text-[#a68a56]">{new Date(inspectedSubmission.submittedAt).toLocaleString()}</strong></span>
-                  )}
+                <div className="mt-1 font-nautical-mono text-[11px] text-[#a68a56] flex gap-4 flex-wrap">
+                  {(() => {
+                    const firstTs = (inspectedSubmission as any).firstSubmittedAt ?? inspectedSubmission.submittedAt;
+                    const lastTs = inspectedSubmission.submittedAt ?? (inspectedSubmission as any).firstSubmittedAt;
+                    const firstDur = (inspectedSubmission as any).firstExecTimeMs || inspectedSubmission.execTimeMs;
+                    const lastDur = inspectedSubmission.execTimeMs || (inspectedSubmission as any).firstExecTimeMs;
+                    const isUpdated = Boolean(firstTs && lastTs && (firstTs !== lastTs || (firstDur && lastDur && firstDur !== lastDur)));
+
+                    return (
+                      <>
+                        <span>
+                          🕐 First sealed:{' '}
+                          <strong className="text-[#f3d38c]">
+                            {new Date(firstTs).toLocaleString()} ({fmtDuration(firstDur)})
+                          </strong>
+                        </span>
+                        <span>
+                          🔄 Last sealed:{' '}
+                          <strong className={isUpdated ? 'text-amber-300' : 'text-[#f3d38c]'}>
+                            {new Date(lastTs).toLocaleString()} ({fmtDuration(lastDur)}){isUpdated ? ' (Updated)' : ''}
+                          </strong>
+                        </span>
+                      </>
+                    );
+                  })()}
                 </div>
               </div>
               <button onClick={() => setInspectedSubmission(null)} className="text-[#a68a56] hover:text-[#ebe4d5]"><X className="h-5 w-5" /></button>
