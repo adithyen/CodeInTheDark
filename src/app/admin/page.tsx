@@ -5,13 +5,12 @@ import Editor from '@monaco-editor/react';
 import {
   ShieldCheck, Play, Pause, Plus, RotateCcw, Clock, Megaphone, Sparkles,
   Users, FileCode, Download, Trash2, ExternalLink, AlertTriangle, Code2,
-  CheckCircle2, Eye, Lock, GitCompare, FileSpreadsheet, Layers, Upload,
+  CheckCircle2, Eye, Lock, FileSpreadsheet, Layers, Upload,
   RefreshCw, ShieldAlert, Undo2, Search, ChevronDown, PlusCircle,
   Calendar, History, BarChart3, Settings, Radio, Zap, StopCircle,
   Timer, Send, X, Copy, Check, Loader2,
 } from 'lucide-react';
 import { Question, ContestSession, ContestPhase, Participant, Submission, Violation, TestCase } from '@/types';
-import { calculateCodeSimilarity, SimilarityResult } from '@/lib/plagiarism';
 import { ROUND_PRESETS, RoundPreset } from '@/lib/presets';
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -84,7 +83,7 @@ export default function AdminPage() {
   const [violations, setViolations] = useState<Violation[]>([]);
 
   // Active tab
-  const [activeTab, setActiveTab] = useState<'setup' | 'registration' | 'live' | 'participants' | 'submissions' | 'history' | 'plagiarism'>('setup');
+  const [activeTab, setActiveTab] = useState<'setup' | 'registration' | 'live' | 'participants' | 'submissions' | 'history'>('setup');
 
   // Control inputs
   const [announcementText, setAnnouncementText] = useState('');
@@ -109,10 +108,6 @@ export default function AdminPage() {
   // Submissions inspector
   const [inspectedSubmission, setInspectedSubmission] = useState<Submission | null>(null);
   const [rejudging, setRejudging] = useState<string | null>(null);
-
-  // Plagiarism
-  const [plagQuestionId, setPlagQuestionId] = useState('');
-  const [suspectPairs, setSuspectPairs] = useState<{ subA: Submission; subB: Submission; similarity: SimilarityResult }[]>([]);
 
   // Session selector dropdown
   const [selectorOpen, setSelectorOpen] = useState(false);
@@ -413,23 +408,6 @@ export default function AdminPage() {
   };
 
   // ────────────────────────────────────────────────────────────────────────────
-  // Plagiarism
-  // ────────────────────────────────────────────────────────────────────────────
-  const scanPlagiarism = (questionId: string) => {
-    const subs = submissions.filter(s => s.questionId === questionId);
-    if (subs.length < 2) return alert('Need at least 2 submissions');
-    const pairs: any[] = [];
-    for (let i = 0; i < subs.length; i++) {
-      for (let j = i + 1; j < subs.length; j++) {
-        if (subs[i].participantId === subs[j].participantId) continue;
-        pairs.push({ subA: subs[i], subB: subs[j], similarity: calculateCodeSimilarity(subs[i].code, subs[j].code) });
-      }
-    }
-    pairs.sort((a, b) => b.similarity.similarityScore - a.similarity.similarityScore);
-    setSuspectPairs(pairs);
-  };
-
-  // ────────────────────────────────────────────────────────────────────────────
   // LOGIN GATE
   // ────────────────────────────────────────────────────────────────────────────
   if (!isAuthenticated) {
@@ -563,7 +541,6 @@ export default function AdminPage() {
             { id: 'participants', icon: Users,          label: `Navigators (${participants.length})`, badge: '' },
             { id: 'submissions',  icon: Code2,          label: `Scrolls (${submissions.length})`,    badge: '' },
             { id: 'history',      icon: History,        label: 'Voyage Annals',            badge: '' },
-            { id: 'plagiarism',   icon: GitCompare,     label: 'Cipher Duplication',       badge: '' },
           ] as Array<{ id: typeof activeTab; icon: React.ComponentType<{className?: string}>; label: string; badge: string }>)).map(({ id, icon: Icon, label, badge }) => (
             <button
               key={id}
@@ -1179,65 +1156,6 @@ export default function AdminPage() {
             <button onClick={() => setShowNewSessionModal(true)} className="flex items-center gap-2 rounded-xl border border-dashed border-[#d4af37]/40 bg-[#1c160e]/40 px-5 py-3 font-cinzel text-sm text-[#f3d38c] hover:border-[#d4af37] transition-all bouncy-btn">
               <PlusCircle className="h-5 w-5 text-[#d4af37]" /> Inscribe New Voyage Session
             </button>
-          </div>
-        )}
-
-        {/* ═══════════════════════════════════════════════════════════════════
-            TAB 7: PLAGIARISM
-        ═══════════════════════════════════════════════════════════════════ */}
-        {activeTab === 'plagiarism' && (
-          <div className="space-y-6">
-            <div className="rounded-2xl border border-[#a68a56]/25 bg-[#090704] p-6 shadow-xl">
-              <h3 className="font-cinzel text-sm font-bold text-[#f3d38c] flex items-center gap-2"><GitCompare className="h-4 w-4 text-[#d4af37]" /> Cipher Duplication & Similarity Scanner</h3>
-              <div className="mt-4 flex gap-2">
-                <select value={plagQuestionId} onChange={e => setPlagQuestionId(e.target.value)}
-                  className="flex-1 rounded-xl border border-[#a68a56]/30 bg-[#050504] px-3 py-2 font-nautical-mono text-xs text-[#ebe4d5] focus:border-[#d4af37] focus:outline-none">
-                  <option value="">Select a scroll to inspect for duplicate ciphers...</option>
-                  {questions.map(q => (
-                    <option key={q.id} value={q.id}>{q.title}</option>
-                  ))}
-                </select>
-                <button onClick={() => scanPlagiarism(plagQuestionId)} disabled={!plagQuestionId}
-                  className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#d4af37] via-[#f3d38c] to-[#a68a56] px-4 py-2 font-cinzel text-xs font-bold text-[#050504] hover:brightness-110 disabled:opacity-50 bouncy-btn">
-                  <Search className="h-4 w-4" /> Scan All Pairs
-                </button>
-              </div>
-            </div>
-
-            {suspectPairs.length > 0 && (
-              <div className="space-y-3">
-                {suspectPairs.map(({ subA, subB, similarity }, i) => (
-                  <div key={i} className="rounded-2xl border border-[#a68a56]/25 bg-[#090704] p-5 shadow-xl">
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="flex items-center gap-3 font-cinzel text-xs">
-                        <span className="font-bold text-[#ebe4d5]">{subA.participantName}</span>
-                        <GitCompare className="h-4 w-4 text-[#d4af37]" />
-                        <span className="font-bold text-[#ebe4d5]">{subB.participantName}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <div className="h-2 w-24 rounded-full bg-[#1c160e] overflow-hidden border border-[#a68a56]/20">
-                          <div className={`h-full rounded-full ${similarity.similarityScore > 0.8 ? 'bg-red-500' : similarity.similarityScore > 0.5 ? 'bg-[#d4af37]' : 'bg-[#a68a56]'}`}
-                            style={{ width: `${Math.round(similarity.similarityScore * 100)}%` }} />
-                        </div>
-                        <span className={`font-nautical-mono text-xs font-bold ${similarity.similarityScore > 0.8 ? 'text-red-400' : similarity.similarityScore > 0.5 ? 'text-[#d4af37]' : 'text-[#f3d38c]'}`}>
-                          {Math.round(similarity.similarityScore * 100)}%
-                        </span>
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <div className="font-cinzel text-[10px] text-[#a68a56] mb-1">{subA.participantName} ({subA.language.toUpperCase()})</div>
-                        <pre className="rounded-lg border border-[#a68a56]/15 bg-[#050504] p-3 font-nautical-mono text-[10px] text-[#ebe4d5]/90 overflow-auto max-h-32">{subA.code.slice(0, 400)}{subA.code.length > 400 ? '...' : ''}</pre>
-                      </div>
-                      <div>
-                        <div className="font-cinzel text-[10px] text-[#a68a56] mb-1">{subB.participantName} ({subB.language.toUpperCase()})</div>
-                        <pre className="rounded-lg border border-[#a68a56]/15 bg-[#050504] p-3 font-nautical-mono text-[10px] text-[#ebe4d5]/90 overflow-auto max-h-32">{subB.code.slice(0, 400)}{subB.code.length > 400 ? '...' : ''}</pre>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
           </div>
         )}
       </div>
