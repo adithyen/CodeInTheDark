@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Trophy, ShieldCheck, Radio, Compass } from 'lucide-react';
+import { Radio } from 'lucide-react';
 import NauticalCompass from './NauticalCompass';
 
 export default function Navbar() {
@@ -20,19 +20,20 @@ export default function Navbar() {
           setIsActiveContest(data.contest?.isActive || false);
           setContestPhase(data.session?.phase || 'setup');
         }
-      } catch {
-        // Ignore
-      }
+      } catch { /* ignore */ }
     };
     checkContest();
     const interval = setInterval(checkContest, 10000);
     return () => clearInterval(interval);
   }, []);
 
+  // Hide navbar on admin (orbit) and leaderboard — those pages are self-contained
+  if (pathname?.startsWith('/orbit') || pathname === '/leaderboard') return null;
+
   return (
     <header className="sticky top-0 z-40 border-b border-[#a68a56]/20 bg-[#050504]/85 backdrop-blur-xl transition-colors">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-2.5 sm:px-6">
-        {/* Brand with 11:11 Chapter 2 Nautical Typography */}
+        {/* Brand */}
         <Link href="/" className="group flex items-center gap-3">
           <div className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-[#1c160e] border border-[#a68a56]/30 shadow-lg shadow-black/80 transition-transform group-hover:scale-105">
             <NauticalCompass size={32} showRings={false} />
@@ -52,24 +53,20 @@ export default function Navbar() {
           </div>
         </Link>
 
-        {/* Live Contest Indicator & Navigation */}
+        {/* Contest status badge + Arena link */}
         <div className="flex items-center gap-2 sm:gap-4">
-          <div className="hidden sm:flex items-center gap-2 rounded-full border border-[#a68a56]/25 bg-[#090806]/80 px-3 py-1 font-nautical-mono text-xs text-[#ebe4d5]">
-            <span
-              className={`h-2 w-2 rounded-full ${
-                isActiveContest
-                  ? 'animate-ping bg-[#d4af37]'
-                  : contestPhase === 'registration'
-                  ? 'animate-pulse bg-amber-400'
-                  : 'bg-[#6b5535]'
-              }`}
-            />
+          <div className="hidden sm:flex items-center gap-2 rounded-full border border-[#a68a56]/25 bg-[#090806]/80 px-3 py-1 font-nautical-mono text-xs">
+            <span className={`h-2 w-2 rounded-full ${
+              isActiveContest ? 'animate-ping bg-[#d4af37]'
+              : contestPhase === 'registration' ? 'animate-pulse bg-amber-400'
+              : contestPhase === 'reveal' ? 'animate-pulse bg-emerald-400'
+              : 'bg-[#6b5535]'
+            }`} />
             <span className="text-[11px] tracking-wider text-[#a68a56]">
-              {isActiveContest
-                ? 'VOYAGE ACTIVE (50m)'
-                : contestPhase === 'registration'
-                ? 'REGISTRATION WINDOW'
-                : 'LOBBY STANDBY'}
+              {isActiveContest ? 'VOYAGE ACTIVE'
+                : contestPhase === 'registration' ? 'REGISTRATION OPEN'
+                : contestPhase === 'reveal' ? 'STAGE REVEAL'
+                : 'STANDBY'}
             </span>
           </div>
 
@@ -77,37 +74,13 @@ export default function Navbar() {
             <Link
               href="/register"
               className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 font-medium uppercase tracking-wider transition-all bouncy-btn ${
-                pathname.startsWith('/arena') || pathname === '/register'
+                pathname?.startsWith('/arena') || pathname === '/register'
                   ? 'border border-[#d4af37]/60 bg-[#1c160e] text-[#f3d38c] shadow-[0_0_12px_rgba(212,175,55,0.2)]'
                   : 'text-[#a68a56] hover:bg-[#1c160e]/50 hover:text-[#f3d38c]'
               }`}
             >
               <Radio className="h-3.5 w-3.5 text-[#d4af37]" />
               <span>Arena</span>
-            </Link>
-
-            <Link
-              href="/leaderboard"
-              className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 font-medium uppercase tracking-wider transition-all bouncy-btn ${
-                pathname === '/leaderboard'
-                  ? 'border border-[#d4af37]/60 bg-[#1c160e] text-[#f3d38c] shadow-[0_0_12px_rgba(212,175,55,0.2)]'
-                  : 'text-[#a68a56] hover:bg-[#1c160e]/50 hover:text-[#f3d38c]'
-              }`}
-            >
-              <Trophy className="h-3.5 w-3.5 text-[#f3d38c]" />
-              <span>Leaderboard</span>
-            </Link>
-
-            <Link
-              href="/admin"
-              className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 font-medium uppercase tracking-wider transition-all bouncy-btn ${
-                pathname === '/admin'
-                  ? 'border border-[#d4af37]/60 bg-[#1c160e] text-[#f3d38c] shadow-[0_0_12px_rgba(212,175,55,0.2)]'
-                  : 'text-[#a68a56] hover:bg-[#1c160e]/50 hover:text-[#f3d38c]'
-              }`}
-            >
-              <ShieldCheck className="h-3.5 w-3.5 text-[#a68a56]" />
-              <span>Command Deck</span>
             </Link>
           </nav>
         </div>

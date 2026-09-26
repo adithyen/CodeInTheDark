@@ -6,33 +6,23 @@ import { ContestSession, Question, Participant, Submission, Violation, Language 
 // ─────────────────────────────────────────────────────────────────────
 
 /**
- * Returns the currently active session: whichever is in
- * registration | active | paused. If none, returns the most recent setup session.
+ * Returns the currently active/viewable session.
+ * Priority order: registration → active → paused → reveal → ended → setup
+ * 'ended' and 'reveal' are included so the leaderboard/lobby can still see them.
  */
 export async function getActiveSession(): Promise<ContestSession | null> {
-  // First try live phases
+  // Priority: live phases first
   const { data: live } = await supabase
     .from('contest_sessions')
     .select('*')
-    .in('phase', ['registration', 'active', 'paused'])
+    .in('phase', ['registration', 'active', 'paused', 'reveal'])
     .order('created_at', { ascending: false })
     .limit(1)
     .single();
 
   if (live) return live as ContestSession;
 
-  // Fallback 1: latest setup session
-  const { data: setup } = await supabase
-    .from('contest_sessions')
-    .select('*')
-    .eq('phase', 'setup')
-    .order('created_at', { ascending: false })
-    .limit(1)
-    .single();
-
-  if (setup) return setup as ContestSession;
-
-  // Fallback 2: most recent session (e.g. ended / reveal)
+  // Fallback: most recent session regardless of phase
   const { data: latest } = await supabase
     .from('contest_sessions')
     .select('*')

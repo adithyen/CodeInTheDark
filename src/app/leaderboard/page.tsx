@@ -95,6 +95,7 @@ export default function LeaderboardPage() {
   const [totalQuestions, setTotalQuestions] = useState(4);
   const [contestTitle, setContestTitle] = useState('11:11 Chapter 2 — Code In The Dark');
   const [isRevealMode, setIsRevealMode] = useState(false);
+  const [contestPhase, setContestPhase] = useState<string>('setup');
   const [lastUpdated, setLastUpdated] = useState<string>('');
   const [loading, setLoading] = useState(true);
 
@@ -143,11 +144,11 @@ export default function LeaderboardPage() {
         setLeaderboard(data.leaderboard || []);
         setTotalQuestions(data.totalQuestions || 4);
         setContestTitle(data.contestTitle || '11:11 Chapter 2 — Code In The Dark');
+        setContestPhase(data.phase || 'setup');
         
-        // Check reveal mode transition
         if (data.isRevealMode && !isRevealMode) {
           setIsRevealMode(true);
-          setRevealedCount(0); // initialize reveal sequence
+          setRevealedCount(0);
         } else if (!data.isRevealMode && isRevealMode) {
           setIsRevealMode(false);
           setAutoRevealActive(false);
@@ -159,15 +160,11 @@ export default function LeaderboardPage() {
         const cData = await cRes.json();
         const cState: ContestState = cData.contest;
         setContest(cState);
-
-        // Check if contest just ended for audio buzzer
         if (cState && cState.isActive && cState.endTime) {
           const timeLeftMs = cState.endTime - Date.now();
           if (timeLeftMs <= 0 && !hasBuzzed) {
             setHasBuzzed(true);
-            if (audioEnabled) {
-              playContestBuzzer();
-            }
+            if (audioEnabled) playContestBuzzer();
           }
         }
       }
@@ -256,6 +253,29 @@ export default function LeaderboardPage() {
   const minutes = Math.floor(remainingSeconds / 60);
   const seconds = remainingSeconds % 60;
   const isUnder5Min = remainingSeconds > 0 && remainingSeconds <= 300;
+
+  // Gate: if contest is fully ended (phase=ended, not reveal), show "no contest" screen
+  if (!loading && contestPhase === 'ended' && !isRevealMode) {
+    return (
+      <div className="relative flex min-h-screen flex-1 flex-col items-center justify-center overflow-hidden bg-[#050504] p-6 text-center">
+        <div className="pointer-events-none absolute inset-0">
+          <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[500px] h-[300px] bg-[#d4af37]/5 rounded-full blur-[100px]" />
+        </div>
+        <div className="relative z-10 max-w-md space-y-4">
+          <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-[#1c160e] border border-[#a68a56]/30 mx-auto">
+            <Trophy className="h-10 w-10 text-[#d4af37]" />
+          </div>
+          <h1 className="font-cinzel text-3xl font-extrabold text-[#ebe4d5]">Contest Concluded</h1>
+          <p className="font-nautical-mono text-sm text-[#a68a56]">
+            The voyage has ended. No active contest is running at this moment.
+          </p>
+          <p className="font-nautical-mono text-xs text-[#6b5535]">
+            Results were revealed on stage. Contact the Admiralty for archived records.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={`relative flex min-h-screen flex-1 flex-col overflow-hidden bg-[#050504] p-4 sm:p-6 lg:p-8 bg-grid-cyber ${isFullscreen ? 'p-6 lg:p-10' : ''}`}>

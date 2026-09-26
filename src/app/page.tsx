@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Trophy, Compass, ArrowRight, EyeOff, Anchor, Clock, Shield } from 'lucide-react';
+import { ArrowRight, EyeOff, Anchor, Clock, Shield } from 'lucide-react';
 import Chapter2Monolith, { Chapter2SailingShip } from '@/components/Chapter2Monolith';
 
 export default function HomePage() {
@@ -133,7 +133,7 @@ export default function HomePage() {
           ))}
         </div>
 
-        {/* Primary Action Buttons (Emil Motion Tactile Physics) */}
+        {/* Primary Action Button */}
         <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
           <Link
             href="/register"
@@ -141,22 +141,6 @@ export default function HomePage() {
           >
             <span>BOARD CONTEST VESSEL</span>
             <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-          </Link>
-
-          <Link
-            href="/leaderboard"
-            className="group inline-flex items-center gap-2.5 rounded-lg border border-[#d4af37]/40 bg-[#1c160e]/85 px-6 py-3.5 font-cinzel text-xs sm:text-sm font-semibold tracking-widest text-[#f3d38c] backdrop-blur-sm shadow-[0_0_15px_rgba(212,175,55,0.1)] transition-all hover:border-[#d4af37] hover:shadow-[0_0_20px_rgba(212,175,55,0.25)] active:scale-95 bouncy-btn"
-          >
-            <Trophy className="h-4 w-4 text-[#d4af37]" />
-            <span>STAGE LEADERBOARD</span>
-          </Link>
-
-          <Link
-            href="/admin"
-            className="inline-flex items-center gap-2 rounded-lg border border-[#a68a56]/30 bg-[#090806]/85 px-6 py-3.5 font-cinzel text-xs sm:text-sm font-semibold tracking-widest text-[#a68a56] backdrop-blur-sm transition-all hover:border-[#a68a56] hover:text-[#f3d38c] active:scale-95 bouncy-btn"
-          >
-            <Compass className="h-4 w-4 text-[#a68a56]" />
-            <span>COMMAND DECK</span>
           </Link>
         </div>
 

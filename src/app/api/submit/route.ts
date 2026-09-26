@@ -134,6 +134,12 @@ export async function POST(req: NextRequest) {
       submittedAt: now,
       questionId,
       isAutoSubmit,
+      // Evaluation results — used by lobby screen to display score immediately
+      testCasesPassed: passedCount,
+      totalTestCases: totalCount,
+      score: finalScore - speedBonus,
+      speedBonus,
+      totalScore: finalScore,
     });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
