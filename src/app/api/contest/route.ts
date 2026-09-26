@@ -130,9 +130,12 @@ export async function POST(req: NextRequest) {
             phase: 'active',
             challenge_starts_at: now,
             challenge_ends_at: challengeEndsAt,
+            registration_ends_at: now,
           }))!;
         } else {
-          session = (await updateSession(targetSessionId, { phase: 'setup' }))!;
+          session = (await updateSession(targetSessionId, {
+            registration_ends_at: now,
+          }))!;
         }
         break;
       }
@@ -145,6 +148,7 @@ export async function POST(req: NextRequest) {
           challenge_starts_at: now,
           challenge_ends_at: now + durationMs,
           challenge_duration_ms: durationMs,
+          registration_ends_at: Math.min(session.registration_ends_at ?? now, now),
           is_paused: false,
         }))!;
         break;

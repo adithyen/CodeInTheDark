@@ -25,6 +25,29 @@ export default function RegisterPage() {
   const [gateStatus, setGateStatus] = useState<GateStatus>('loading');
   const [countdown, setCountdown] = useState('');
   const [serverTimeOffset, setServerTimeOffset] = useState(0);
+  const [registeredParticipant, setRegisteredParticipant] = useState<any>(null);
+
+  // Initialize registered participant from localStorage on mount
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('cid_participant');
+      if (saved) {
+        const p = JSON.parse(saved);
+        if (p && p.id) {
+          setRegisteredParticipant(p);
+        }
+      }
+    } catch {}
+  }, []);
+
+  const handleLaunchArena = useCallback(async () => {
+    try {
+      if (!document.fullscreenElement) {
+        await document.documentElement.requestFullscreen();
+      }
+    } catch {}
+    router.push('/arena');
+  }, [router]);
 
   const fetchContestState = useCallback(async () => {
     try {
@@ -36,12 +59,32 @@ export default function RegisterPage() {
       setServerTimeOffset(serverNow - Date.now());
       setSession(s);
 
-      if (s.phase === 'active' || s.phase === 'paused') {
-        if (!s.allow_late_join) {
-          setGateStatus('late_closed');
-        } else {
-          setGateStatus('active');
-        }
+      // Check if user is registered in localStorage or state
+      let currentReg = registeredParticipant;
+      if (!currentReg && typeof window !== 'undefined') {
+        try {
+          const saved = localStorage.getItem('cid_participant');
+          if (saved) {
+            const p = JSON.parse(saved);
+            if (p && p.id) {
+              currentReg = p;
+              setRegisteredParticipant(p);
+            }
+          }
+        } catch {}
+      }
+
+      const isLive = s.phase === 'active' || s.phase === 'paused';
+
+      // ── CRITICAL: If participant is already registered and contest is live, immediately enter arena! ──
+      if (isLive && currentReg && currentReg.id && (!currentReg.sessionId || currentReg.sessionId === s.id)) {
+        handleLaunchArena();
+        return;
+      }
+
+      // Gate status for registration form
+      if (isLive) {
+        setGateStatus(s.allow_late_join ? 'open' : 'late_closed');
       } else if (s.phase === 'registration') {
         setGateStatus('open');
       } else if (s.phase === 'ended' || s.phase === 'reveal') {
@@ -52,7 +95,7 @@ export default function RegisterPage() {
     } catch {
       setGateStatus('not_open');
     }
-  }, []);
+  }, [registeredParticipant, handleLaunchArena]);
 
   // Poll every 3 seconds
   useEffect(() => {
@@ -61,33 +104,24 @@ export default function RegisterPage() {
     return () => clearInterval(interval);
   }, [fetchContestState]);
 
-  const [registeredParticipant, setRegisteredParticipant] = useState<any>(null);
-
-  // Check if already registered in this session and redirect if active
+  // Reactive redirect: whenever session or registeredParticipant changes, if contest is live, launch arena!
   useEffect(() => {
-    const saved = localStorage.getItem('cid_participant');
-    if (saved) {
-      try {
-        const p = JSON.parse(saved);
-        if (p.id && p.sessionId && session && p.sessionId === session.id) {
-          setRegisteredParticipant(p);
-          if (gateStatus === 'active') {
-            router.push('/arena');
-          }
-        }
-      } catch { /* ignore */ }
+    const isLive = session?.phase === 'active' || session?.phase === 'paused';
+    if (registeredParticipant && isLive && (!registeredParticipant.sessionId || registeredParticipant.sessionId === session?.id)) {
+      handleLaunchArena();
     }
-  }, [session, gateStatus, router]);
+  }, [registeredParticipant, session?.phase, session?.id, handleLaunchArena]);
 
   // Live countdown ticker
   useEffect(() => {
-    if (!session?.registration_ends_at || gateStatus !== 'open') return;
+    if (!session?.registration_ends_at || session?.phase !== 'registration') return;
 
     const tick = () => {
       const now = Date.now() + serverTimeOffset;
       const remaining = (session.registration_ends_at ?? 0) - now;
       if (remaining <= 0) {
         setCountdown('00:00');
+        fetchContestState();
         return;
       }
       const mins = Math.floor(remaining / 60000);
@@ -98,7 +132,7 @@ export default function RegisterPage() {
     tick();
     const timer = setInterval(tick, 1000);
     return () => clearInterval(timer);
-  }, [session, gateStatus, serverTimeOffset]);
+  }, [session?.registration_ends_at, session?.phase, serverTimeOffset, fetchContestState]);
 
   const handleCollegeChange = (val: string) => {
     setCollege(val);
@@ -183,8 +217,46 @@ export default function RegisterPage() {
     );
   }
 
+  // ── Active Launch Screen (Participant registered and contest live) ──
+  if (registeredParticipant && (session?.phase === 'active' || session?.phase === 'paused')) {
+    return (
+      <div className="relative flex flex-1 items-center justify-center p-4 sm:p-6">
+        <div className="w-full max-w-lg rounded-2xl border border-emerald-500/50 bg-[#090806]/95 p-8 backdrop-blur-2xl shadow-2xl shadow-black text-center space-y-6">
+          <div className="flex flex-col items-center">
+            <NauticalCompass size={90} showRings={true} />
+            <span className="mt-4 inline-block rounded-full bg-emerald-950/60 border border-emerald-500/50 px-3.5 py-1 font-nautical-mono text-xs font-bold tracking-widest uppercase text-emerald-400">
+              ● VOYAGE UNDERWAY · ARENA ACTIVE ●
+            </span>
+            <h1 className="mt-3 font-cinzel text-2xl font-bold text-[#f3d38c] tracking-wide">
+              Entering Blind Coding Arena
+            </h1>
+            <p className="mt-1 font-nautical-mono text-xs text-[#a68a56]">
+              Voyager: <span className="text-[#ebe4d5] font-semibold">{registeredParticipant.name}</span>
+              {registeredParticipant.college && (
+                <> · College: <span className="text-[#d4af37] font-semibold">{registeredParticipant.college}</span></>
+              )}
+            </p>
+          </div>
+
+          <div className="rounded-2xl border border-emerald-500/40 bg-[#121810]/80 p-6 space-y-4 shadow-[0_0_25px_rgba(16,185,129,0.15)]">
+            <div className="flex items-center justify-center gap-2 font-nautical-mono text-xs uppercase tracking-wider text-emerald-300">
+              <Loader2 className="h-4 w-4 animate-spin text-emerald-400" />
+              <span>Transferring control to terminal...</span>
+            </div>
+            <button
+              onClick={handleLaunchArena}
+              className="w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-500 via-[#d4af37] to-amber-400 py-3.5 font-cinzel text-sm font-black tracking-wider text-[#050504] hover:brightness-110 shadow-lg shadow-black bouncy-btn"
+            >
+              <ArrowRight className="h-5 w-5 stroke-[2.5]" /> ENTER ARENA NOW
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   // ── Waiting Lobby (Registered Participant waiting for challenge to start) ──
-  if (registeredParticipant && gateStatus !== 'ended' && gateStatus !== 'active') {
+  if (registeredParticipant && gateStatus !== 'ended' && session?.phase !== 'active' && session?.phase !== 'paused') {
     return (
       <div className="relative flex flex-1 items-center justify-center p-4 sm:p-6">
         <div className="w-full max-w-lg rounded-2xl border border-[#a68a56]/40 bg-[#090806]/90 p-8 backdrop-blur-2xl shadow-2xl shadow-black text-center space-y-6">

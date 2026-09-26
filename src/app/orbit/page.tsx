@@ -1054,8 +1054,8 @@ export default function AdminPage() {
                     <button onClick={() => contestAction('extendRegistration', { extraMinutes: 1 })} className="rounded-xl border border-[#a68a56]/30 bg-[#1c160e]/50 px-4 py-2 font-cinzel text-xs text-[#ebe4d5] hover:border-[#d4af37] bouncy-btn">+1 min</button>
                     <button onClick={() => contestAction('extendRegistration', { extraMinutes: 3 })} className="rounded-xl border border-[#a68a56]/30 bg-[#1c160e]/50 px-4 py-2 font-cinzel text-xs text-[#ebe4d5] hover:border-[#d4af37] bouncy-btn">+3 min</button>
                     <button onClick={() => contestAction('extendRegistration', { extraMinutes: 5 })} className="rounded-xl border border-[#a68a56]/30 bg-[#1c160e]/50 px-4 py-2 font-cinzel text-xs text-[#ebe4d5] hover:border-[#d4af37] bouncy-btn">+5 min</button>
-                    <button onClick={() => { if (confirm('Close registration now?')) contestAction('closeRegistration'); }} className="rounded-xl border border-red-500/40 bg-red-950/30 px-4 py-2 font-cinzel text-xs text-red-300 hover:bg-red-900/40 bouncy-btn">Close Now</button>
-                    <button onClick={() => { if (confirm('Start challenge immediately?')) contestAction('startChallenge', { durationMinutes: challengeDurationMin }); }}
+                    <button onClick={() => { if (confirm('Close registration now?')) contestAction('closeRegistration', { sessionId: viewingSession?.id }); }} className="rounded-xl border border-red-500/40 bg-red-950/30 px-4 py-2 font-cinzel text-xs text-red-300 hover:bg-red-900/40 bouncy-btn">Close Now</button>
+                    <button onClick={() => { if (confirm('Start challenge immediately?')) contestAction('startChallenge', { durationMinutes: challengeDurationMin, sessionId: viewingSession?.id }); }}
                       className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#d4af37] via-[#f3d38c] to-[#a68a56] px-4 py-2 font-cinzel text-xs font-bold text-[#050504] hover:brightness-110 shadow-[0_0_15px_rgba(212,175,55,0.25)] bouncy-btn">
                       <Play className="h-3.5 w-3.5 fill-[#050504]" /> Launch Voyage Now
                     </button>
