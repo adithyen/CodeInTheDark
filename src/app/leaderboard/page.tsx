@@ -22,7 +22,8 @@ import {
   Crown,
   Megaphone,
   Eye,
-  EyeOff
+  EyeOff,
+  GraduationCap
 } from 'lucide-react';
 import { LeaderboardEntry, ContestState } from '@/types';
 
@@ -463,7 +464,10 @@ export default function LeaderboardPage() {
                 </div>
                 <div className="mt-4">
                   <h3 className="font-cinzel text-lg font-bold text-[#ebe4d5] truncate">{top3[1].name}</h3>
-                  <p className="font-nautical-mono text-xs text-[#a68a56]">{top3[1].rollNumber} · {top3[1].terminalId}</p>
+                  <p className="font-nautical-mono text-xs text-[#a68a56] truncate mt-1 flex items-center gap-1.5">
+                    <GraduationCap className="h-3.5 w-3.5 text-[#d4af37] shrink-0" />
+                    <span className="truncate">{top3[1].college || 'College'}</span>
+                  </p>
                 </div>
                 <div className="mt-4 flex items-baseline gap-2">
                   <span className="font-nautical-mono text-3xl font-extrabold text-[#f3d38c]">{top3[1].totalScore}</span>
@@ -490,7 +494,10 @@ export default function LeaderboardPage() {
                     <span>GRAND ADMIRAL · CHAMPION</span>
                   </div>
                   <h3 className="font-cinzel text-xl font-extrabold text-[#ebe4d5] truncate">{top3[0].name}</h3>
-                  <p className="font-nautical-mono text-xs text-[#f3d38c]/80">{top3[0].rollNumber} · {top3[0].terminalId}</p>
+                  <p className="font-nautical-mono text-xs text-[#f3d38c]/90 truncate mt-1 flex items-center gap-1.5">
+                    <GraduationCap className="h-3.5 w-3.5 text-[#d4af37] shrink-0" />
+                    <span className="truncate">{top3[0].college || 'College'}</span>
+                  </p>
                 </div>
                 <div className="mt-4 flex items-baseline gap-2">
                   <span className="font-nautical-mono text-4xl font-extrabold text-[#d4af37]">{top3[0].totalScore}</span>
@@ -513,7 +520,10 @@ export default function LeaderboardPage() {
                 </div>
                 <div className="mt-4">
                   <h3 className="font-cinzel text-lg font-bold text-[#ebe4d5] truncate">{top3[2].name}</h3>
-                  <p className="font-nautical-mono text-xs text-[#a68a56]">{top3[2].rollNumber} · {top3[2].terminalId}</p>
+                  <p className="font-nautical-mono text-xs text-[#a68a56] truncate mt-1 flex items-center gap-1.5">
+                    <GraduationCap className="h-3.5 w-3.5 text-[#d4af37] shrink-0" />
+                    <span className="truncate">{top3[2].college || 'College'}</span>
+                  </p>
                 </div>
                 <div className="mt-4 flex items-baseline gap-2">
                   <span className="font-nautical-mono text-3xl font-extrabold text-[#f3d38c]">{top3[2].totalScore}</span>
@@ -609,7 +619,10 @@ export default function LeaderboardPage() {
                             <span>{entry.name}</span>
                             {idx === 0 && <Crown className="h-4 w-4 text-[#d4af37] inline" />}
                           </div>
-                          <div className="text-xs text-[#a68a56] font-nautical-mono">{entry.rollNumber} · {entry.terminalId}</div>
+                          <div className="text-xs text-[#d4af37] font-nautical-mono flex items-center gap-1.5 mt-0.5">
+                            <GraduationCap className="h-3.5 w-3.5 text-[#a68a56] shrink-0" />
+                            <span className="truncate">{entry.college || 'KTU Engineering College'}</span>
+                          </div>
                         </td>
 
                         {/* Total Score */}

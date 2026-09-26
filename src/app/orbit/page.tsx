@@ -513,12 +513,22 @@ export default function AdminPage() {
   // ────────────────────────────────────────────────────────────────────────────
   const exportCSV = () => {
     if (!participants.length) return alert('No participants');
-    const headers = ['Roll Number', 'Name', 'Terminal ID', 'Total Score', 'Questions Solved', 'Strikes', 'Status', 'Registered At'];
+    const headers = ['Name', 'Phone Number', 'College', 'Seat Number', 'Total Score', 'Questions Solved', 'Strikes', 'Status', 'Registered At'];
     const rows = participants.map((p) => {
       const userSubs = submissions.filter(s => s.participantId === p.id);
       const totalScore = userSubs.reduce((a, s) => a + (s.score || 0), 0);
       const solved = userSubs.filter(s => s.testCasesPassed === s.totalTestCases).length;
-      return [`"${p.rollNumber}"`, `"${p.name}"`, `"${p.terminalId}"`, totalScore, solved, p.strikes, p.isLockedOut ? 'LOCKED' : 'ACTIVE', `"${new Date(p.registeredAt).toLocaleString()}"`].join(',');
+      return [
+        `"${p.name}"`,
+        `"${p.phone || ''}"`,
+        `"${p.college || ''}"`,
+        `"${p.terminalId}"`,
+        totalScore,
+        solved,
+        p.strikes,
+        p.isLockedOut ? 'LOCKED' : 'ACTIVE',
+        `"${new Date(p.registeredAt).toLocaleString()}"`
+      ].join(',');
     });
     const csv = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows].join('\n');
     const a = document.createElement('a'); a.href = encodeURI(csv); a.download = `CodeInTheDark_${viewingSession?.label}_${new Date().toISOString().slice(0,10)}.csv`; a.click();
@@ -1307,8 +1317,9 @@ export default function AdminPage() {
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="border-b border-[#a68a56]/20 bg-[#140f0a] font-cinzel text-[11px] text-[#d4af37] uppercase tracking-wider">
-                    <th className="py-3 px-4">Navigator</th>
-                    <th className="py-3 px-4 hidden sm:table-cell">Terminal</th>
+                    <th className="py-3 px-4">Navigator &amp; College</th>
+                    <th className="py-3 px-4 hidden sm:table-cell">Phone (Confidential)</th>
+                    <th className="py-3 px-4 hidden sm:table-cell">Seat Number</th>
                     <th className="py-3 px-4 hidden md:table-cell">Cipher</th>
                     <th className="py-3 px-4">Penalties</th>
                     <th className="py-3 px-4">Status</th>
@@ -1318,14 +1329,17 @@ export default function AdminPage() {
                 </thead>
                 <tbody className="divide-y divide-[#a68a56]/15 font-nautical-mono text-xs">
                   {participants.length === 0 ? (
-                    <tr><td colSpan={7} className="py-8 text-center text-[#a68a56]">No navigators mustered yet.</td></tr>
+                    <tr><td colSpan={8} className="py-8 text-center text-[#a68a56]">No navigators mustered yet.</td></tr>
                   ) : participants.map((p) => (
                     <tr key={p.id} className="hover:bg-[#1c160e]/30">
                       <td className="py-3 px-4">
                         <div className="font-bold text-[#ebe4d5] font-cinzel">{p.name}</div>
-                        <div className="text-[11px] text-[#a68a56]">{p.rollNumber}</div>
+                        <div className="text-[11px] text-[#f3d38c] truncate max-w-xs">{p.college || '—'}</div>
                       </td>
-                      <td className="py-3 px-4 hidden sm:table-cell text-[#f3d38c]">{p.terminalId}</td>
+                      <td className="py-3 px-4 hidden sm:table-cell font-mono text-[#ebe4d5]">
+                        {p.phone ? <span className="text-[#f3d38c] font-semibold">{p.phone}</span> : <span className="text-[#a68a56]">—</span>}
+                      </td>
+                      <td className="py-3 px-4 hidden sm:table-cell text-[#d4af37]">{p.terminalId}</td>
                       <td className="py-3 px-4 hidden md:table-cell uppercase text-[#a68a56]">{p.activeLanguage || '—'}</td>
                       <td className="py-3 px-4">
                         <span className={`font-bold ${p.strikes >= 3 ? 'text-red-400' : p.strikes > 0 ? 'text-[#d4af37]' : 'text-[#a68a56]'}`}>{p.strikes}/3</span>

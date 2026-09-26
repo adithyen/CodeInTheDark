@@ -342,7 +342,19 @@ export async function getParticipantByRoll(sessionId: string, rollNumber: string
     .select('*')
     .eq('session_id', sessionId)
     .eq('roll_number', rollNumber.toUpperCase())
-    .single();
+    .maybeSingle();
+  return data ? dbRowToParticipant(data) : null;
+}
+
+export async function getParticipantByPhone(sessionId: string, phone: string): Promise<Participant | null> {
+  const cleanPhone = phone.trim();
+  if (!cleanPhone) return null;
+  const { data } = await supabase
+    .from('participants')
+    .select('*')
+    .eq('session_id', sessionId)
+    .eq('phone', cleanPhone)
+    .maybeSingle();
   return data ? dbRowToParticipant(data) : null;
 }
 
@@ -351,26 +363,48 @@ export async function getParticipantById(id: string): Promise<Participant | null
     .from('participants')
     .select('*')
     .eq('id', id)
-    .single();
+    .maybeSingle();
   return data ? dbRowToParticipant(data) : null;
 }
 
 export async function upsertParticipant(sessionId: string, p: {
   name: string;
-  rollNumber: string;
+  phone?: string;
+  college?: string;
+  rollNumber?: string;
   terminalId?: string;
 }): Promise<Participant> {
   const now = Date.now();
-  const rollUpper = p.rollNumber.trim().toUpperCase();
+  const phoneVal = (p.phone || '').trim();
+  const collegeVal = (p.college || '').trim();
+  const rollVal = (p.rollNumber || phoneVal || `NAV-${Math.floor(1000 + Math.random() * 9000)}`).trim().toUpperCase();
 
-  const existing = await getParticipantByRoll(sessionId, rollUpper);
+  // Check if participant already exists in this session
+  let existing: Participant | null = null;
+  if (phoneVal) {
+    existing = await getParticipantByPhone(sessionId, phoneVal);
+  }
+  if (!existing && rollVal) {
+    existing = await getParticipantByRoll(sessionId, rollVal);
+  }
+
   if (existing) {
-    // Update last active
+    // Update last active and update any missing fields
+    const updates: any = { last_active_at: now };
+    if (phoneVal) updates.phone = phoneVal;
+    if (collegeVal) updates.college = collegeVal;
+
     await supabase
       .from('participants')
-      .update({ last_active_at: now })
+      .update(updates)
       .eq('id', existing.id);
-    return { ...existing, lastActiveAt: now };
+
+    return {
+      ...existing,
+      phone: phoneVal || existing.phone,
+      college: collegeVal || existing.college,
+      lastActiveAt: now,
+    };
   }
 
   const terminalId = p.terminalId?.trim().toUpperCase() || `SEAT-${Math.floor(10 + Math.random() * 90)}`;
@@ -380,7 +414,9 @@ export async function upsertParticipant(sessionId: string, p: {
     .insert({
       session_id: sessionId,
       name: p.name.trim(),
-      roll_number: rollUpper,
+      phone: phoneVal,
+      college: collegeVal,
+      roll_number: rollVal,
       terminal_id: terminalId,
       registered_at: now,
       last_active_at: now,
@@ -425,10 +461,12 @@ function dbRowToParticipant(row: any): Participant {
     id: row.id,
     sessionId: row.session_id,
     name: row.name,
-    rollNumber: row.roll_number,
-    terminalId: row.terminal_id,
-    strikes: row.strikes,
-    isLockedOut: row.is_locked_out,
+    phone: row.phone || '',
+    college: row.college || '',
+    rollNumber: row.roll_number || '',
+    terminalId: row.terminal_id || '',
+    strikes: row.strikes || 0,
+    isLockedOut: row.is_locked_out || false,
     activeLanguage: row.active_language,
     currentQuestionId: row.current_question_id,
     registeredAt: row.registered_at,
@@ -619,7 +657,8 @@ export async function buildLeaderboard(sessionId: string) {
     entriesMap.set(p.id, {
       participantId: p.id,
       name: p.name,
-      rollNumber: p.rollNumber,
+      college: p.college || '',
+      rollNumber: p.rollNumber || '',
       terminalId: p.terminalId,
       totalScore: 0,
       questionsSolved: 0,

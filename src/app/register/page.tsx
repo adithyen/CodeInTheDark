@@ -3,17 +3,21 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Shield, ArrowRight, CheckCircle2, User, Hash, Monitor, AlertCircle, Clock, Lock, Loader2, Compass } from 'lucide-react';
+import { Shield, ArrowRight, CheckCircle2, User, Phone, GraduationCap, Monitor, AlertCircle, Clock, Lock, Loader2, Compass } from 'lucide-react';
 import { ContestSession } from '@/types';
 import NauticalCompass from '@/components/NauticalCompass';
+import { searchColleges } from '@/lib/colleges';
 
 type GateStatus = 'loading' | 'not_open' | 'late_closed' | 'open' | 'active' | 'ended';
 
 export default function RegisterPage() {
   const router = useRouter();
   const [name, setName] = useState('');
-  const [rollNumber, setRollNumber] = useState('');
+  const [phone, setPhone] = useState('');
+  const [college, setCollege] = useState('');
   const [terminalId, setTerminalId] = useState('');
+  const [collegeSuggestions, setCollegeSuggestions] = useState<string[]>([]);
+  const [showCollegeDropdown, setShowCollegeDropdown] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -96,10 +100,22 @@ export default function RegisterPage() {
     return () => clearInterval(timer);
   }, [session, gateStatus, serverTimeOffset]);
 
+  const handleCollegeChange = (val: string) => {
+    setCollege(val);
+    if (val.trim().length > 0) {
+      const results = searchColleges(val, 8);
+      setCollegeSuggestions(results);
+      setShowCollegeDropdown(results.length > 0);
+    } else {
+      setCollegeSuggestions([]);
+      setShowCollegeDropdown(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim() || !rollNumber.trim()) {
-      setError('Please provide your full name and Roll Number / Team ID.');
+    if (!name.trim() || !phone.trim() || !college.trim()) {
+      setError('Please provide your Name, Phone Number, and College.');
       return;
     }
 
@@ -112,7 +128,8 @@ export default function RegisterPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name: name.trim(),
-          rollNumber: rollNumber.trim().toUpperCase(),
+          phone: phone.trim(),
+          college: college.trim(),
           terminalId: terminalId.trim() || `SEAT-${Math.floor(10 + Math.random() * 90)}`,
         }),
       });
@@ -120,7 +137,7 @@ export default function RegisterPage() {
       const data = await res.json();
       if (!res.ok) {
         if (res.status === 409) {
-          setError('Roll number already registered for this session.');
+          setError('This phone number is already registered for this session.');
         } else {
           setError(data.error || 'Registration failed');
         }
@@ -181,7 +198,10 @@ export default function RegisterPage() {
               Welcome Aboard, {registeredParticipant.name}
             </h1>
             <p className="mt-1 font-nautical-mono text-xs text-[#a68a56]">
-              Assigned Seat: <span className="text-[#f3d38c] font-bold">{registeredParticipant.terminalId || 'AUTO-ASSIGNED'}</span> · Roll No: <span className="text-[#d4af37] font-bold">{registeredParticipant.rollNumber}</span>
+              Assigned Seat: <span className="text-[#f3d38c] font-bold">{registeredParticipant.terminalId || 'AUTO-ASSIGNED'}</span>
+              {registeredParticipant.college && (
+                <> · College: <span className="text-[#d4af37] font-bold">{registeredParticipant.college}</span></>
+              )}
             </p>
           </div>
 
@@ -355,10 +375,11 @@ export default function RegisterPage() {
         )}
 
         <form onSubmit={handleSubmit} className="mt-6 space-y-4 font-nautical-mono">
+          {/* 1. Full Name */}
           <div>
             <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-[#f3d38c]">
               <User className="h-3.5 w-3.5 text-[#d4af37]" />
-              Full Name / Team Lead
+              Full Name
             </label>
             <input
               type="text"
@@ -370,25 +391,82 @@ export default function RegisterPage() {
             />
           </div>
 
+          {/* 2. Phone Number */}
           <div>
-            <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-[#f3d38c]">
-              <Hash className="h-3.5 w-3.5 text-[#d4af37]" />
-              Roll Number / Registration ID
+            <label className="mb-1.5 flex items-center justify-between text-xs font-medium text-[#f3d38c]">
+              <span className="flex items-center gap-1.5">
+                <Phone className="h-3.5 w-3.5 text-[#d4af37]" />
+                Phone Number
+              </span>
+              <span className="text-[10px] text-[#a68a56]">Admin Only · Strictly Confidential</span>
             </label>
             <input
-              type="text"
-              value={rollNumber}
-              onChange={(e) => setRollNumber(e.target.value)}
-              placeholder="e.g. 21CS089 or CREW-TITAN"
+              type="tel"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              placeholder="e.g. 9876543210"
               required
               className="w-full rounded-xl border border-[#a68a56]/30 bg-[#050504]/80 px-3.5 py-2.5 text-sm text-[#ebe4d5] placeholder-[#a68a56]/40 transition-all focus:border-[#d4af37] focus:outline-none focus:ring-1 focus:ring-[#d4af37]/50"
             />
           </div>
 
+          {/* 3. College with Live Autocomplete Suggestions */}
+          <div className="relative">
+            <label className="mb-1.5 flex items-center justify-between text-xs font-medium text-[#f3d38c]">
+              <span className="flex items-center gap-1.5">
+                <GraduationCap className="h-3.5 w-3.5 text-[#d4af37]" />
+                College / Institution
+              </span>
+              <span className="text-[10px] text-[#a68a56]">KTU Affiliated</span>
+            </label>
+            <input
+              type="text"
+              value={college}
+              onChange={(e) => handleCollegeChange(e.target.value)}
+              onFocus={() => {
+                if (college.trim().length > 0) {
+                  const results = searchColleges(college, 8);
+                  setCollegeSuggestions(results);
+                  setShowCollegeDropdown(results.length > 0);
+                }
+              }}
+              onBlur={() => {
+                setTimeout(() => setShowCollegeDropdown(false), 250);
+              }}
+              placeholder="Start typing your college (e.g. Barton Hill, CET...)"
+              required
+              className="w-full rounded-xl border border-[#a68a56]/30 bg-[#050504]/80 px-3.5 py-2.5 text-sm text-[#ebe4d5] placeholder-[#a68a56]/40 transition-all focus:border-[#d4af37] focus:outline-none focus:ring-1 focus:ring-[#d4af37]/50"
+            />
+
+            {/* Suggestions Dropdown */}
+            {showCollegeDropdown && collegeSuggestions.length > 0 && (
+              <div className="absolute left-0 right-0 top-full mt-1.5 z-50 max-h-56 overflow-y-auto rounded-xl border border-[#d4af37]/40 bg-[#0c0906]/98 p-1.5 shadow-2xl shadow-black backdrop-blur-2xl">
+                <div className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-[#a68a56] border-b border-[#a68a56]/15 mb-1">
+                  Matching Colleges ({collegeSuggestions.length})
+                </div>
+                {collegeSuggestions.map((col, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onMouseDown={() => {
+                      setCollege(col);
+                      setShowCollegeDropdown(false);
+                    }}
+                    className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left font-nautical-mono text-xs text-[#ebe4d5] hover:bg-[#1c160e] hover:text-[#f3d38c] transition-colors"
+                  >
+                    <GraduationCap className="h-3 w-3 shrink-0 text-[#d4af37]" />
+                    <span className="truncate">{col}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* 4. Seat Number (Optional) */}
           <div>
             <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-[#f3d38c]">
               <Monitor className="h-3.5 w-3.5 text-[#d4af37]" />
-              Assigned Seat / Terminal ID <span className="text-[#a68a56]/60">(Optional)</span>
+              Seat Number <span className="text-[#a68a56]/60">(Optional)</span>
             </label>
             <input
               type="text"

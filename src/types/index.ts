@@ -34,7 +34,9 @@ export interface Participant {
   id: string;
   sessionId?: string;
   name: string;
-  rollNumber: string;
+  phone?: string;       // Admin only
+  college?: string;     // College name
+  rollNumber?: string;  // Kept for backward compatibility
   terminalId: string;
   registeredAt: number;
   strikes: number;
@@ -49,7 +51,9 @@ export interface Submission {
   sessionId?: string;
   participantId: string;
   participantName: string;
-  participantRoll: string;
+  participantCollege?: string;
+  participantPhone?: string;
+  participantRoll?: string;
   questionId: string;
   questionTitle: string;
   language: Language;
@@ -135,6 +139,7 @@ export interface Violation {
 export interface LeaderboardEntry {
   participantId: string;
   name: string;
+  college?: string;
   rollNumber: string;
   terminalId: string;
   totalScore: number;

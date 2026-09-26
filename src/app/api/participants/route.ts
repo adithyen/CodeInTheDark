@@ -37,10 +37,18 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { name, rollNumber, terminalId, sessionId: reqSessionId } = body;
+    const { name, phone, college, rollNumber, terminalId, sessionId: reqSessionId } = body;
 
-    if (!name || !rollNumber) {
-      return NextResponse.json({ error: 'Name and Roll Number are required' }, { status: 400 });
+    const cleanName = (name || '').trim();
+    const cleanPhone = (phone || '').trim();
+    const cleanCollege = (college || '').trim();
+    const cleanTerminal = (terminalId || '').trim();
+    const cleanRoll = (rollNumber || cleanPhone).trim().toUpperCase();
+
+    if (!cleanName || !cleanPhone || !cleanCollege) {
+      return NextResponse.json({
+        error: 'Name, Phone Number, and College are required.',
+      }, { status: 400 });
     }
 
     // 1. Resolve session
@@ -53,7 +61,7 @@ export async function POST(req: NextRequest) {
     const existingParticipants = await getParticipantsForSession(session.id);
     const maxCapacity = (session.max_participants && session.max_participants > 0) ? session.max_participants : 200;
     const isAlreadyRegistered = existingParticipants.some(
-      (p) => p.rollNumber.toLowerCase() === rollNumber.trim().toLowerCase()
+      (p) => (p.phone && p.phone === cleanPhone) || (p.rollNumber && p.rollNumber.toLowerCase() === cleanRoll.toLowerCase())
     );
 
     // 3. Validate Phase & Late Join rule
@@ -82,16 +90,29 @@ export async function POST(req: NextRequest) {
       }, { status: 403 });
     }
 
-    // 4. Register or update participant
+    // 5. Register or update participant
     const participant = await upsertParticipant(session.id, {
-      name: name.trim(),
-      rollNumber: rollNumber.trim(),
-      terminalId,
+      name: cleanName,
+      phone: cleanPhone,
+      college: cleanCollege,
+      rollNumber: cleanRoll,
+      terminalId: cleanTerminal,
     });
-    return NextResponse.json({ success: true, participant, sessionPhase: session.phase });
+
+    return NextResponse.json({
+      success: true,
+      participant: {
+        id: participant.id,
+        name: participant.name,
+        college: participant.college,
+        terminalId: participant.terminalId,
+        registeredAt: participant.registeredAt,
+      },
+      sessionPhase: session.phase,
+    });
   } catch (error: any) {
     if (error.message?.includes('unique') || error.code === '23505') {
-      return NextResponse.json({ error: 'Roll number already registered for this session.' }, { status: 409 });
+      return NextResponse.json({ error: 'Phone number already registered for this session.' }, { status: 409 });
     }
     return NextResponse.json({ error: error.message }, { status: 500 });
   }

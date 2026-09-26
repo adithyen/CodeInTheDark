@@ -735,7 +735,7 @@ export default function ArenaPage() {
     <div className="relative flex flex-1 flex-col overflow-hidden bg-[#050504]">
       <AntiCheatShield
         participantName={participant.name}
-        rollNumber={participant.rollNumber}
+        rollNumber={participant.college || participant.rollNumber || 'NAVIGATOR'}
         terminalId={participant.terminalId}
         strikes={strikes}
         isLockedOut={isLockedOut}
@@ -784,6 +784,12 @@ export default function ArenaPage() {
           <div className="flex items-center gap-2 rounded-lg border border-[#a68a56]/30 bg-[#1c160e]/80 px-2.5 py-1 font-nautical-mono text-xs text-[#f3d38c]">
             <span className="h-2 w-2 rounded-full bg-[#d4af37] animate-pulse" />
             <span>{participant.name}</span>
+            {participant.college && (
+              <>
+                <span className="text-[#a68a56]">·</span>
+                <span className="text-[#d4af37] max-w-[180px] truncate">{participant.college}</span>
+              </>
+            )}
             <span className="text-[#a68a56]">·</span>
             <span className="text-[#ebe4d5]/80">{participant.terminalId}</span>
           </div>
