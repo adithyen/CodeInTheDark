@@ -8,7 +8,7 @@ import {
   CheckCircle2, Eye, Lock, FileSpreadsheet, Layers, Upload,
   RefreshCw, ShieldAlert, Undo2, Search, ChevronDown, PlusCircle,
   Calendar, History, BarChart3, Settings, Radio, Zap, StopCircle,
-  Timer, Send, X, Copy, Check, Loader2,
+  Timer, Send, X, Copy, Check, Loader2, Edit3,
 } from 'lucide-react';
 import { Question, ContestSession, ContestPhase, Participant, Submission, Violation, TestCase } from '@/types';
 import { ROUND_PRESETS, RoundPreset } from '@/lib/presets';
@@ -108,6 +108,18 @@ export default function AdminPage() {
   // Submissions inspector
   const [inspectedSubmission, setInspectedSubmission] = useState<Submission | null>(null);
   const [rejudging, setRejudging] = useState<string | null>(null);
+
+  // Rename & Delete session modals
+  const [showRenameSessionModal, setShowRenameSessionModal] = useState(false);
+  const [sessionToRename, setSessionToRename] = useState<ContestSession | null>(null);
+  const [renameLabel, setRenameLabel] = useState('');
+  const [renameNotes, setRenameNotes] = useState('');
+  const [renameLoading, setRenameLoading] = useState(false);
+
+  const [showDeleteSessionModal, setShowDeleteSessionModal] = useState(false);
+  const [sessionToDelete, setSessionToDelete] = useState<ContestSession | null>(null);
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   // Session selector dropdown
   const [selectorOpen, setSelectorOpen] = useState(false);
@@ -265,6 +277,83 @@ export default function AdminPage() {
       }
     } catch { alert('Network error'); }
     setNewSessionCreating(false);
+  };
+
+  const openRenameModal = (session: ContestSession) => {
+    setSessionToRename(session);
+    setRenameLabel(session.label);
+    setRenameNotes(session.notes || '');
+    setShowRenameSessionModal(true);
+  };
+
+  const openDeleteModal = (session: ContestSession) => {
+    setSessionToDelete(session);
+    setDeleteConfirmText('');
+    setShowDeleteSessionModal(true);
+  };
+
+  const handleRenameSession = async () => {
+    if (!sessionToRename) return;
+    if (!renameLabel.trim()) return alert('Session label cannot be empty');
+    setRenameLoading(true);
+    try {
+      const res = await fetch('/api/contest', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'renameSession',
+          passkey,
+          sessionId: sessionToRename.id,
+          label: renameLabel.trim(),
+          notes: renameNotes.trim(),
+        }),
+      });
+      const d = await res.json();
+      if (res.ok) {
+        setShowRenameSessionModal(false);
+        setSessionToRename(null);
+        await fetchAllData(passkey, viewingSessionId || undefined);
+      } else {
+        alert(d.error || 'Failed to rename session');
+      }
+    } catch {
+      alert('Network error while renaming session');
+    }
+    setRenameLoading(false);
+  };
+
+  const handleDeleteSession = async () => {
+    if (!sessionToDelete) return;
+    if (deleteConfirmText.trim().toUpperCase() !== 'DELETE') {
+      return alert('Please type DELETE to confirm session purge.');
+    }
+    setDeleteLoading(true);
+    try {
+      const res = await fetch('/api/contest', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'deleteSession',
+          passkey,
+          sessionId: sessionToDelete.id,
+        }),
+      });
+      const d = await res.json();
+      if (res.ok) {
+        setShowDeleteSessionModal(false);
+        setSessionToDelete(null);
+        setDeleteConfirmText('');
+        const remaining: ContestSession[] = d.sessions || [];
+        const nextId = d.session?.id || (remaining.length > 0 ? remaining[0].id : null);
+        setViewingSessionId(nextId);
+        await fetchAllData(passkey, nextId || undefined);
+      } else {
+        alert(d.error || 'Failed to delete session');
+      }
+    } catch {
+      alert('Network error while deleting session');
+    }
+    setDeleteLoading(false);
   };
 
   // ────────────────────────────────────────────────────────────────────────────
@@ -569,10 +658,44 @@ export default function AdminPage() {
           <div className="space-y-6">
             {/* Session config card */}
             <div className="rounded-2xl border border-[#a68a56]/25 bg-[#090704] p-6 shadow-xl">
-              <h3 className="font-cinzel text-sm font-bold text-[#f3d38c] flex items-center gap-2">
-                <Settings className="h-4 w-4 text-[#d4af37]" /> Voyage Session Configuration
-                {viewingSession && <PhaseBadge phase={viewingSession.phase} />}
-              </h3>
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-[#a68a56]/15 pb-4">
+                <div>
+                  <h3 className="font-cinzel text-sm font-bold text-[#f3d38c] flex items-center gap-2">
+                    <Settings className="h-4 w-4 text-[#d4af37]" /> Voyage Session Configuration
+                    {viewingSession && <PhaseBadge phase={viewingSession.phase} />}
+                  </h3>
+                  <div className="mt-1 flex flex-wrap items-center gap-2">
+                    <span className="font-cinzel text-base font-bold text-[#ebe4d5]">
+                      {viewingSession?.label || 'Untitled Session'}
+                    </span>
+                    {viewingSession?.notes && (
+                      <span className="font-nautical-mono text-xs text-[#a68a56] italic">
+                        — {viewingSession.notes}
+                      </span>
+                    )}
+                  </div>
+                </div>
+                {viewingSession && (
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => openRenameModal(viewingSession)}
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-[#a68a56]/30 bg-[#1c160e]/60 px-3 py-1.5 font-cinzel text-xs text-[#f3d38c] hover:border-[#d4af37] transition-all bouncy-btn"
+                      title="Rename this voyage session"
+                    >
+                      <Edit3 className="h-3.5 w-3.5 text-[#d4af37]" />
+                      <span>Rename</span>
+                    </button>
+                    <button
+                      onClick={() => openDeleteModal(viewingSession)}
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-red-500/40 bg-red-950/20 px-3 py-1.5 font-cinzel text-xs text-red-400 hover:bg-red-900/30 hover:border-red-500 transition-all bouncy-btn"
+                      title="Delete this voyage session and all associated data"
+                    >
+                      <Trash2 className="h-3.5 w-3.5 text-red-400" />
+                      <span>Purge Voyage</span>
+                    </button>
+                  </div>
+                )}
+              </div>
               <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 <div>
                   <label className="block font-cinzel text-xs text-[#a68a56] mb-1">Challenge Duration (min)</label>
@@ -1132,18 +1255,33 @@ export default function AdminPage() {
                         </div>
                       )}
 
-                      <div className="flex gap-2">
+                      <div className="grid grid-cols-2 gap-2">
                         <button
                           onClick={() => { setViewingSessionId(s.id); setActiveTab('submissions'); }}
-                          className="flex-1 rounded-lg border border-[#a68a56]/30 bg-[#1c160e]/50 py-1.5 font-cinzel text-xs text-[#ebe4d5] hover:border-[#d4af37] text-center bouncy-btn"
+                          className="rounded-lg border border-[#a68a56]/30 bg-[#1c160e]/50 py-1.5 font-cinzel text-xs text-[#ebe4d5] hover:border-[#d4af37] text-center bouncy-btn"
                         >
                           View Scrolls
                         </button>
                         <button
                           onClick={() => { setViewingSessionId(s.id); setActiveTab('participants'); }}
-                          className="flex-1 rounded-lg border border-[#a68a56]/30 bg-[#1c160e]/50 py-1.5 font-cinzel text-xs text-[#ebe4d5] hover:border-[#d4af37] text-center bouncy-btn"
+                          className="rounded-lg border border-[#a68a56]/30 bg-[#1c160e]/50 py-1.5 font-cinzel text-xs text-[#ebe4d5] hover:border-[#d4af37] text-center bouncy-btn"
                         >
                           Navigators
+                        </button>
+                      </div>
+
+                      <div className="flex gap-2 border-t border-[#a68a56]/15 pt-2">
+                        <button
+                          onClick={() => openRenameModal(s)}
+                          className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg border border-[#a68a56]/30 bg-[#0c0906] py-1.5 font-cinzel text-xs text-[#f3d38c] hover:border-[#d4af37] transition-all bouncy-btn"
+                        >
+                          <Edit3 className="h-3 w-3 text-[#d4af37]" /> Rename
+                        </button>
+                        <button
+                          onClick={() => openDeleteModal(s)}
+                          className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg border border-red-500/30 bg-red-950/20 py-1.5 font-cinzel text-xs text-red-400 hover:bg-red-950/40 hover:border-red-500 transition-all bouncy-btn"
+                        >
+                          <Trash2 className="h-3 w-3 text-red-400" /> Delete
                         </button>
                       </div>
                     </div>
@@ -1210,6 +1348,126 @@ export default function AdminPage() {
           </div>
         </div>
       )}
+
+      {/* Rename Session Modal */}
+      {showRenameSessionModal && sessionToRename && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4 backdrop-blur-md">
+          <div className="w-full max-w-lg rounded-2xl border border-[#d4af37]/40 bg-[#0c0906] p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-[#a68a56]/20 pb-3">
+              <h3 className="font-cinzel text-lg font-bold text-[#f3d38c] flex items-center gap-2">
+                <Edit3 className="h-5 w-5 text-[#d4af37]" /> Rename Voyage Session
+              </h3>
+              <button onClick={() => setShowRenameSessionModal(false)} className="text-[#a68a56] hover:text-[#ebe4d5]"><X className="h-5 w-5" /></button>
+            </div>
+
+            <div className="space-y-3">
+              <div>
+                <label className="block font-cinzel text-xs text-[#a68a56] mb-1">Session Inscription / Name *</label>
+                <input
+                  type="text"
+                  value={renameLabel}
+                  onChange={e => setRenameLabel(e.target.value)}
+                  placeholder="e.g. Trial Run 2, Chapter 2 Grand Finals"
+                  className="w-full rounded-xl border border-[#a68a56]/30 bg-[#050504] px-3 py-2 font-nautical-mono text-sm text-[#ebe4d5] focus:border-[#d4af37] focus:outline-none"
+                  autoFocus
+                />
+              </div>
+
+              <div>
+                <label className="block font-cinzel text-xs text-[#a68a56] mb-1">Nautical Notes (optional)</label>
+                <input
+                  type="text"
+                  value={renameNotes}
+                  onChange={e => setRenameNotes(e.target.value)}
+                  placeholder="e.g. Morning wave, 50-minute blitz"
+                  className="w-full rounded-xl border border-[#a68a56]/30 bg-[#050504] px-3 py-2 font-nautical-mono text-xs text-[#ebe4d5] focus:border-[#d4af37] focus:outline-none"
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-3 border-t border-[#a68a56]/20 pt-4">
+              <button
+                onClick={() => setShowRenameSessionModal(false)}
+                className="rounded-xl border border-[#a68a56]/30 bg-[#1c160e]/50 px-4 py-2 font-cinzel text-xs text-[#ebe4d5] hover:border-[#d4af37] bouncy-btn"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleRenameSession}
+                disabled={renameLoading || !renameLabel.trim()}
+                className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#d4af37] via-[#f3d38c] to-[#a68a56] px-5 py-2 font-cinzel text-xs font-bold text-[#050504] hover:brightness-110 disabled:opacity-50 bouncy-btn"
+              >
+                {renameLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+                Save Changes
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Session Modal (Strict Safeguard) */}
+      {showDeleteSessionModal && sessionToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4 backdrop-blur-md">
+          <div className="w-full max-w-lg rounded-2xl border border-red-500/50 bg-[#0c0606] p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-red-500/20 border-b pb-3">
+              <h3 className="font-cinzel text-lg font-bold text-red-400 flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5 text-red-500" /> Purge Voyage Session
+              </h3>
+              <button onClick={() => setShowDeleteSessionModal(false)} className="text-[#a68a56] hover:text-[#ebe4d5]"><X className="h-5 w-5" /></button>
+            </div>
+
+            <div className="rounded-xl border border-red-500/30 bg-red-950/20 p-4 space-y-2">
+              <p className="font-cinzel text-xs font-bold text-red-300">
+                You are about to permanently delete session:
+              </p>
+              <p className="font-cinzel text-sm font-black text-white bg-black/60 px-3 py-1.5 rounded-lg border border-red-500/40">
+                {sessionToDelete.label}
+              </p>
+              <p className="font-nautical-mono text-[11px] text-red-300/90 leading-relaxed pt-1">
+                ⚠️ This action is <strong>PERMANENT and IRREVERSIBLE</strong>. It will completely delete all related information from everywhere:
+              </p>
+              <ul className="font-nautical-mono text-[11px] text-red-200/80 list-disc list-inside space-y-0.5 pl-1">
+                <li>All Questions & Test Cases associated with this session</li>
+                <li>All Submissions & Code evaluated for this session</li>
+                <li>All Registered Navigators / Participants</li>
+                <li>All Anti-Cheat Violations & Strikes</li>
+              </ul>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="block font-nautical-mono text-xs text-[#ebe4d5]">
+                To confirm, type <strong className="text-red-400 font-bold tracking-widest">DELETE</strong> below:
+              </label>
+              <input
+                type="text"
+                value={deleteConfirmText}
+                onChange={e => setDeleteConfirmText(e.target.value)}
+                placeholder="DELETE"
+                className="w-full rounded-xl border border-red-500/40 bg-[#050504] px-3 py-2 font-nautical-mono text-sm text-[#ebe4d5] focus:border-red-500 focus:outline-none"
+                autoFocus
+              />
+            </div>
+
+            <div className="flex justify-end gap-3 border-t border-red-500/20 pt-4">
+              <button
+                onClick={() => setShowDeleteSessionModal(false)}
+                className="rounded-xl border border-[#a68a56]/30 bg-[#1c160e]/50 px-4 py-2 font-cinzel text-xs text-[#ebe4d5] hover:border-[#d4af37] bouncy-btn"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteSession}
+                disabled={deleteLoading || deleteConfirmText.trim().toUpperCase() !== 'DELETE'}
+                className="flex items-center gap-2 rounded-xl bg-red-600 px-5 py-2 font-cinzel text-xs font-bold text-white hover:bg-red-500 disabled:opacity-40 disabled:cursor-not-allowed bouncy-btn shadow-lg shadow-red-950/60"
+              >
+                {deleteLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                Purge All Records
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
 
       {/* Question Editor Modal */}
       {showQuestionModal && (

@@ -5,6 +5,8 @@ import {
   getAllSessions,
   createSession,
   updateSession,
+  renameSession,
+  deleteSession,
   copyQuestionsToSession,
   autoTransitionSession,
 } from '@/lib/db';
@@ -215,6 +217,38 @@ export async function POST(req: NextRequest) {
         if (body.autoStartOnRegClose !== undefined) updates.auto_start_on_reg_close = body.autoStartOnRegClose;
         session = (await updateSession(targetSessionId, updates))!;
         break;
+      }
+
+      // ── RENAME SESSION ─────────────────────────────────────────────────
+      case 'renameSession': {
+        const { label, notes } = body;
+        if (!label || typeof label !== 'string' || !label.trim()) {
+          return NextResponse.json({ error: 'Session label cannot be empty' }, { status: 400 });
+        }
+        session = (await renameSession(
+          targetSessionId,
+          label.trim(),
+          notes !== undefined ? String(notes).trim() : undefined
+        ))!;
+        break;
+      }
+
+      // ── DELETE SESSION (AND ALL RELATED INFO CASCADE) ──────────────────
+      case 'deleteSession': {
+        const success = await deleteSession(targetSessionId);
+        if (!success) {
+          return NextResponse.json({ error: 'Failed to delete session and purge records' }, { status: 500 });
+        }
+        const remainingSessions = await getAllSessions();
+        const nextActive = await getActiveSession();
+        return NextResponse.json({
+          success: true,
+          message: 'Session and all associated questions, test cases, submissions, participants, and violations completely purged',
+          sessions: remainingSessions,
+          session: nextActive,
+          contest: nextActive ? sessionToContestState(nextActive) : null,
+          serverTime: now,
+        });
       }
 
       default:

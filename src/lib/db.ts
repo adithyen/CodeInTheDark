@@ -92,6 +92,96 @@ export async function createSession(
 }
 
 /**
+ * Renames a contest session and updates its notes.
+ */
+export async function renameSession(
+  id: string,
+  newLabel: string,
+  newNotes?: string
+): Promise<ContestSession | null> {
+  const updates: Partial<ContestSession> = { label: newLabel.trim() };
+  if (newNotes !== undefined) updates.notes = newNotes.trim();
+  return updateSession(id, updates);
+}
+
+/**
+ * Permanently deletes a contest session and ALL related information from EVERY table:
+ * test_cases, questions, submissions, violations, participants, and contest_sessions.
+ * If zero sessions remain, initializes a fresh clean default session.
+ */
+export async function deleteSession(id: string): Promise<boolean> {
+  try {
+    // 1. Find all question IDs for this session
+    const { data: questions } = await supabase
+      .from('questions')
+      .select('id')
+      .eq('session_id', id);
+
+    const questionIds = (questions || []).map((q) => q.id);
+
+    // 2. Delete test cases for those questions
+    if (questionIds.length > 0) {
+      const { error: tcErr } = await supabase
+        .from('test_cases')
+        .delete()
+        .in('question_id', questionIds);
+      if (tcErr) console.error('Error deleting test_cases for session:', tcErr);
+    }
+
+    // 3. Delete all submissions belonging to this session
+    const { error: subErr } = await supabase
+      .from('submissions')
+      .delete()
+      .eq('session_id', id);
+    if (subErr) console.error('Error deleting submissions for session:', subErr);
+
+    // 4. Delete all anti-cheat violations belonging to this session
+    const { error: violErr } = await supabase
+      .from('violations')
+      .delete()
+      .eq('session_id', id);
+    if (violErr) console.error('Error deleting violations for session:', violErr);
+
+    // 5. Delete all registered participants belonging to this session
+    const { error: partErr } = await supabase
+      .from('participants')
+      .delete()
+      .eq('session_id', id);
+    if (partErr) console.error('Error deleting participants for session:', partErr);
+
+    // 6. Delete all questions belonging to this session
+    const { error: qErr } = await supabase
+      .from('questions')
+      .delete()
+      .eq('session_id', id);
+    if (qErr) console.error('Error deleting questions for session:', qErr);
+
+    // 7. Delete the session row itself
+    const { error: sessErr } = await supabase
+      .from('contest_sessions')
+      .delete()
+      .eq('id', id);
+
+    if (sessErr) {
+      console.error('Error deleting session row:', sessErr);
+      return false;
+    }
+
+    // 8. Fail-safe: If no sessions remain in database, create a fallback setup session
+    const remaining = await getAllSessions();
+    if (remaining.length === 0) {
+      await createSession('11:11 Chapter 2 — Main Arena', 'Default session initialized', undefined);
+    }
+
+    return true;
+  } catch (err) {
+    console.error('Fatal error during deleteSession:', err);
+    return false;
+  }
+}
+
+
+/**
  * Auto-transition: if registration ended and auto_start is on, flip to active.
  * Called on every GET /api/contest so no cron is needed.
  */
