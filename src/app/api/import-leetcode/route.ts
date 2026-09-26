@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { importLeetCodeQuestion } from '@/lib/leetcode';
+import { isAdmin } from '@/lib/adminAuth';
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const { slug, passkey } = body;
 
-    if (passkey !== 'admin1111' && passkey !== process.env.ADMIN_SECRET) {
+    if (!isAdmin(passkey)) {
       return NextResponse.json({ error: 'Unauthorized: Invalid Admin Passkey' }, { status: 401 });
     }
 

@@ -11,9 +11,7 @@ import {
   autoTransitionSession,
 } from '@/lib/db';
 
-function isAdmin(passkey: string) {
-  return passkey === 'admin1111' || passkey === 'admiral2026' || passkey === process.env.ADMIN_SECRET || passkey === process.env.NEXT_PUBLIC_ADMIN_PASSKEY;
-}
+import { isAdmin } from '@/lib/adminAuth';
 
 // Converts a ContestSession to the legacy ContestState shape so arena/leaderboard keep working
 function sessionToContestState(session: any) {
@@ -64,6 +62,10 @@ export async function POST(req: NextRequest) {
 
     if (!isAdmin(passkey)) {
       return NextResponse.json({ error: 'Unauthorized: Invalid Admin Passkey' }, { status: 401 });
+    }
+
+    if (action === 'verifyPasskey') {
+      return NextResponse.json({ success: true, valid: true });
     }
 
     const now = Date.now();

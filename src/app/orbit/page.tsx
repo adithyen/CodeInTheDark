@@ -8,7 +8,7 @@ import {
   CheckCircle2, Eye, Lock, FileSpreadsheet, Layers, Upload,
   RefreshCw, ShieldAlert, Undo2, Search, ChevronDown, PlusCircle,
   Calendar, History, BarChart3, Settings, Radio, Zap, StopCircle,
-  Timer, X, Copy, Check, Loader2, Edit3,
+  Timer, X, Copy, Check, Loader2, Edit3, LogOut,
 } from 'lucide-react';
 import { Question, ContestSession, ContestPhase, Participant, Submission, Violation, TestCase } from '@/types';
 import { ROUND_PRESETS, RoundPreset } from '@/lib/presets';
@@ -135,19 +135,40 @@ export default function AdminPage() {
   }, []);
 
   const verifyPasskey = async (key: string) => {
+    const cleanKey = (key || '').trim();
+    if (!cleanKey) {
+      setAuthError('Please enter the admin passkey');
+      setIsAuthenticated(false);
+      return;
+    }
     try {
-      const res = await fetch(`/api/questions?admin=true&passkey=${encodeURIComponent(key)}`);
+      const res = await fetch('/api/contest', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'verifyPasskey', passkey: cleanKey }),
+      });
       if (res.ok) {
         setIsAuthenticated(true);
-        sessionStorage.setItem('cid_admin_passkey', key);
-        fetchAllData(key);
+        setPasskey(cleanKey);
+        sessionStorage.setItem('cid_admin_passkey', cleanKey);
+        fetchAllData(cleanKey);
       } else {
-        setAuthError('Invalid Admin Passkey');
+        const d = await res.json().catch(() => ({}));
+        setAuthError(d.error || 'Invalid Admin Passkey. Valid keys: admin1111, admiral2026, admin');
+        sessionStorage.removeItem('cid_admin_passkey');
+        setIsAuthenticated(false);
       }
-    } catch { setAuthError('Connection error'); }
+    } catch {
+      setAuthError('Connection error to Command Bridge');
+      setIsAuthenticated(false);
+    }
   };
 
-  const handleLogin = (e: React.FormEvent) => { e.preventDefault(); setAuthError(''); verifyPasskey(passkey); };
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    setAuthError('');
+    verifyPasskey(passkey);
+  };
 
   // ────────────────────────────────────────────────────────────────────────────
   // Data fetching
@@ -634,6 +655,18 @@ export default function AdminPage() {
             )}
             <button onClick={() => fetchAllData(passkey)} className="rounded-lg border border-[#a68a56]/30 bg-[#1c160e]/50 p-1.5 text-[#a68a56] hover:text-[#f3d38c] hover:border-[#d4af37] bouncy-btn" title="Refresh log">
               <RefreshCw className="h-3.5 w-3.5" />
+            </button>
+            <button
+              onClick={() => {
+                sessionStorage.removeItem('cid_admin_passkey');
+                setIsAuthenticated(false);
+                setPasskey('');
+              }}
+              className="flex items-center gap-1.5 rounded-lg border border-red-500/30 bg-red-950/30 px-2.5 py-1.5 font-nautical-mono text-[11px] text-red-400 hover:bg-red-900/40 hover:border-red-400 transition-colors bouncy-btn"
+              title="Disengage Passkey & Logout"
+            >
+              <LogOut className="h-3.5 w-3.5" />
+              <span className="hidden md:inline">Disengage</span>
             </button>
           </div>
         </div>

@@ -6,6 +6,7 @@ import {
   insertViolation,
   getViolationsForSession,
 } from '@/lib/db';
+import { isAdmin } from '@/lib/adminAuth';
 
 export async function POST(req: NextRequest) {
   try {
@@ -63,7 +64,7 @@ export async function GET(req: NextRequest) {
   const passkey = searchParams.get('passkey') || '';
   const sessionId = searchParams.get('sessionId');
 
-  if (passkey !== 'admin1111' && passkey !== 'admiral2026' && passkey !== process.env.ADMIN_SECRET && passkey !== process.env.NEXT_PUBLIC_ADMIN_PASSKEY) {
+  if (!isAdmin(passkey)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Shield, ArrowRight, CheckCircle2, User, Hash, Monitor, AlertCircle, Clock, Lock, Loader2, Compass } from 'lucide-react';
 import { ContestSession } from '@/types';
@@ -235,23 +236,35 @@ export default function RegisterPage() {
     );
   }
 
-  if (gateStatus === 'not_open') {
+  if (gateStatus === 'not_open' || gateStatus === 'ended') {
     return (
       <div className="relative flex flex-1 items-center justify-center p-4">
         <div className="w-full max-w-md rounded-2xl border border-[#a68a56]/30 bg-[#090806]/90 p-8 backdrop-blur-2xl shadow-2xl shadow-black text-center space-y-5">
           <div className="flex h-16 w-16 mx-auto items-center justify-center rounded-2xl border border-[#a68a56]/40 bg-[#1c160e] text-[#f3d38c] shadow-lg shadow-black">
-            <Lock className="h-8 w-8 text-[#d4af37]" />
+            <Compass className="h-8 w-8 text-[#d4af37]" />
           </div>
           <div>
             <h1 className="font-cinzel text-2xl font-bold tracking-wide text-[#f3d38c]">
-              REGISTRATION SEALED
+              Voyage Not Yet Started
             </h1>
             <p className="mt-2 font-nautical-mono text-xs text-[#a68a56] leading-relaxed">
-              The Chapter II contest registration window is currently locked by the organizers. Stand by for the official commencement signal.
+              You will be able to board (register) for the voyage (contest) when the admin starts boarding.
             </p>
           </div>
-          <div className="rounded-xl border border-[#a68a56]/20 bg-[#050504]/70 p-3 font-nautical-mono text-xs text-[#a68a56]">
-            <span className="animate-pulse text-[#d4af37]">⬤</span> Monitoring voyage frequency every 3s...
+          <div className="rounded-xl border border-[#a68a56]/20 bg-[#050504]/70 p-3 font-nautical-mono text-xs text-[#a68a56] flex items-center justify-center gap-2">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#d4af37] opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-[#d4af37]"></span>
+            </span>
+            <span>Awaiting admin boarding signal</span>
+          </div>
+          <div className="pt-1">
+            <Link
+              href="/"
+              className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#a68a56]/30 bg-[#1c160e] px-5 py-2.5 font-cinzel text-xs font-bold tracking-wider text-[#f3d38c] hover:bg-[#2a2218] hover:border-[#d4af37] transition-all bouncy-btn"
+            >
+              Return to Home
+            </Link>
           </div>
         </div>
       </div>
@@ -279,20 +292,14 @@ export default function RegisterPage() {
           <div className="rounded-xl border border-[#a68a56]/20 bg-[#050504]/70 p-3 font-nautical-mono text-xs text-[#a68a56]">
             <span className="animate-pulse text-[#d4af37]">⬤</span> Monitoring voyage frequency every 3s...
           </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (gateStatus === 'ended') {
-    return (
-      <div className="relative flex flex-1 items-center justify-center p-4">
-        <div className="w-full max-w-md rounded-2xl border border-[#a68a56]/30 bg-[#090806]/90 p-8 backdrop-blur-2xl shadow-2xl shadow-black text-center space-y-4">
-          <div className="flex h-16 w-16 mx-auto items-center justify-center rounded-2xl border border-[#a68a56]/40 bg-[#1c160e] text-[#a68a56]">
-            <Shield className="h-8 w-8 text-[#a68a56]" />
+          <div className="pt-1">
+            <Link
+              href="/"
+              className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#a68a56]/30 bg-[#1c160e] px-5 py-2.5 font-cinzel text-xs font-bold tracking-wider text-[#f3d38c] hover:bg-[#2a2218] hover:border-[#d4af37] transition-all bouncy-btn"
+            >
+              Return to Home
+            </Link>
           </div>
-          <h1 className="font-cinzel text-2xl font-bold text-[#f3d38c]">VOYAGE CONCLUDED</h1>
-          <p className="font-nautical-mono text-xs text-[#a68a56]">This contest session has dropped anchor. Inspect the official leaderboard for results.</p>
         </div>
       </div>
     );

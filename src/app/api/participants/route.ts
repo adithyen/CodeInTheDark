@@ -9,9 +9,7 @@ import {
   getParticipantById,
 } from '@/lib/db';
 
-function isAdmin(passkey: string) {
-  return passkey === 'admin1111' || passkey === 'admiral2026' || passkey === process.env.ADMIN_SECRET || passkey === process.env.NEXT_PUBLIC_ADMIN_PASSKEY;
-}
+import { isAdmin } from '@/lib/adminAuth';
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
