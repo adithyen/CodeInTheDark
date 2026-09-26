@@ -63,7 +63,7 @@ export async function GET(req: NextRequest) {
   const passkey = searchParams.get('passkey') || '';
   const sessionId = searchParams.get('sessionId');
 
-  if (passkey !== 'admin1111' && passkey !== process.env.ADMIN_SECRET) {
+  if (passkey !== 'admin1111' && passkey !== 'admiral2026' && passkey !== process.env.ADMIN_SECRET && passkey !== process.env.NEXT_PUBLIC_ADMIN_PASSKEY) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 

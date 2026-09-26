@@ -208,6 +208,18 @@ export default function AdminPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [viewingSessionId]);
 
+  // Sync inputs with viewed session
+  useEffect(() => {
+    if (viewingSession) {
+      if (viewingSession.challenge_duration_ms) {
+        setChallengeDurationMin(Math.round(viewingSession.challenge_duration_ms / 60000));
+      }
+      if (viewingSession.max_participants) {
+        setMaxParticipants(viewingSession.max_participants);
+      }
+    }
+  }, [viewingSession?.id, viewingSession?.challenge_duration_ms, viewingSession?.max_participants]);
+
   // ────────────────────────────────────────────────────────────────────────────
   // Countdown tickers
   // ────────────────────────────────────────────────────────────────────────────
@@ -227,10 +239,10 @@ export default function AdminPage() {
   }, [currentSession, serverTimeOffset]);
 
   // ────────────────────────────────────────────────────────────────────────────
-  // Contest actions (on the current active session)
+  // Contest actions (on the viewed session or current session)
   // ────────────────────────────────────────────────────────────────────────────
   const contestAction = async (action: string, extra: any = {}) => {
-    const sessionId = currentSession?.id;
+    const sessionId = extra.sessionId || viewingSessionId || currentSession?.id;
     if (!sessionId && action !== 'createSession' && action !== 'getSessions') return;
     try {
       const res = await fetch('/api/contest', {
@@ -238,7 +250,7 @@ export default function AdminPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action, passkey, sessionId, ...extra }),
       });
-      if (res.ok) await fetchAllData(passkey);
+      if (res.ok) await fetchAllData(passkey, sessionId);
       else {
         const d = await res.json();
         alert(d.error || 'Action failed');
@@ -404,13 +416,19 @@ export default function AdminPage() {
   const handleLoadPreset = async (preset: RoundPreset) => {
     const targetId = viewingSessionId ?? currentSession?.id;
     if (!targetId) return alert('No session selected');
-    if (!confirm(`Load "${preset.name}"? This replaces all current questions.`)) return;
+    if (!confirm(`Load "${preset.name}"? This replaces all current questions and sets challenge duration to ${preset.durationMinutes} min.`)) return;
     const res = await fetch('/api/questions', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ passkey, action: 'bulk_import', questions: preset.questions, sessionId: targetId }),
     });
-    if (res.ok) { alert(`Loaded ${preset.name}!`); fetchAllData(passkey); }
-    else alert('Failed loading preset');
+    if (res.ok) {
+      if (preset.durationMinutes) {
+        setChallengeDurationMin(preset.durationMinutes);
+        await contestAction('updateConfig', { durationMinutes: preset.durationMinutes, sessionId: targetId });
+      }
+      alert(`Loaded ${preset.name}!`);
+      fetchAllData(passkey, targetId);
+    } else alert('Failed loading preset');
   };
 
   const handleImportLeetCode = async () => {
@@ -696,34 +714,73 @@ export default function AdminPage() {
                   </div>
                 )}
               </div>
-              <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 <div>
                   <label className="block font-cinzel text-xs text-[#a68a56] mb-1">Challenge Duration (min)</label>
                   <div className="flex gap-2">
-                    <input type="number" value={challengeDurationMin} onChange={e => setChallengeDurationMin(+e.target.value)} min={1} max={180}
+                    <input type="number" id="input-challenge-duration" value={challengeDurationMin} onChange={e => setChallengeDurationMin(+e.target.value)} min={1} max={180}
                       className="w-full rounded-lg border border-[#a68a56]/30 bg-[#050504] px-3 py-1.5 font-nautical-mono text-xs text-[#ebe4d5] focus:border-[#d4af37] focus:outline-none" />
-                    <button onClick={() => contestAction('updateConfig', { durationMinutes: challengeDurationMin })}
+                    <button id="save-duration-btn" onClick={() => contestAction('updateConfig', { durationMinutes: challengeDurationMin, sessionId: viewingSession?.id })}
                       className="rounded-lg bg-[#1c160e] border border-[#d4af37]/40 px-3 py-1.5 font-cinzel text-xs text-[#f3d38c] hover:border-[#d4af37] bouncy-btn">Save</button>
                   </div>
                 </div>
                 <div>
-                  <label className="block font-cinzel text-xs text-[#a68a56] mb-1">Max Navigators</label>
+                  <label className="block font-cinzel text-xs text-[#a68a56] mb-1">Max Navigators (Capacity)</label>
                   <div className="flex gap-2">
-                    <input type="number" value={maxParticipants} onChange={e => setMaxParticipants(+e.target.value)} min={1}
+                    <input type="number" id="input-max-navigators" value={maxParticipants} onChange={e => setMaxParticipants(+e.target.value)} min={1}
                       className="w-full rounded-lg border border-[#a68a56]/30 bg-[#050504] px-3 py-1.5 font-nautical-mono text-xs text-[#ebe4d5] focus:border-[#d4af37] focus:outline-none" />
-                    <button onClick={() => contestAction('updateConfig', { maxParticipants })}
+                    <button id="save-capacity-btn" onClick={() => contestAction('updateConfig', { maxParticipants, sessionId: viewingSession?.id })}
                       className="rounded-lg bg-[#1c160e] border border-[#d4af37]/40 px-3 py-1.5 font-cinzel text-xs text-[#f3d38c] hover:border-[#d4af37] bouncy-btn">Save</button>
                   </div>
                 </div>
-                <div className="flex items-end">
-                  <div className="flex items-center gap-3">
+                <div className="flex flex-col justify-end">
+                  <div className="flex items-center justify-between mb-1">
                     <span className="font-cinzel text-xs text-[#a68a56]">Allow Late Join</span>
+                    <span className={`font-nautical-mono text-[9px] font-bold px-1.5 py-0.5 rounded border uppercase tracking-wider ${
+                      viewingSession?.allow_late_join
+                        ? 'bg-emerald-950/60 text-emerald-400 border-emerald-500/40 shadow-[0_0_8px_rgba(16,185,129,0.25)]'
+                        : 'bg-[#18130c] text-[#a68a56] border-[#a68a56]/30'
+                    }`}>
+                      {viewingSession?.allow_late_join ? '● OPEN' : '○ BLOCKED'}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2.5 h-[34px]">
                     <button
-                      onClick={() => contestAction('updateConfig', { allowLateJoin: !currentSession?.allow_late_join })}
-                      className={`relative h-5 w-9 rounded-full transition-colors cursor-pointer ${currentSession?.allow_late_join ? 'bg-[#d4af37]' : 'bg-[#2a2218]'}`}
+                      type="button"
+                      role="switch"
+                      id="allow-late-join-toggle"
+                      aria-checked={Boolean(viewingSession?.allow_late_join)}
+                      onClick={() => {
+                        const nextVal = !viewingSession?.allow_late_join;
+                        if (viewingSession) {
+                          setSessions(prev => prev.map(s => s.id === viewingSession.id ? { ...s, allow_late_join: nextVal } : s));
+                          if (currentSession?.id === viewingSession.id) {
+                            setCurrentSession(prev => prev ? { ...prev, allow_late_join: nextVal } : prev);
+                          }
+                        }
+                        contestAction('updateConfig', {
+                          allowLateJoin: nextVal,
+                          sessionId: viewingSession?.id,
+                        });
+                      }}
+                      className={`relative inline-flex h-6 w-12 shrink-0 cursor-pointer items-center rounded-full p-0.5 transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[#d4af37]/40 ${
+                        viewingSession?.allow_late_join
+                          ? 'bg-gradient-to-r from-[#d4af37] to-[#f3d38c] shadow-[0_0_10px_rgba(212,175,55,0.35)]'
+                          : 'bg-[#1a140d] border border-[#a68a56]/40 hover:border-[#a68a56]'
+                      }`}
+                      title={viewingSession?.allow_late_join ? 'Late join is ALLOWED' : 'Late join is BLOCKED'}
                     >
-                      <span className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform ${currentSession?.allow_late_join ? 'translate-x-4' : 'translate-x-0.5'}`} />
+                      <span
+                        className={`pointer-events-none inline-block h-5 w-5 rounded-full shadow-md transition-transform duration-200 ease-in-out ${
+                          viewingSession?.allow_late_join
+                            ? 'translate-x-6 bg-[#050504]'
+                            : 'translate-x-0 bg-[#8c734b]'
+                        }`}
+                      />
                     </button>
+                    <span className="font-nautical-mono text-[11px] text-[#ebe4d5]/70 truncate">
+                      {viewingSession?.allow_late_join ? 'Late arrival permitted' : 'Closed once active'}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -840,17 +897,45 @@ export default function AdminPage() {
                       <input type="number" value={regDurationMin} onChange={e => setRegDurationMin(+e.target.value)} min={1} max={30}
                         className="w-full rounded-xl border border-[#a68a56]/30 bg-[#050504] px-3 py-2 font-nautical-mono text-sm text-[#ebe4d5] focus:border-[#d4af37] focus:outline-none" />
                     </div>
-                    <div className="flex items-end">
-                      <div className="flex items-center gap-3">
+                    <div className="flex flex-col justify-end">
+                      <div className="flex items-center justify-between mb-1">
                         <span className="font-cinzel text-xs text-[#a68a56]">Auto-Start Voyage Upon Muster Close</span>
-                        <button onClick={() => setAutoStartReg(v => !v)}
-                          className={`relative h-5 w-9 rounded-full transition-colors cursor-pointer ${autoStartReg ? 'bg-[#d4af37]' : 'bg-[#2a2218]'}`}>
-                          <span className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform ${autoStartReg ? 'translate-x-4' : 'translate-x-0.5'}`} />
+                        <span className={`font-nautical-mono text-[9px] font-bold px-1.5 py-0.5 rounded border uppercase tracking-wider ${
+                          autoStartReg
+                            ? 'bg-emerald-950/60 text-emerald-400 border-emerald-500/40 shadow-[0_0_8px_rgba(16,185,129,0.25)]'
+                            : 'bg-[#18130c] text-[#a68a56] border-[#a68a56]/30'
+                        }`}>
+                          {autoStartReg ? '● ENABLED' : '○ MANUAL'}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2.5 h-[34px]">
+                        <button
+                          type="button"
+                          role="switch"
+                          aria-checked={autoStartReg}
+                          onClick={() => setAutoStartReg(v => !v)}
+                          className={`relative inline-flex h-6 w-12 shrink-0 cursor-pointer items-center rounded-full p-0.5 transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[#d4af37]/40 ${
+                            autoStartReg
+                              ? 'bg-gradient-to-r from-[#d4af37] to-[#f3d38c] shadow-[0_0_10px_rgba(212,175,55,0.35)]'
+                              : 'bg-[#1a140d] border border-[#a68a56]/40 hover:border-[#a68a56]'
+                          }`}
+                          title={autoStartReg ? 'Auto-start enabled' : 'Manual launch required'}
+                        >
+                          <span
+                            className={`pointer-events-none inline-block h-5 w-5 rounded-full shadow-md transition-transform duration-200 ease-in-out ${
+                              autoStartReg
+                                ? 'translate-x-6 bg-[#050504]'
+                                : 'translate-x-0 bg-[#8c734b]'
+                            }`}
+                          />
                         </button>
+                        <span className="font-nautical-mono text-[11px] text-[#ebe4d5]/70">
+                          {autoStartReg ? 'Launches when countdown hits 0' : 'Awaits manual launch'}
+                        </span>
                       </div>
                     </div>
                   </div>
-                  <button onClick={() => contestAction('openRegistration', { durationMinutes: regDurationMin, autoStart: autoStartReg })}
+                  <button onClick={() => contestAction('openRegistration', { durationMinutes: regDurationMin, autoStart: autoStartReg, sessionId: viewingSession?.id })}
                     className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#d4af37] via-[#f3d38c] to-[#a68a56] px-6 py-3 font-cinzel text-sm font-bold text-[#050504] hover:brightness-110 active:scale-95 shadow-[0_0_20px_rgba(212,175,55,0.25)] bouncy-btn">
                     <Zap className="h-4 w-4 fill-[#050504]" /> Open Muster Portal Now
                   </button>
@@ -868,24 +953,57 @@ export default function AdminPage() {
                     <div className="text-right">
                       <div className="font-cinzel text-xs text-[#a68a56] mb-1">Enrolled Navigators</div>
                       <div className="font-nautical-mono text-3xl font-bold text-[#ebe4d5]">{participants.length}</div>
-                      <div className="font-nautical-mono text-xs text-[#a68a56]">/ {currentSession?.max_participants ?? 200}</div>
+                      <div className="font-nautical-mono text-xs text-[#a68a56]">/ {viewingSession?.max_participants ?? 200}</div>
                     </div>
                   </div>
 
                   {/* Auto start live toggle button */}
                   <div className="flex items-center justify-between rounded-xl border border-[#a68a56]/20 bg-[#050504] p-3">
                     <div className="flex items-center gap-2 font-nautical-mono text-xs">
-                      <CheckCircle2 className={`h-4 w-4 ${currentSession?.auto_start_on_reg_close ? 'text-[#d4af37]' : 'text-[#6b5535]'}`} />
-                      <span className={currentSession?.auto_start_on_reg_close ? 'text-[#f3d38c] font-semibold' : 'text-[#a68a56]'}>
-                        Auto-Start Voyage on Timeout: {currentSession?.auto_start_on_reg_close ? 'ENABLED (Immediate Launch)' : 'DISABLED (Manual Deck Command)'}
+                      <CheckCircle2 className={`h-4 w-4 ${viewingSession?.auto_start_on_reg_close ? 'text-[#d4af37]' : 'text-[#6b5535]'}`} />
+                      <span className={viewingSession?.auto_start_on_reg_close ? 'text-[#f3d38c] font-semibold' : 'text-[#a68a56]'}>
+                        Auto-Start Voyage on Timeout:
+                      </span>
+                      <span className={`font-nautical-mono text-[9px] font-bold px-1.5 py-0.5 rounded border uppercase tracking-wider ${
+                        viewingSession?.auto_start_on_reg_close
+                          ? 'bg-emerald-950/60 text-emerald-400 border-emerald-500/40 shadow-[0_0_8px_rgba(16,185,129,0.25)]'
+                          : 'bg-[#18130c] text-[#a68a56] border-[#a68a56]/30'
+                      }`}>
+                        {viewingSession?.auto_start_on_reg_close ? '● ENABLED (Immediate Launch)' : '○ DISABLED (Manual Command)'}
                       </span>
                     </div>
                     <button
-                      onClick={() => contestAction('updateConfig', { autoStartOnRegClose: !currentSession?.auto_start_on_reg_close })}
-                      className={`relative h-6 w-11 rounded-full transition-colors cursor-pointer ${currentSession?.auto_start_on_reg_close ? 'bg-[#d4af37]' : 'bg-[#2a2218]'}`}
+                      type="button"
+                      role="switch"
+                      id="auto-start-toggle"
+                      aria-checked={Boolean(viewingSession?.auto_start_on_reg_close)}
+                      onClick={() => {
+                        const nextVal = !viewingSession?.auto_start_on_reg_close;
+                        if (viewingSession) {
+                          setSessions(prev => prev.map(s => s.id === viewingSession.id ? { ...s, auto_start_on_reg_close: nextVal } : s));
+                          if (currentSession?.id === viewingSession.id) {
+                            setCurrentSession(prev => prev ? { ...prev, auto_start_on_reg_close: nextVal } : prev);
+                          }
+                        }
+                        contestAction('updateConfig', {
+                          autoStartOnRegClose: nextVal,
+                          sessionId: viewingSession?.id,
+                        });
+                      }}
+                      className={`relative inline-flex h-6 w-12 shrink-0 cursor-pointer items-center rounded-full p-0.5 transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[#d4af37]/40 ${
+                        viewingSession?.auto_start_on_reg_close
+                          ? 'bg-gradient-to-r from-[#d4af37] to-[#f3d38c] shadow-[0_0_10px_rgba(212,175,55,0.35)]'
+                          : 'bg-[#1a140d] border border-[#a68a56]/40 hover:border-[#a68a56]'
+                      }`}
                       title="Click to toggle auto-start behavior"
                     >
-                      <span className={`absolute top-1 h-4 w-4 rounded-full bg-white shadow transition-transform ${currentSession?.auto_start_on_reg_close ? 'translate-x-6' : 'translate-x-1'}`} />
+                      <span
+                        className={`pointer-events-none inline-block h-5 w-5 rounded-full shadow-md transition-transform duration-200 ease-in-out ${
+                          viewingSession?.auto_start_on_reg_close
+                            ? 'translate-x-6 bg-[#050504]'
+                            : 'translate-x-0 bg-[#8c734b]'
+                        }`}
+                      />
                     </button>
                   </div>
 

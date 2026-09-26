@@ -6,7 +6,7 @@ import { Shield, ArrowRight, CheckCircle2, User, Hash, Monitor, AlertCircle, Clo
 import { ContestSession } from '@/types';
 import NauticalCompass from '@/components/NauticalCompass';
 
-type GateStatus = 'loading' | 'not_open' | 'open' | 'active' | 'ended';
+type GateStatus = 'loading' | 'not_open' | 'late_closed' | 'open' | 'active' | 'ended';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -32,7 +32,11 @@ export default function RegisterPage() {
       setSession(s);
 
       if (s.phase === 'active' || s.phase === 'paused') {
-        setGateStatus('active');
+        if (!s.allow_late_join) {
+          setGateStatus('late_closed');
+        } else {
+          setGateStatus('active');
+        }
       } else if (s.phase === 'registration') {
         setGateStatus('open');
       } else if (s.phase === 'ended' || s.phase === 'reveal') {
@@ -254,6 +258,32 @@ export default function RegisterPage() {
     );
   }
 
+  if (gateStatus === 'late_closed') {
+    return (
+      <div className="relative flex flex-1 items-center justify-center p-4">
+        <div className="w-full max-w-md rounded-2xl border border-red-500/30 bg-[#090806]/95 p-8 backdrop-blur-2xl shadow-2xl shadow-black text-center space-y-5">
+          <div className="flex h-16 w-16 mx-auto items-center justify-center rounded-2xl border border-red-500/40 bg-red-950/30 text-red-400 shadow-lg shadow-black">
+            <Lock className="h-8 w-8 text-red-400" />
+          </div>
+          <div>
+            <span className="inline-block rounded border border-red-500/40 bg-red-950/40 px-2.5 py-1 font-nautical-mono text-[10px] font-bold uppercase tracking-wider text-red-400">
+              VOYAGE UNDERWAY · LATE ENTRY SEALED
+            </span>
+            <h1 className="mt-3 font-cinzel text-2xl font-bold tracking-wide text-[#f3d38c]">
+              MUSTER PERIOD EXPIRED
+            </h1>
+            <p className="mt-2 font-nautical-mono text-xs text-[#a68a56] leading-relaxed">
+              The contest challenge is currently underway and late join has been strictly locked by Admiralty commands.
+            </p>
+          </div>
+          <div className="rounded-xl border border-[#a68a56]/20 bg-[#050504]/70 p-3 font-nautical-mono text-xs text-[#a68a56]">
+            <span className="animate-pulse text-[#d4af37]">⬤</span> Monitoring voyage frequency every 3s...
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (gateStatus === 'ended') {
     return (
       <div className="relative flex flex-1 items-center justify-center p-4">
@@ -283,6 +313,19 @@ export default function RegisterPage() {
             <p className="font-nautical-mono text-[11px] text-[#a68a56]">{session?.label ?? '11:11 Chapter II · Blind Coding'}</p>
           </div>
         </div>
+
+        {/* Late Entry Notice */}
+        {gateStatus === 'active' && (
+          <div className="mt-5 flex items-center justify-between rounded-xl border border-[#d4af37]/40 bg-[#1c160e]/90 px-4 py-2.5">
+            <div className="flex items-center gap-2 font-nautical-mono text-xs text-[#f3d38c]">
+              <Compass className="h-4 w-4 text-[#d4af37] animate-spin" />
+              <span className="uppercase tracking-wider font-semibold">Late Entry Permitted</span>
+            </div>
+            <span className="font-nautical-mono text-[10px] font-bold text-emerald-400 border border-emerald-500/40 bg-emerald-950/40 px-2 py-0.5 rounded">
+              VOYAGE ACTIVE
+            </span>
+          </div>
+        )}
 
         {/* Registration Window Countdown */}
         {gateStatus === 'open' && session?.registration_ends_at && (
