@@ -27,13 +27,15 @@ export default function Navbar() {
     return () => clearInterval(interval);
   }, []);
 
-  // Hide navbar on home ('/'), register ('/register'), admin (orbit), and leaderboard — those pages are self-contained
+  // Hide navbar on home ('/'), register ('/register'), admin (orbit), arena ('/arena'), and leaderboard — those pages are self-contained
   if (
     pathname === '/' ||
     pathname === '/register' ||
     pathname?.startsWith('/register') ||
     pathname?.startsWith('/orbit') ||
-    pathname === '/leaderboard'
+    pathname === '/leaderboard' ||
+    pathname === '/arena' ||
+    pathname?.startsWith('/arena')
   ) {
     return null;
   }

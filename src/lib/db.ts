@@ -683,6 +683,7 @@ export async function buildLeaderboard(sessionId: string) {
       language: sub.language,
       submittedAt: sub.submittedAt,
       firstSubmittedAt: firstTs,
+      execTimeMs: sub.execTimeMs || 0,
       isAutoSubmit: sub.isAutoSubmit,
     };
 
@@ -703,12 +704,26 @@ export async function buildLeaderboard(sessionId: string) {
       (acc: number, qs: any) => acc + qs.score,
       0
     );
+    const totalDurationMs = Object.values(entry.perQuestionScores).reduce(
+      (acc: number, qs: any) => acc + (qs.execTimeMs || 0),
+      0
+    );
     const penalty = entry.strikes * 50;
-    return { ...entry, totalScore: Math.max(0, (questionScoreSum as number) - penalty) };
+    return {
+      ...entry,
+      totalScore: Math.max(0, (questionScoreSum as number) - penalty),
+      totalDurationMs,
+    };
   });
 
   entries.sort((a, b) => {
+    // 1. Total Score DESC (highest points first)
     if (b.totalScore !== a.totalScore) return b.totalScore - a.totalScore;
+    // 2. Lowest total question duration ASC (speed tie-breaker)
+    if (a.totalDurationMs > 0 && b.totalDurationMs > 0 && a.totalDurationMs !== b.totalDurationMs) {
+      return a.totalDurationMs - b.totalDurationMs;
+    }
+    // 3. Fallback: earliest submission timestamp
     return a.lastSubmissionTime - b.lastSubmissionTime;
   });
 

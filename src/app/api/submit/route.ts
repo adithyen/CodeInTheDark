@@ -262,6 +262,7 @@ export async function POST(req: NextRequest) {
       grandTotalTests += totalCount;
 
       // Persist completed submission
+      const questionElapsed = (item as any).elapsedMs || (now - (targetSession?.challenge_starts_at || now));
       await upsertSubmission({
         sessionId: targetSessionId,
         participantId,
@@ -279,6 +280,7 @@ export async function POST(req: NextRequest) {
         score: finalScore,
         speedBonus,
         testCaseDetails,
+        execTimeMs: questionElapsed,
       });
 
       results.push({
@@ -286,6 +288,7 @@ export async function POST(req: NextRequest) {
         questionTitle: question.title,
         language: item.language,
         submittedAt: now,
+        elapsedMs: questionElapsed,
         testCasesPassed: passedCount,
         totalTestCases: totalCount,
         baseScore,

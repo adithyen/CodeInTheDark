@@ -89,6 +89,30 @@ export default function ArenaPage() {
   const currentCode = allCodes[activeQId] ?? '';
   const currentLanguage = allLanguages[activeQId] ?? 'python';
 
+  // ── Per-Question Stopwatch & Sealing State ──────────────────────────────────
+  const [firstVisitedAt, setFirstVisitedAt] = useState<Record<string, number>>({});
+  const [questionDurations, setQuestionDurations] = useState<Record<string, number>>({});
+  const [questionSealed, setQuestionSealed] = useState<Record<string, boolean>>({});
+  const [lastSealedCodes, setLastSealedCodes] = useState<Record<string, string>>({});
+  const [currentQElapsedMs, setCurrentQElapsedMs] = useState(0);
+
+  // Re-save warning confirmation modal state
+  const [showResaveModal, setShowResaveModal] = useState(false);
+  const [pendingResaveInfo, setPendingResaveInfo] = useState<{
+    qId: string;
+    qTitle: string;
+    oldDurationMs: number;
+    newDurationMs: number;
+  } | null>(null);
+
+  const fmtDuration = (ms: number): string => {
+    if (!ms || ms <= 0) return '0s';
+    const mins = Math.floor(ms / 60000);
+    const secs = Math.floor((ms % 60000) / 1000);
+    if (mins === 0) return `${secs}s`;
+    return `${mins}m ${secs.toString().padStart(2, '0')}s`;
+  };
+
   // ── 5-State Status Helper ───────────────────────────────────────────────────
   const getQStatus = useCallback((qId: string, qs: Question[]): QStatus => {
     const q = qs.find(x => x.id === qId);
@@ -240,16 +264,84 @@ export default function ArenaPage() {
     restoreFromCloud();
   }, [participant?.id, questions.length, sessionId]);
 
-  // ── Mark Active Question as Visited ─────────────────────────────────────────
+  // ── Restore Stopwatch & Sealed States from LocalStorage ─────────────────────
   useEffect(() => {
-    if (!activeQId) return;
+    if (!participant || questions.length === 0) return;
+
+    const restoredDurations: Record<string, number> = {};
+    const restoredSealed: Record<string, boolean> = {};
+    const restoredFirstVisit: Record<string, number> = {};
+    const restoredCodes: Record<string, string> = {};
+
+    questions.forEach(q => {
+      const d = localStorage.getItem(`cid_q_duration_${participant.id}_${q.id}`);
+      if (d) restoredDurations[q.id] = Number(d);
+
+      const s = localStorage.getItem(`cid_q_sealed_${participant.id}_${q.id}`);
+      if (s === 'true') restoredSealed[q.id] = true;
+
+      const v = localStorage.getItem(`cid_first_visit_${participant.id}_${q.id}`);
+      if (v) restoredFirstVisit[q.id] = Number(v);
+
+      const c = localStorage.getItem(`cid_q_code_${participant.id}_${q.id}`);
+      if (c !== null) restoredCodes[q.id] = c;
+    });
+
+    if (Object.keys(restoredDurations).length > 0) setQuestionDurations(restoredDurations);
+    if (Object.keys(restoredSealed).length > 0) setQuestionSealed(restoredSealed);
+    if (Object.keys(restoredFirstVisit).length > 0) setFirstVisitedAt(restoredFirstVisit);
+    if (Object.keys(restoredCodes).length > 0) setLastSealedCodes(restoredCodes);
+  }, [participant?.id, questions.length]);
+
+  // ── Mark Active Question as Visited & Initialize Stopwatch ──────────────────
+  useEffect(() => {
+    if (!activeQId || !participant) return;
+
     setVisitedSet(prev => {
       if (prev.has(activeQId)) return prev;
       const n = new Set(prev);
       n.add(activeQId);
       return n;
     });
-  }, [activeQId]);
+
+    setFirstVisitedAt(prev => {
+      if (prev[activeQId]) return prev;
+      const contestStart = contestStartRef.current || contest?.startTime || Date.now();
+      // For Q1 at contest start, stopwatch starts with contest; for subsequent questions, stopwatch starts on first visit
+      const visitTime = activeQuestionIndex === 0 ? contestStart : Date.now();
+      localStorage.setItem(`cid_first_visit_${participant.id}_${activeQId}`, String(visitTime));
+      return { ...prev, [activeQId]: visitTime };
+    });
+  }, [activeQId, participant, contest?.startTime, activeQuestionIndex]);
+
+  // ── Live Stopwatch Ticker for Currently Active Question ─────────────────────
+  useEffect(() => {
+    if (!activeQId || !participant || isSubmitted) return;
+
+    const tick = () => {
+      const contestStart = contestStartRef.current || contest?.startTime || Date.now();
+      const firstVisit = firstVisitedAt[activeQId] || contestStart;
+      const isSealed = Boolean(questionSealed[activeQId]);
+
+      if (isSealed) {
+        const lastSaved = lastSealedCodes[activeQId] ?? '';
+        const isModified = (allCodes[activeQId] ?? '').trim() !== lastSaved.trim();
+        if (isModified) {
+          // If code was modified after sealing, live timer shows total contest elapsed time
+          setCurrentQElapsedMs(Math.max(1000, Date.now() - contestStart));
+        } else {
+          setCurrentQElapsedMs(questionDurations[activeQId] || 0);
+        }
+      } else {
+        // Not sealed: stopwatch starts from when this question was first opened
+        setCurrentQElapsedMs(Math.max(0, Date.now() - firstVisit));
+      }
+    };
+
+    tick();
+    const interval = setInterval(tick, 1000);
+    return () => clearInterval(interval);
+  }, [activeQId, participant, isSubmitted, firstVisitedAt, questionSealed, questionDurations, lastSealedCodes, allCodes, contest?.startTime]);
 
   // ── Fetch Contest & Auto-Transition Status ──────────────────────────────────
   const fetchContest = useCallback(async () => {
@@ -396,19 +488,98 @@ export default function ArenaPage() {
     }
   };
 
-  // ── Exam Bottom Action Bar Handlers ──────────────────────────────────────────
-  // Save & Next Button
-  const handleSaveAndNext = () => {
-    if (!participant) return;
-    // Force immediate cloud save
-    saveDraftToCloud(activeQId, currentCode, currentLanguage);
+  // ── Save Question with Recorded Stopwatch Duration ──────────────────────────
+  const saveQuestionWithDuration = useCallback((qId: string, isResave: boolean) => {
+    if (!participant || !qId) return;
+    const contestStart = contestStartRef.current || contest?.startTime || Date.now();
+    let durationMs: number;
 
+    if (isResave) {
+      // Re-saving modified question: Duration updates to total contest elapsed time (45s + 95s + review/edit time)
+      durationMs = Math.max(1000, Date.now() - contestStart);
+    } else {
+      // First save of this question: Stopwatch duration from when question was first visited
+      const firstVisit = firstVisitedAt[qId] || contestStart;
+      durationMs = Math.max(1000, Date.now() - firstVisit);
+    }
+
+    const codeToSave = allCodes[qId] ?? '';
+    const langToSave = allLanguages[qId] ?? 'python';
+
+    // 1. Force immediate cloud save
+    saveDraftToCloud(qId, codeToSave, langToSave);
+
+    // 2. Persist sealed duration & code snapshot
+    setQuestionDurations(prev => {
+      const next = { ...prev, [qId]: durationMs };
+      localStorage.setItem(`cid_q_duration_${participant.id}_${qId}`, String(durationMs));
+      return next;
+    });
+
+    setQuestionSealed(prev => {
+      const next = { ...prev, [qId]: true };
+      localStorage.setItem(`cid_q_sealed_${participant.id}_${qId}`, 'true');
+      return next;
+    });
+
+    setLastSealedCodes(prev => {
+      const next = { ...prev, [qId]: codeToSave };
+      localStorage.setItem(`cid_q_code_${participant.id}_${qId}`, codeToSave);
+      return next;
+    });
+
+    // 3. Navigate to next question or open preview if last
     if (activeQuestionIndex < questions.length - 1) {
       setActiveQuestionIndex(activeQuestionIndex + 1);
     } else {
-      // Last question: open review modal
       setShowPreviewModal(true);
     }
+  }, [participant, contest?.startTime, firstVisitedAt, allCodes, allLanguages, saveDraftToCloud, activeQuestionIndex, questions.length]);
+
+  // Save & Next Button
+  const handleSaveAndNext = () => {
+    if (!participant || !activeQId) return;
+
+    const isAlreadySealed = Boolean(questionSealed[activeQId]);
+    const prevSavedCode = lastSealedCodes[activeQId] ?? '';
+    const codeChanged = currentCode.trim() !== prevSavedCode.trim();
+
+    // Case 1: Already sealed, and code was NOT modified:
+    if (isAlreadySealed && !codeChanged) {
+      if (activeQuestionIndex < questions.length - 1) {
+        setActiveQuestionIndex(activeQuestionIndex + 1);
+      } else {
+        setShowPreviewModal(true);
+      }
+      return;
+    }
+
+    // Case 2: Already sealed, and code WAS modified -> Prompt warning modal!
+    if (isAlreadySealed && codeChanged) {
+      const contestStart = contestStartRef.current || contest?.startTime || Date.now();
+      const newDurationMs = Math.max(1000, Date.now() - contestStart);
+      const oldDurationMs = questionDurations[activeQId] || 0;
+
+      setPendingResaveInfo({
+        qId: activeQId,
+        qTitle: activeQuestion?.title || `Question ${activeQuestionIndex + 1}`,
+        oldDurationMs,
+        newDurationMs,
+      });
+      setShowResaveModal(true);
+      return;
+    }
+
+    // Case 3: First time saving this question:
+    saveQuestionWithDuration(activeQId, false);
+  };
+
+  // Confirm Resave Handler (Modal)
+  const confirmResave = () => {
+    if (!pendingResaveInfo) return;
+    saveQuestionWithDuration(pendingResaveInfo.qId, true);
+    setShowResaveModal(false);
+    setPendingResaveInfo(null);
   };
 
   // Mark for Review & Next Button
@@ -454,15 +625,20 @@ export default function ArenaPage() {
     }
 
     const now = Date.now();
+    const contestStart = contestStartRef.current || contest?.startTime || now;
 
-    // Prepare global payload with all questions
+    // Prepare global payload with all questions including recorded question elapsed durations
     const submissionsPayload = questions.map((q) => {
       const code = allCodes[q.id] ?? q.starterTemplates['python'] ?? '';
       const lang = allLanguages[q.id] ?? 'python';
+      const elapsed = questionDurations[q.id] || (firstVisitedAt[q.id] ? now - firstVisitedAt[q.id] : now - contestStart);
+
       return {
         questionId: q.id,
         language: lang,
         code,
+        elapsedMs: elapsed,
+        isSealed: Boolean(questionSealed[q.id]),
       };
     });
 
@@ -485,7 +661,7 @@ export default function ArenaPage() {
           questionTitle: r.questionTitle,
           language: r.language,
           submittedAt: r.submittedAt || now,
-          elapsedMs: contestStartRef.current ? (r.submittedAt || now) - contestStartRef.current : 0,
+          elapsedMs: r.elapsedMs || questionDurations[r.questionId] || (contestStartRef.current ? (r.submittedAt || now) - contestStartRef.current : 0),
           testCasesPassed: r.testCasesPassed ?? 0,
           totalTestCases: r.totalTestCases ?? 0,
           score: r.baseScore ?? r.score ?? 0,
@@ -518,7 +694,7 @@ export default function ArenaPage() {
       setSubmitting(false);
       setAutoSubmitBanner(false);
     }
-  }, [participant, isSubmitted, submitting, questions, allCodes, allLanguages, sessionId]);
+  }, [participant, isSubmitted, submitting, questions, allCodes, allLanguages, sessionId, questionDurations, firstVisitedAt, questionSealed, contest?.startTime]);
 
   // ── Timer Expiry Auto-Submit ────────────────────────────────────────────────
   const handleTimerExpired = useCallback(() => {
@@ -732,7 +908,7 @@ export default function ArenaPage() {
   const isMarked = markedSet.has(activeQId);
 
   return (
-    <div className="relative flex flex-1 flex-col overflow-hidden bg-[#050504]">
+    <div className="fixed inset-0 z-30 flex flex-col h-screen w-screen overflow-hidden bg-[#050504]">
       <AntiCheatShield
         participantName={participant.name}
         rollNumber={participant.college || participant.rollNumber || 'NAVIGATOR'}
@@ -761,7 +937,7 @@ export default function ArenaPage() {
 
       {/* ── Urgent Timer Countdown Warning Banners ──────────────────────────── */}
       {remainingSeconds !== null && remainingSeconds > 0 && remainingSeconds <= 60 && (
-        <div className="flex items-center justify-center gap-2 border-b border-red-500/60 bg-red-950/80 px-4 py-1.5 text-center animate-pulse">
+        <div className="shrink-0 flex items-center justify-center gap-2 border-b border-red-500/60 bg-red-950/80 px-4 py-1.5 text-center animate-pulse">
           <AlertTriangle className="h-4 w-4 text-red-400" />
           <span className="font-nautical-mono text-xs font-bold text-red-200">
             🚨 FINAL COUNTDOWN: Auto-submitting all answers in {remainingSeconds}s! All responses will be locked.
@@ -769,7 +945,7 @@ export default function ArenaPage() {
         </div>
       )}
       {remainingSeconds !== null && remainingSeconds > 60 && remainingSeconds <= 120 && (
-        <div className="flex items-center justify-center gap-2 border-b border-amber-500/40 bg-amber-950/60 px-4 py-1.5 text-center">
+        <div className="shrink-0 flex items-center justify-center gap-2 border-b border-amber-500/40 bg-amber-950/60 px-4 py-1.5 text-center">
           <AlertCircle className="h-4 w-4 text-amber-400" />
           <span className="font-nautical-mono text-xs font-semibold text-amber-200">
             ⚠️ 2 Minutes Remaining: Global contest auto-submit will execute when timer expires.
@@ -778,7 +954,7 @@ export default function ArenaPage() {
       )}
 
       {/* ── Top Bar ─────────────────────────────────────────────────────────── */}
-      <div className="flex flex-wrap items-center justify-between border-b border-[#a68a56]/20 bg-[#090806]/95 px-4 py-2 sm:px-6 gap-2 select-none">
+      <div className="shrink-0 flex flex-wrap items-center justify-between border-b border-[#a68a56]/20 bg-[#090806]/95 px-4 py-2 sm:px-6 gap-2 select-none">
         {/* Left: Participant status */}
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2 rounded-lg border border-[#a68a56]/30 bg-[#1c160e]/80 px-2.5 py-1 font-nautical-mono text-xs text-[#f3d38c]">
@@ -844,25 +1020,27 @@ export default function ArenaPage() {
       </div>
 
       {/* ── Two-Panel Arena Layout ───────────────────────────────────────────── */}
-      <div className="flex flex-1 flex-col lg:flex-row overflow-hidden">
+      <div className="flex flex-1 min-h-0 flex-col lg:flex-row overflow-hidden">
 
         {/* Left: Problem Statement & Question Palette */}
         {!isDrawerCollapsed && (
-          <div className="w-full lg:w-[450px] xl:w-[500px] flex flex-col border-b lg:border-b-0 lg:border-r border-[#a68a56]/20 bg-[#090806]/95 overflow-y-auto">
+          <div className="w-full lg:w-[440px] xl:w-[480px] shrink-0 flex flex-col min-h-0 border-b lg:border-b-0 lg:border-r border-[#a68a56]/20 bg-[#090806]/95 overflow-hidden">
             {/* Question Selector Tabs */}
-            <div className="sticky top-0 z-10 border-b border-[#a68a56]/20 bg-[#090806]">
+            <div className="shrink-0 border-b border-[#a68a56]/20 bg-[#090806]">
               <div className="flex items-center gap-1.5 p-2 overflow-x-auto justify-between">
                 <div className="flex gap-1.5 overflow-x-auto py-1">
                   {questions.map((q, idx) => {
                     const st = getQStatus(q.id, questions);
                     const cfg = statusConfig[st];
                     const isSel = idx === activeQuestionIndex;
+                    const isQSealed = questionSealed[q.id];
+                    const qDur = questionDurations[q.id];
 
                     return (
                       <button
                         key={q.id}
                         onClick={() => setActiveQuestionIndex(idx)}
-                        className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 font-nautical-mono text-xs transition-all whitespace-nowrap bouncy-btn border ${
+                        className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 font-nautical-mono text-xs transition-all whitespace-nowrap bouncy-btn border ${
                           isSel
                             ? 'border-[#d4af37] bg-[#1c160e] text-[#f3d38c] font-bold shadow-[0_0_12px_rgba(212,175,55,0.25)]'
                             : `${cfg.borderClass} ${cfg.bgClass} text-[#a68a56] hover:bg-[#1c160e]/50`
@@ -871,6 +1049,11 @@ export default function ArenaPage() {
                         <span className={`h-2 w-2 rounded-full flex-shrink-0 ${cfg.dotClass}`} />
                         <span>Q{idx + 1}</span>
                         <span className="text-[10px] opacity-70">({q.points}p)</span>
+                        {isQSealed && qDur && (
+                          <span className="rounded bg-[#d4af37]/20 border border-[#d4af37]/40 px-1 py-0.2 text-[9px] font-bold text-[#f3d38c]">
+                            🔒 {fmtDuration(qDur)}
+                          </span>
+                        )}
                         {markedSet.has(q.id) && (
                           <Bookmark className="h-3 w-3 text-amber-400 fill-amber-400/40" />
                         )}
@@ -898,8 +1081,8 @@ export default function ArenaPage() {
               </div>
             </div>
 
-            {/* Problem Details */}
-            <div className="p-5 space-y-5">
+            {/* Problem Details Scroll Area */}
+            <div className="flex-1 min-h-0 overflow-y-auto p-5 space-y-5">
               <div>
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="rounded border border-[#d4af37]/30 bg-[#1c160e] px-2 py-0.5 font-cinzel text-[10px] font-semibold text-[#f3d38c]">
@@ -965,9 +1148,9 @@ export default function ArenaPage() {
         )}
 
         {/* Right: Monaco Blind Editor & Action Bar */}
-        <div className="flex flex-1 flex-col overflow-hidden">
+        <div className="flex flex-1 min-h-0 flex-col overflow-hidden bg-[#050504]">
           {/* Editor Toolbar */}
-          <div className="flex items-center justify-between border-b border-[#a68a56]/20 bg-[#0c0906] px-4 py-2">
+          <div className="shrink-0 flex flex-wrap items-center justify-between border-b border-[#a68a56]/20 bg-[#0c0906] px-4 py-2 gap-2">
             <div className="flex items-center gap-3">
               {isDrawerCollapsed && (
                 <button
@@ -990,6 +1173,28 @@ export default function ArenaPage() {
                   <option value="java">Java 17</option>
                 </select>
               </div>
+
+              {/* Live Question Stopwatch */}
+              <div className="flex items-center gap-1.5 rounded-lg border border-[#a68a56]/30 bg-[#1c160e]/70 px-2.5 py-1 font-nautical-mono text-xs shadow-inner">
+                <Clock className="h-3 w-3 text-[#d4af37]" />
+                <span className="text-[#a68a56] hidden sm:inline">Q Stopwatch:</span>
+                <span className="text-[#f3d38c] font-bold">{fmtDuration(currentQElapsedMs)}</span>
+              </div>
+
+              {/* Sealed Status Indicator Badge */}
+              {questionSealed[activeQId] && (
+                currentCode.trim() !== (lastSealedCodes[activeQId] ?? '').trim() ? (
+                  <div className="hidden md:flex items-center gap-1 rounded border border-amber-500/40 bg-amber-950/40 px-2 py-0.5 font-nautical-mono text-[10px] text-amber-300 animate-pulse">
+                    <AlertTriangle className="h-3 w-3 text-amber-400" />
+                    <span>Modified (saving updates time)</span>
+                  </div>
+                ) : (
+                  <div className="hidden md:flex items-center gap-1 rounded border border-emerald-500/40 bg-emerald-950/40 px-2 py-0.5 font-nautical-mono text-[10px] text-emerald-400">
+                    <Check className="h-3 w-3" />
+                    <span>Sealed ({fmtDuration(questionDurations[activeQId])})</span>
+                  </div>
+                )
+              )}
             </div>
 
             <div className="flex items-center gap-2">
@@ -1016,7 +1221,7 @@ export default function ArenaPage() {
           </div>
 
           {/* Editor Area */}
-          <div className="relative flex-1 p-2 bg-[#050504]">
+          <div className="relative flex-1 min-h-0 p-2 bg-[#050504] overflow-hidden">
             {!isFullscreen && (
               <div className="absolute inset-0 z-30 flex items-center justify-center bg-[#050504]/95 backdrop-blur-md select-none">
                 <div className="flex flex-col items-center gap-3 p-6 text-center">
@@ -1039,7 +1244,7 @@ export default function ArenaPage() {
           </div>
 
           {/* ── Exam Bottom Action Bar: Code Stats + Navigation Controls ──────── */}
-          <div className="flex flex-wrap items-center justify-between border-t border-[#a68a56]/20 bg-[#090806] px-4 py-2.5 gap-2">
+          <div className="shrink-0 z-20 flex flex-wrap items-center justify-between border-t border-[#a68a56]/30 bg-[#090806] px-4 py-2.5 gap-2 select-none shadow-[0_-4px_20px_rgba(0,0,0,0.5)]">
             {/* Left: Code Stats & Cloud Save Status */}
             <div className="flex items-center gap-3 font-nautical-mono text-[11px] text-[#a68a56]">
               <span className="flex items-center gap-1 text-[#ebe4d5]">
@@ -1050,6 +1255,14 @@ export default function ArenaPage() {
               <span>{currentCode.length} chars</span>
               <span>·</span>
               <span className="hidden sm:inline text-[#8c7456]">{lastSavedTimeStr}</span>
+              {questionSealed[activeQId] && questionDurations[activeQId] && (
+                <>
+                  <span>·</span>
+                  <span className="text-emerald-400 font-bold hidden sm:inline">
+                    Sealed: {fmtDuration(questionDurations[activeQId])}
+                  </span>
+                </>
+              )}
             </div>
 
             {/* Right: Question Navigation & Save Actions */}
@@ -1057,38 +1270,37 @@ export default function ArenaPage() {
               <button
                 onClick={() => setActiveQuestionIndex(Math.max(0, activeQuestionIndex - 1))}
                 disabled={activeQuestionIndex === 0}
-                className="flex items-center gap-1 rounded-xl border border-[#a68a56]/30 bg-[#1c160e]/50 px-3 py-1.5 font-cinzel text-xs text-[#ebe4d5] hover:border-[#d4af37] disabled:opacity-30 transition-all bouncy-btn"
+                className="flex items-center gap-1 rounded-xl border border-[#a68a56]/30 bg-[#1c160e]/50 px-3.5 py-1.5 font-cinzel text-xs text-[#ebe4d5] hover:border-[#d4af37] disabled:opacity-30 disabled:pointer-events-none transition-all bouncy-btn"
               >
                 <ChevronLeft className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">Prev</span>
+                <span>Prev</span>
               </button>
 
               <button
                 onClick={handleMarkForReviewAndNext}
-                className="flex items-center gap-1 rounded-xl border border-amber-500/40 bg-amber-950/20 px-3 py-1.5 font-cinzel text-xs text-amber-300 hover:border-amber-400 hover:bg-amber-950/40 transition-all bouncy-btn"
+                className="flex items-center gap-1.5 rounded-xl border border-amber-500/40 bg-amber-950/20 px-3.5 py-1.5 font-cinzel text-xs text-amber-300 hover:border-amber-400 hover:bg-amber-950/40 transition-all bouncy-btn"
               >
                 <Bookmark className="h-3.5 w-3.5 text-amber-400" />
-                <span className="hidden sm:inline">Mark &amp; Next</span>
+                <span>Mark &amp; Next</span>
               </button>
 
               <button
                 onClick={handleSaveAndNext}
-                className="flex items-center gap-1.5 rounded-xl border border-[#d4af37]/60 bg-[#1c160e] px-4 py-1.5 font-cinzel text-xs font-bold text-[#f3d38c] shadow-[0_0_15px_rgba(212,175,55,0.15)] hover:border-[#d4af37] hover:bg-[#1c160e]/90 transition-all bouncy-btn"
+                className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#d4af37] via-[#f3d38c] to-[#d4af37] px-5 py-2 font-cinzel text-xs font-black text-[#050504] shadow-[0_0_20px_rgba(212,175,55,0.35)] hover:brightness-110 active:scale-95 transition-all bouncy-btn"
               >
-                <Check className="h-3.5 w-3.5 text-emerald-400" />
-                <span>{activeQuestionIndex === questions.length - 1 ? 'Save & Review' : 'Save & Next'}</span>
-                <ArrowRight className="h-3.5 w-3.5 ml-0.5" />
+                <Check className="h-4 w-4 stroke-[3]" />
+                <span>{activeQuestionIndex === questions.length - 1 ? 'SAVE & REVIEW' : 'SAVE & NEXT'}</span>
+                <ArrowRight className="h-4 w-4 stroke-[2.5]" />
               </button>
 
-              {activeQuestionIndex < questions.length - 1 && (
-                <button
-                  onClick={() => setActiveQuestionIndex(activeQuestionIndex + 1)}
-                  className="flex items-center gap-1 rounded-xl border border-[#a68a56]/30 bg-[#1c160e]/50 px-3 py-1.5 font-cinzel text-xs text-[#ebe4d5] hover:border-[#d4af37] transition-all bouncy-btn"
-                >
-                  <span className="hidden sm:inline">Next</span>
-                  <ChevronRight className="h-3.5 w-3.5" />
-                </button>
-              )}
+              <button
+                onClick={() => setActiveQuestionIndex(Math.min(questions.length - 1, activeQuestionIndex + 1))}
+                disabled={activeQuestionIndex >= questions.length - 1}
+                className="flex items-center gap-1 rounded-xl border border-[#a68a56]/30 bg-[#1c160e]/50 px-3.5 py-1.5 font-cinzel text-xs text-[#ebe4d5] hover:border-[#d4af37] disabled:opacity-30 disabled:pointer-events-none transition-all bouncy-btn"
+              >
+                <span>Next</span>
+                <ChevronRight className="h-3.5 w-3.5" />
+              </button>
             </div>
           </div>
         </div>
@@ -1258,6 +1470,52 @@ export default function ArenaPage() {
                   Confirm &amp; Final Submit All
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Re-Save Confirmation Modal ────────────────────────────────────────── */}
+      {showResaveModal && pendingResaveInfo && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4 backdrop-blur-md">
+          <div className="w-full max-w-md rounded-2xl border border-amber-500/60 bg-[#120c07] p-6 shadow-[0_0_50px_rgba(245,158,11,0.25)] space-y-4">
+            <div className="flex items-center gap-3 text-amber-400">
+              <AlertTriangle className="h-6 w-6 shrink-0" />
+              <h3 className="font-cinzel text-lg font-bold text-[#f3d38c]">Update Sealed Question?</h3>
+            </div>
+            <p className="font-sans text-xs text-[#ebe4d5]/90 leading-relaxed">
+              You previously sealed <strong className="text-[#f3d38c]">{pendingResaveInfo.qTitle}</strong> with a duration of <strong className="text-emerald-400 font-nautical-mono">{fmtDuration(pendingResaveInfo.oldDurationMs)}</strong>.
+            </p>
+            <div className="rounded-xl border border-amber-500/30 bg-[#1c140a] p-3 text-xs font-nautical-mono text-[#f3d38c] space-y-2">
+              <div className="flex justify-between items-center pb-1.5 border-b border-amber-500/20">
+                <span className="text-[#a68a56]">Original Sealed Time:</span>
+                <span className="text-emerald-400 font-bold">{fmtDuration(pendingResaveInfo.oldDurationMs)}</span>
+              </div>
+              <div className="flex justify-between items-center text-amber-300 font-bold">
+                <span>New Evaluated Time (Contest Elapsed):</span>
+                <span className="text-[#f3d38c] text-sm">{fmtDuration(pendingResaveInfo.newDurationMs)}</span>
+              </div>
+            </div>
+            <p className="font-nautical-mono text-[11px] text-[#a68a56] leading-relaxed">
+              Because you modified your solution, saving now will update your official recorded duration to the total elapsed contest time (<strong className="text-amber-300">{fmtDuration(pendingResaveInfo.newDurationMs)}</strong>), which will be used for scoring and tie-breaking.
+            </p>
+            <div className="flex items-center justify-end gap-3 pt-2">
+              <button
+                onClick={() => {
+                  setShowResaveModal(false);
+                  setPendingResaveInfo(null);
+                }}
+                className="rounded-xl border border-[#a68a56]/30 px-4 py-2 font-cinzel text-xs text-[#ebe4d5] hover:bg-white/5 transition-all bouncy-btn"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmResave}
+                className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-[#d4af37] px-4 py-2 font-cinzel text-xs font-bold text-[#050504] shadow-[0_0_15px_rgba(212,175,55,0.3)] hover:brightness-110 active:scale-95 transition-all bouncy-btn"
+              >
+                <Check className="h-4 w-4" />
+                Update &amp; Re-Seal
+              </button>
             </div>
           </div>
         </div>
