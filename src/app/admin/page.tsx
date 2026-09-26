@@ -557,7 +557,7 @@ export default function AdminPage() {
   // ────────────────────────────────────────────────────────────────────────────
   // MAIN ADMIN LAYOUT
   // ────────────────────────────────────────────────────────────────────────────
-  const phase = currentSession?.phase ?? 'setup';
+  const phase = viewingSession?.phase ?? currentSession?.phase ?? 'setup';
   const isLive = phase === 'active' || phase === 'paused';
 
   return (
@@ -1057,76 +1057,172 @@ export default function AdminPage() {
         ═══════════════════════════════════════════════════════════════════ */}
         {activeTab === 'live' && (
           <div className="space-y-6">
-            {!isLive && phase !== 'ended' && phase !== 'reveal' ? (
-              <div className="rounded-2xl border border-[#a68a56]/25 bg-[#090704] p-10 text-center shadow-xl">
-                <Zap className="h-10 w-10 text-[#6b5535] mx-auto mb-3" />
-                <p className="font-cinzel text-sm text-[#ebe4d5]">Live controls are only engaged during an active or paused voyage.</p>
-                <p className="font-nautical-mono text-xs text-[#a68a56] mt-1">Current state: <span className="text-[#f3d38c]">{PHASE_LABELS[phase]}</span></p>
-                {(phase === 'setup' || phase === 'registration') && (
-                  <button onClick={() => contestAction('startChallenge', { durationMinutes: challengeDurationMin })}
-                    className="mt-4 flex items-center gap-2 mx-auto rounded-xl bg-gradient-to-r from-[#d4af37] via-[#f3d38c] to-[#a68a56] px-5 py-2.5 font-cinzel text-sm font-bold text-[#050504] hover:brightness-110 shadow-[0_0_20px_rgba(212,175,55,0.25)] bouncy-btn">
+            {/* 1. SETUP PHASE */}
+            {phase === 'setup' && (
+              <div className="rounded-2xl border border-[#a68a56]/25 bg-[#090704] p-10 text-center shadow-xl space-y-4">
+                <div className="flex h-14 w-14 mx-auto items-center justify-center rounded-2xl border border-[#a68a56]/30 bg-[#1c160e]">
+                  <Layers className="h-7 w-7 text-[#d4af37]" />
+                </div>
+                <div>
+                  <h3 className="font-cinzel text-base font-bold text-[#f3d38c]">Voyage in Preparation</h3>
+                  <p className="font-nautical-mono text-xs text-[#a68a56] mt-1 max-w-md mx-auto">
+                    This voyage charter is currently in preparation. The challenge clock is halted and no trial is underway.
+                  </p>
+                </div>
+                <div className="flex flex-wrap justify-center gap-3 pt-2">
+                  <button onClick={() => setActiveTab('registration')}
+                    className="flex items-center gap-2 rounded-xl border border-[#d4af37]/40 bg-[#1c160e] px-4 py-2.5 font-cinzel text-xs font-semibold text-[#f3d38c] hover:border-[#d4af37] bouncy-btn">
+                    <Radio className="h-4 w-4" /> Open Crew Muster (Registration)
+                  </button>
+                  <button onClick={() => contestAction('startChallenge', { durationMinutes: challengeDurationMin, sessionId: viewingSession?.id })}
+                    className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#d4af37] via-[#f3d38c] to-[#a68a56] px-5 py-2.5 font-cinzel text-xs font-bold text-[#050504] hover:brightness-110 shadow-[0_0_15px_rgba(212,175,55,0.25)] bouncy-btn">
                     <Play className="h-4 w-4 fill-[#050504]" /> Launch Voyage Directly
                   </button>
-                )}
+                </div>
               </div>
-            ) : (
-              <>
-                {/* Challenge status card */}
-                <div className="rounded-2xl border border-[#a68a56]/25 bg-[#090704] p-6 shadow-xl">
-                  <div className="flex flex-wrap items-center justify-between gap-4">
-                    <div>
-                      <PhaseBadge phase={phase} />
-                      {currentSession?.challenge_starts_at && (
-                        <p className="mt-1 font-nautical-mono text-xs text-[#a68a56]">
-                          Commenced: {new Date(currentSession.challenge_starts_at).toLocaleTimeString()} ·
-                          Concludes: {currentSession.challenge_ends_at ? new Date(currentSession.challenge_ends_at).toLocaleTimeString() : 'TBD'}
-                        </p>
-                      )}
-                    </div>
-                    <div className="font-nautical-mono text-5xl font-black tabular-nums text-[#d4af37]">
-                      {challengeCountdown || '00:00'}
-                    </div>
+            )}
+
+            {/* 2. REGISTRATION MUSTER PHASE */}
+            {phase === 'registration' && (
+              <div className="rounded-2xl border border-[#d4af37]/30 bg-[#090704] p-8 shadow-xl space-y-5">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-[#a68a56]/20 pb-4">
+                  <div>
+                    <span className="inline-block rounded border border-amber-500/40 bg-amber-950/30 px-2 py-0.5 font-nautical-mono text-[10px] font-bold text-amber-300 uppercase tracking-wider">
+                      ● CREW MUSTER UNDERWAY
+                    </span>
+                    <h3 className="mt-1 font-cinzel text-lg font-bold text-[#f3d38c]">Registration Muster Portal Open</h3>
+                    <p className="font-nautical-mono text-xs text-[#a68a56]">Candidates are actively boarding and claiming terminal seats.</p>
                   </div>
-
-                  {/* Progress bar */}
-                  {currentSession?.challenge_starts_at && currentSession?.challenge_ends_at && (() => {
-                    const total = currentSession.challenge_ends_at - currentSession.challenge_starts_at;
-                    const elapsed = Date.now() - currentSession.challenge_starts_at;
-                    const pct = Math.min(100, Math.max(0, (elapsed / total) * 100));
-                    return (
-                      <div className="mt-4 h-2 rounded-full bg-[#1c160e] overflow-hidden border border-[#a68a56]/20">
-                        <div className="h-full rounded-full bg-gradient-to-r from-[#d4af37] to-[#f3d38c] transition-all duration-1000" style={{ width: `${pct}%` }} />
-                      </div>
-                    );
-                  })()}
-
-                  <div className="mt-5 flex flex-wrap gap-3">
-                    {phase === 'active' && (
-                      <button onClick={() => contestAction('pause')} className="flex items-center gap-2 rounded-xl border border-[#d4af37]/40 bg-[#1c160e] px-4 py-2.5 font-cinzel text-xs font-semibold text-[#f3d38c] hover:border-[#d4af37] bouncy-btn">
-                        <Pause className="h-4 w-4" /> Pause Voyage
-                      </button>
-                    )}
-                    {phase === 'paused' && (
-                      <button onClick={() => contestAction('resume')} className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#d4af37] via-[#f3d38c] to-[#a68a56] px-4 py-2.5 font-cinzel text-xs font-bold text-[#050504] hover:brightness-110 bouncy-btn">
-                        <Play className="h-4 w-4 fill-[#050504]" /> Resume Voyage
-                      </button>
-                    )}
-                    <button onClick={() => contestAction('extend', { extraMinutes: 1 })} className="rounded-xl border border-[#a68a56]/30 bg-[#1c160e]/50 px-3 py-2 font-cinzel text-xs text-[#ebe4d5] hover:border-[#d4af37] bouncy-btn">+1 min</button>
-                    <button onClick={() => contestAction('extend', { extraMinutes: 5 })} className="rounded-xl border border-[#a68a56]/30 bg-[#1c160e]/50 px-3 py-2 font-cinzel text-xs text-[#ebe4d5] hover:border-[#d4af37] bouncy-btn">+5 min</button>
-                    <button onClick={() => contestAction('extend', { extraMinutes: 10 })} className="rounded-xl border border-[#a68a56]/30 bg-[#1c160e]/50 px-3 py-2 font-cinzel text-xs text-[#ebe4d5] hover:border-[#d4af37] bouncy-btn">+10 min</button>
-                    {(phase === 'active' || phase === 'paused') && (
-                      <button onClick={() => { if (confirm('End the challenge now? Auto-submit will still work for participants.')) contestAction('endChallenge'); }}
-                        className="flex items-center gap-2 rounded-xl border border-red-500/40 bg-red-950/30 px-4 py-2.5 font-cinzel text-xs font-semibold text-red-300 hover:bg-red-900/40 bouncy-btn">
-                        <StopCircle className="h-4 w-4" /> End Voyage Now
-                      </button>
-                    )}
-                  </div>
-
-                  <div className="mt-4 rounded-xl border border-[#d4af37]/30 bg-[#1c160e]/80 p-3 font-nautical-mono text-xs text-[#f3d38c] flex items-center gap-2">
-                    <Timer className="h-4 w-4 shrink-0 text-[#d4af37]" />
-                    Auto-submit fires in <strong className="text-[#d4af37] tabular-nums">{challengeCountdown}</strong> — all parchment scrolls lock automatically at 00:00
+                  <div className="text-right">
+                    <span className="font-cinzel text-xs text-[#a68a56] block">Muster Closes In</span>
+                    <span className="font-nautical-mono text-3xl font-black text-[#d4af37] tabular-nums">{regCountdown}</span>
                   </div>
                 </div>
+                <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
+                  <div className="font-nautical-mono text-xs text-[#ebe4d5]">
+                    Enrolled: <strong className="text-[#f3d38c]">{participants.length}</strong> / {viewingSession?.max_participants ?? 200} Navigators
+                  </div>
+                  <div className="flex gap-2">
+                    <button onClick={() => setActiveTab('registration')}
+                      className="rounded-xl border border-[#a68a56]/30 bg-[#1c160e]/50 px-4 py-2 font-cinzel text-xs text-[#ebe4d5] hover:border-[#d4af37] bouncy-btn">
+                      Manage Muster
+                    </button>
+                    <button onClick={() => { if (confirm('Start challenge immediately?')) contestAction('startChallenge', { durationMinutes: challengeDurationMin, sessionId: viewingSession?.id }); }}
+                      className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#d4af37] via-[#f3d38c] to-[#a68a56] px-4 py-2 font-cinzel text-xs font-bold text-[#050504] hover:brightness-110 bouncy-btn">
+                      <Play className="h-3.5 w-3.5 fill-[#050504]" /> Launch Voyage Immediately
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* 3. ACTIVE OR PAUSED PHASE (LIVE CONTEST ONLY) */}
+            {isLive && (
+              <div className="rounded-2xl border border-[#a68a56]/25 bg-[#090704] p-6 shadow-xl">
+                <div className="flex flex-wrap items-center justify-between gap-4">
+                  <div>
+                    <PhaseBadge phase={phase} />
+                    {viewingSession?.challenge_starts_at && (
+                      <p className="mt-1 font-nautical-mono text-xs text-[#a68a56]">
+                        Commenced: {new Date(viewingSession.challenge_starts_at).toLocaleTimeString()} ·
+                        Concludes: {viewingSession.challenge_ends_at ? new Date(viewingSession.challenge_ends_at).toLocaleTimeString() : 'TBD'}
+                      </p>
+                    )}
+                  </div>
+                  <div className="font-nautical-mono text-5xl font-black tabular-nums text-[#d4af37]">
+                    {challengeCountdown || '00:00'}
+                  </div>
+                </div>
+
+                {/* Progress bar */}
+                {viewingSession?.challenge_starts_at && viewingSession?.challenge_ends_at && (() => {
+                  const total = viewingSession.challenge_ends_at - viewingSession.challenge_starts_at;
+                  const elapsed = Date.now() - viewingSession.challenge_starts_at;
+                  const pct = Math.min(100, Math.max(0, (elapsed / total) * 100));
+                  return (
+                    <div className="mt-4 h-2 rounded-full bg-[#1c160e] overflow-hidden border border-[#a68a56]/20">
+                      <div className="h-full rounded-full bg-gradient-to-r from-[#d4af37] to-[#f3d38c] transition-all duration-1000" style={{ width: `${pct}%` }} />
+                    </div>
+                  );
+                })()}
+
+                <div className="mt-5 flex flex-wrap gap-3">
+                  {phase === 'active' && (
+                    <button onClick={() => contestAction('pause', { sessionId: viewingSession?.id })} className="flex items-center gap-2 rounded-xl border border-[#d4af37]/40 bg-[#1c160e] px-4 py-2.5 font-cinzel text-xs font-semibold text-[#f3d38c] hover:border-[#d4af37] bouncy-btn">
+                      <Pause className="h-4 w-4" /> Pause Voyage
+                    </button>
+                  )}
+                  {phase === 'paused' && (
+                    <button onClick={() => contestAction('resume', { sessionId: viewingSession?.id })} className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#d4af37] via-[#f3d38c] to-[#a68a56] px-4 py-2.5 font-cinzel text-xs font-bold text-[#050504] hover:brightness-110 bouncy-btn">
+                      <Play className="h-4 w-4 fill-[#050504]" /> Resume Voyage
+                    </button>
+                  )}
+                  <button onClick={() => contestAction('extend', { extraMinutes: 1, sessionId: viewingSession?.id })} className="rounded-xl border border-[#a68a56]/30 bg-[#1c160e]/50 px-3 py-2 font-cinzel text-xs text-[#ebe4d5] hover:border-[#d4af37] bouncy-btn">+1 min</button>
+                  <button onClick={() => contestAction('extend', { extraMinutes: 5, sessionId: viewingSession?.id })} className="rounded-xl border border-[#a68a56]/30 bg-[#1c160e]/50 px-3 py-2 font-cinzel text-xs text-[#ebe4d5] hover:border-[#d4af37] bouncy-btn">+5 min</button>
+                  <button onClick={() => contestAction('extend', { extraMinutes: 10, sessionId: viewingSession?.id })} className="rounded-xl border border-[#a68a56]/30 bg-[#1c160e]/50 px-3 py-2 font-cinzel text-xs text-[#ebe4d5] hover:border-[#d4af37] bouncy-btn">+10 min</button>
+                  <button onClick={() => { if (confirm('End the challenge now? Auto-submit will still work for participants.')) contestAction('endChallenge', { sessionId: viewingSession?.id }); }}
+                    className="flex items-center gap-2 rounded-xl border border-red-500/40 bg-red-950/30 px-4 py-2.5 font-cinzel text-xs font-semibold text-red-300 hover:bg-red-900/40 bouncy-btn">
+                    <StopCircle className="h-4 w-4" /> End Voyage Now
+                  </button>
+                </div>
+
+                <div className="mt-4 rounded-xl border border-[#d4af37]/30 bg-[#1c160e]/80 p-3 font-nautical-mono text-xs text-[#f3d38c] flex items-center gap-2">
+                  <Timer className="h-4 w-4 shrink-0 text-[#d4af37]" />
+                  Auto-submit fires in <strong className="text-[#d4af37] tabular-nums">{challengeCountdown}</strong> — all parchment scrolls lock automatically at 00:00
+                </div>
+              </div>
+            )}
+
+            {/* 4. CONCLUDED / REVEAL PHASE */}
+            {(phase === 'ended' || phase === 'reveal') && (
+              <div className="rounded-2xl border border-[#a68a56]/25 bg-[#090704] p-8 shadow-xl space-y-5">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-[#a68a56]/20 pb-5">
+                  <div className="flex items-center gap-3.5">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-[#a68a56]/30 bg-[#1c160e] text-[#a68a56]">
+                      <CheckCircle2 className="h-6 w-6 text-[#d4af37]" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <PhaseBadge phase={phase} />
+                        <h3 className="font-cinzel text-lg font-bold text-[#f3d38c]">Voyage Concluded</h3>
+                      </div>
+                      <p className="mt-0.5 font-nautical-mono text-xs text-[#a68a56]">
+                        This contest voyage has concluded. All code submissions are frozen and locked in the archives.
+                      </p>
+                    </div>
+                  </div>
+                  {viewingSession?.challenge_starts_at && (
+                    <div className="rounded-xl border border-[#a68a56]/20 bg-[#050504] px-4 py-2 text-right">
+                      <span className="font-cinzel text-[10px] text-[#a68a56] block">Trial Window (Archive)</span>
+                      <span className="font-nautical-mono text-xs text-[#ebe4d5]">
+                        {new Date(viewingSession.challenge_starts_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        {viewingSession.challenge_ends_at && ` – ${new Date(viewingSession.challenge_ends_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`}
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
+                  <span className="font-nautical-mono text-xs text-[#ebe4d5]/70">
+                    {phase === 'reveal' ? '★ Solutions are currently unlocked for public review.' : 'Solutions and test cases remain sealed.'}
+                  </span>
+                  <div className="flex flex-wrap gap-2">
+                    <a href="/leaderboard" target="_blank" rel="noreferrer"
+                      className="inline-flex items-center gap-1.5 rounded-xl border border-[#d4af37]/40 bg-[#1c160e] px-4 py-2 font-cinzel text-xs font-semibold text-[#f3d38c] hover:border-[#d4af37] bouncy-btn">
+                      <BarChart3 className="h-3.5 w-3.5 text-[#d4af37]" /> Official Leaderboard
+                    </a>
+                    <button onClick={() => contestAction('toggleReveal', { sessionId: viewingSession?.id })}
+                      className="inline-flex items-center gap-1.5 rounded-xl border border-[#a68a56]/30 bg-[#1c160e]/50 px-4 py-2 font-cinzel text-xs text-[#ebe4d5] hover:border-[#d4af37] bouncy-btn">
+                      <Eye className="h-3.5 w-3.5 text-[#d4af37]" /> {phase === 'reveal' ? 'Hide Solutions' : 'Reveal Solutions'}
+                    </button>
+                    <button onClick={() => setActiveTab('submissions')}
+                      className="rounded-xl border border-[#a68a56]/30 bg-[#1c160e]/50 px-4 py-2 font-cinzel text-xs text-[#ebe4d5] hover:border-[#d4af37] bouncy-btn">
+                      Audit Submissions
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
 
 
                 {/* KPIs */}
@@ -1160,10 +1256,8 @@ export default function AdminPage() {
                     {currentSession?.is_reveal_mode ? 'Conceal Stage Reveal' : 'Trigger Grand Stage Reveal'}
                   </button>
                 </div>
-              </>
+              </div>
             )}
-          </div>
-        )}
 
         {/* ═══════════════════════════════════════════════════════════════════
             TAB 4: PARTICIPANTS MONITOR
