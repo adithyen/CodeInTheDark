@@ -54,7 +54,8 @@ export interface Submission {
   questionTitle: string;
   language: Language;
   code: string;
-  submittedAt: number;
+  submittedAt: number;       // timestamp of the LATEST submission
+  firstSubmittedAt?: number; // timestamp of the FIRST submission — never overwritten (for tiebreaking)
   isAutoSubmit?: boolean;
   evaluationStatus: 'pending' | 'evaluating' | 'completed' | 'error';
   testCasesPassed: number;
@@ -140,12 +141,13 @@ export interface LeaderboardEntry {
   questionsSolved: number;
   partialSolved: number;
   strikes: number;
-  lastSubmissionTime: number;
+  lastSubmissionTime: number; // earliest firstSubmittedAt for tiebreaking
   perQuestionScores: Record<string, {
     score: number;
     passedRatio: string;
     language: Language;
     submittedAt: number;
+    firstSubmittedAt?: number; // original first-solve timestamp
     isAutoSubmit?: boolean;
   }>;
 }

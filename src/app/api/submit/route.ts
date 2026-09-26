@@ -3,6 +3,7 @@ import {
   getActiveSession,
   getParticipantById,
   getQuestionsForSession,
+  getSessionById,
   upsertSubmission,
   updateParticipant,
 } from '@/lib/db';
@@ -91,12 +92,13 @@ export async function POST(req: NextRequest) {
     const passRatio = totalCount > 0 ? passedCount / totalCount : 0;
     const baseScore = Math.round(passRatio * question.points);
 
-    // Speed bonus (up to 25% for solving early)
+    // Speed bonus: up to 25% extra for solving early
+    // Use the SAME session as this submission (not a second getActiveSession() call)
     let speedBonus = 0;
-    const session = await getActiveSession();
-    if (session?.challenge_starts_at && session?.challenge_ends_at && passedCount > 0) {
-      const totalDurationMs = session.challenge_ends_at - session.challenge_starts_at;
-      const remainingMs = Math.max(0, session.challenge_ends_at - now);
+    const targetSession = await getSessionById(targetSessionId);
+    if (targetSession?.challenge_starts_at && targetSession?.challenge_ends_at && passedCount > 0) {
+      const totalDurationMs = targetSession.challenge_ends_at - targetSession.challenge_starts_at;
+      const remainingMs = Math.max(0, targetSession.challenge_ends_at - now);
       if (totalDurationMs > 0) {
         speedBonus = Math.round(baseScore * (remainingMs / totalDurationMs) * 0.25);
       }

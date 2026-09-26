@@ -1349,6 +1349,9 @@ export default function AdminPage() {
         {/* ═══════════════════════════════════════════════════════════════════
             TAB 5: SUBMISSIONS
         ═══════════════════════════════════════════════════════════════════ */}
+        {/* ═══════════════════════════════════════════════════════════════════
+            TAB 5: SUBMISSIONS
+        ═══════════════════════════════════════════════════════════════════ */}
         {activeTab === 'submissions' && (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
@@ -1366,13 +1369,14 @@ export default function AdminPage() {
                     <th className="py-3 px-4">Cipher</th>
                     <th className="py-3 px-4">Bounty</th>
                     <th className="py-3 px-4 hidden md:table-cell">Trials</th>
-                    <th className="py-3 px-4 hidden lg:table-cell">Sealed At</th>
+                    <th className="py-3 px-4 hidden lg:table-cell">First Sealed</th>
+                    <th className="py-3 px-4 hidden xl:table-cell">Last Update</th>
                     <th className="py-3 px-4 text-right">Admiralty Action</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#a68a56]/15 font-nautical-mono text-xs">
                   {submissions.length === 0 ? (
-                    <tr><td colSpan={7} className="py-8 text-center text-[#a68a56]">No scrolls submitted yet.</td></tr>
+                    <tr><td colSpan={8} className="py-8 text-center text-[#a68a56]">No scrolls submitted yet.</td></tr>
                   ) : submissions.map(s => (
                     <tr key={s.id} className="hover:bg-[#1c160e]/30">
                       <td className="py-3 px-4">
@@ -1386,10 +1390,18 @@ export default function AdminPage() {
                       <td className="py-3 px-4 uppercase text-[#a68a56]">{s.language}</td>
                       <td className="py-3 px-4">
                         <span className={`font-bold ${s.score > 0 ? 'text-[#d4af37]' : 'text-[#a68a56]'}`}>{s.score}</span>
-                        {s.speedBonus > 0 && <span className="ml-1 text-[#f3d38c] text-[10px]">+{s.speedBonus}</span>}
+                        {(s as any).speedBonus > 0 && <span className="ml-1 text-[#f3d38c] text-[10px]">+{(s as any).speedBonus}</span>}
                       </td>
                       <td className="py-3 px-4 hidden md:table-cell text-[#ebe4d5]/80">{s.testCasesPassed}/{s.totalTestCases}</td>
-                      <td className="py-3 px-4 hidden lg:table-cell text-[#a68a56]">{new Date(s.submittedAt).toLocaleTimeString()}</td>
+                      <td className="py-3 px-4 hidden lg:table-cell">
+                        <div className="text-[#f3d38c] font-bold">{new Date((s as any).firstSubmittedAt ?? s.submittedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</div>
+                        <div className="text-[10px] text-[#a68a56]">{new Date((s as any).firstSubmittedAt ?? s.submittedAt).toLocaleDateString()}</div>
+                      </td>
+                      <td className="py-3 px-4 hidden xl:table-cell">
+                        {(s as any).firstSubmittedAt && (s as any).firstSubmittedAt !== s.submittedAt ? (
+                          <div className="text-[#a68a56]">{new Date(s.submittedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</div>
+                        ) : <span className="text-[#6b5535]">—</span>}
+                      </td>
                       <td className="py-3 px-4 text-right">
                         <div className="flex items-center justify-end gap-1.5">
                           <button onClick={() => setInspectedSubmission(s)} className="flex items-center gap-1 rounded border border-[#a68a56]/30 bg-[#1c160e]/50 px-2 py-1 text-[11px] text-[#ebe4d5] hover:border-[#d4af37] bouncy-btn">
@@ -1799,9 +1811,18 @@ export default function AdminPage() {
             <div className="flex items-center justify-between border-b border-[#a68a56]/20 px-6 py-4">
               <div>
                 <div className="font-cinzel text-sm font-bold text-[#ebe4d5]">{inspectedSubmission.participantName} — {inspectedSubmission.questionTitle}</div>
-                <div className="font-nautical-mono text-xs text-[#a68a56] mt-0.5">
-                  {inspectedSubmission.language.toUpperCase()} · Score: {inspectedSubmission.score} · {inspectedSubmission.testCasesPassed}/{inspectedSubmission.totalTestCases} passed
-                  {inspectedSubmission.isAutoSubmit && <span className="ml-2 rounded bg-[#1c160e] border border-[#d4af37]/40 px-1.5 py-0.5 text-[10px] text-[#f3d38c] font-cinzel">AUTO-SUBMITTED</span>}
+                <div className="font-nautical-mono text-xs text-[#a68a56] mt-0.5 flex flex-wrap gap-3">
+                  <span>{inspectedSubmission.language.toUpperCase()} · Score: <strong className="text-[#d4af37]">{inspectedSubmission.score}</strong>
+                    {(inspectedSubmission as any).speedBonus > 0 && <span className="text-[#f3d38c] ml-1">(+{(inspectedSubmission as any).speedBonus} speed bonus)</span>}
+                  </span>
+                  <span>{inspectedSubmission.testCasesPassed}/{inspectedSubmission.totalTestCases} test cases passed</span>
+                  {inspectedSubmission.isAutoSubmit && <span className="rounded bg-[#1c160e] border border-[#d4af37]/40 px-1.5 py-0.5 text-[10px] text-[#f3d38c] font-cinzel">AUTO-SUBMITTED</span>}
+                </div>
+                <div className="mt-1 font-nautical-mono text-[11px] text-[#a68a56] flex gap-4">
+                  <span>🕐 First sealed: <strong className="text-[#f3d38c]">{new Date((inspectedSubmission as any).firstSubmittedAt ?? inspectedSubmission.submittedAt).toLocaleString()}</strong></span>
+                  {(inspectedSubmission as any).firstSubmittedAt && (inspectedSubmission as any).firstSubmittedAt !== inspectedSubmission.submittedAt && (
+                    <span>🔄 Last update: <strong className="text-[#a68a56]">{new Date(inspectedSubmission.submittedAt).toLocaleString()}</strong></span>
+                  )}
                 </div>
               </div>
               <button onClick={() => setInspectedSubmission(null)} className="text-[#a68a56] hover:text-[#ebe4d5]"><X className="h-5 w-5" /></button>

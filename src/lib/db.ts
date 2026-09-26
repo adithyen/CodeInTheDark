@@ -461,13 +461,15 @@ export async function getSubmissionsForSession(sessionId: string): Promise<Submi
 }
 
 export async function upsertSubmission(sub: Omit<Submission, 'id'> & { sessionId: string }): Promise<Submission> {
-  // One submission per participant per question — upsert by participant + question
+  // Look up existing submission for this participant + question
   const { data: existing } = await supabase
     .from('submissions')
-    .select('id')
+    .select('id, submitted_at, first_submitted_at')
     .eq('participant_id', sub.participantId)
     .eq('question_id', sub.questionId)
     .single();
+
+  const now = sub.submittedAt;
 
   const payload: any = {
     session_id: sub.sessionId,
@@ -478,7 +480,10 @@ export async function upsertSubmission(sub: Omit<Submission, 'id'> & { sessionId
     question_title: sub.questionTitle,
     language: sub.language,
     code: sub.code,
-    submitted_at: sub.submittedAt,
+    submitted_at: now,
+    // Preserve the FIRST submission timestamp for tiebreaking.
+    // first_submitted_at is never overwritten once set.
+    first_submitted_at: existing?.first_submitted_at ?? existing?.submitted_at ?? now,
     is_auto_submit: sub.isAutoSubmit ?? false,
     evaluation_status: sub.evaluationStatus,
     test_cases_passed: sub.testCasesPassed,
@@ -520,6 +525,8 @@ function dbRowToSubmission(row: any): Submission {
     language: row.language as Language,
     code: row.code,
     submittedAt: row.submitted_at,
+    // firstSubmittedAt: the original timestamp — never overwritten on resubmit
+    firstSubmittedAt: row.first_submitted_at ?? row.submitted_at,
     isAutoSubmit: row.is_auto_submit,
     evaluationStatus: row.evaluation_status,
     testCasesPassed: row.test_cases_passed,
@@ -604,11 +611,15 @@ export async function buildLeaderboard(sessionId: string) {
     const entry = entriesMap.get(sub.participantId);
     if (!entry) continue;
 
+    // Use firstSubmittedAt for tiebreaking (who solved it first)
+    const firstTs = (sub as any).firstSubmittedAt ?? sub.submittedAt;
+
     entry.perQuestionScores[sub.questionId] = {
       score: sub.score,
       passedRatio: `${sub.testCasesPassed}/${sub.totalTestCases}`,
       language: sub.language,
       submittedAt: sub.submittedAt,
+      firstSubmittedAt: firstTs,
       isAutoSubmit: sub.isAutoSubmit,
     };
 
@@ -618,8 +629,9 @@ export async function buildLeaderboard(sessionId: string) {
       entry.partialSolved += 1;
     }
 
-    if (sub.submittedAt > entry.lastSubmissionTime) {
-      entry.lastSubmissionTime = sub.submittedAt;
+    // Track earliest first-submission timestamp for tiebreaking
+    if (firstTs < entry.lastSubmissionTime || entry.lastSubmissionTime === entry.registeredAt) {
+      entry.lastSubmissionTime = firstTs;
     }
   }
 
