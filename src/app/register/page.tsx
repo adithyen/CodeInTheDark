@@ -27,17 +27,26 @@ export default function RegisterPage() {
   const [serverTimeOffset, setServerTimeOffset] = useState(0);
   const [registeredParticipant, setRegisteredParticipant] = useState<any>(null);
 
-  // Initialize registered participant from localStorage on mount
+  // Wipe out stored participant details completely on mount/reload
   useEffect(() => {
     try {
-      const saved = localStorage.getItem('cid_participant');
-      if (saved) {
-        const p = JSON.parse(saved);
-        if (p && p.id) {
-          setRegisteredParticipant(p);
-        }
+      localStorage.removeItem('cid_participant');
+      if (typeof document !== 'undefined') {
+        document.cookie.split(';').forEach((c) => {
+          document.cookie = c
+            .replace(/^ +/, '')
+            .replace(/=.*/, `=;expires=${new Date(0).toUTCString()};path=/`);
+        });
       }
     } catch {}
+
+    // Reset all registration form fields & state
+    setName('');
+    setPhone('');
+    setCollege('');
+    setTerminalId('');
+    setError('');
+    setRegisteredParticipant(null);
   }, []);
 
   const handleLaunchArena = useCallback(async () => {
@@ -59,25 +68,10 @@ export default function RegisterPage() {
       setServerTimeOffset(serverNow - Date.now());
       setSession(s);
 
-      // Check if user is registered in localStorage or state
-      let currentReg = registeredParticipant;
-      if (!currentReg && typeof window !== 'undefined') {
-        try {
-          const saved = localStorage.getItem('cid_participant');
-          if (saved) {
-            const p = JSON.parse(saved);
-            if (p && p.id) {
-              currentReg = p;
-              setRegisteredParticipant(p);
-            }
-          }
-        } catch {}
-      }
-
       const isLive = s.phase === 'active' || s.phase === 'paused';
 
-      // ── CRITICAL: If participant is already registered and contest is live, immediately enter arena! ──
-      if (isLive && currentReg && currentReg.id && (!currentReg.sessionId || currentReg.sessionId === s.id)) {
+      // If participant just registered in this session and contest is live, immediately enter arena!
+      if (isLive && registeredParticipant && registeredParticipant.id && (!registeredParticipant.sessionId || registeredParticipant.sessionId === s.id)) {
         handleLaunchArena();
         return;
       }
@@ -446,7 +440,7 @@ export default function RegisterPage() {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="mt-6 space-y-4 font-nautical-mono">
+        <form onSubmit={handleSubmit} autoComplete="off" className="mt-6 space-y-4 font-nautical-mono">
           {/* 1. Full Name */}
           <div>
             <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-[#f3d38c]">
@@ -455,6 +449,9 @@ export default function RegisterPage() {
             </label>
             <input
               type="text"
+              name="crew_fullname"
+              autoComplete="off"
+              spellCheck="false"
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="e.g. John Hawkins"
@@ -474,6 +471,9 @@ export default function RegisterPage() {
             </label>
             <input
               type="tel"
+              name="crew_phone"
+              autoComplete="off"
+              spellCheck="false"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               placeholder="e.g. 9876543210"
@@ -493,6 +493,9 @@ export default function RegisterPage() {
             </label>
             <input
               type="text"
+              name="crew_college"
+              autoComplete="off"
+              spellCheck="false"
               value={college}
               onChange={(e) => handleCollegeChange(e.target.value)}
               onFocus={() => {
@@ -542,6 +545,9 @@ export default function RegisterPage() {
             </label>
             <input
               type="text"
+              name="crew_seat"
+              autoComplete="off"
+              spellCheck="false"
               value={terminalId}
               onChange={(e) => setTerminalId(e.target.value)}
               placeholder="e.g. LAB-02-SEAT-14"
