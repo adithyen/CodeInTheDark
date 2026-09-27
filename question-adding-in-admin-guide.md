@@ -7,8 +7,7 @@ This guide explains how to add, configure, and manage contest questions in the *
 ## 1. Accessing the Command Bridge
 
 1. Navigate to `/orbit` (e.g., `https://11-11-chapter-2-codeinthedark.vercel.app/orbit` or `http://localhost:3000/orbit`).
-2. Enter your admin passkey:
-   * **`admin1111`** (or `admiral2026`)
+2. Enter your Master Admiralty Key.
 3. Select the session you wish to manage from the top dropdown (e.g., `11:11 Chapter 2 — Main Arena`).
 4. Click on the **"Setup Trials"** tab in the top navigation bar.
 

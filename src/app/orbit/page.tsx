@@ -163,7 +163,7 @@ export default function AdminPage() {
         fetchAllData(cleanKey);
       } else {
         const d = await res.json().catch(() => ({}));
-        setAuthError(d.error || 'Invalid Admin Passkey. Valid keys: admin1111, admiral2026, admin');
+        setAuthError(d.error || 'Invalid Admin Passkey. Access Denied.');
         sessionStorage.removeItem('cid_admin_passkey');
         setIsAuthenticated(false);
       }
@@ -577,7 +577,7 @@ export default function AdminPage() {
                 type="password"
                 value={passkey}
                 onChange={(e) => setPasskey(e.target.value)}
-                placeholder="admin1111"
+                placeholder="••••••••••••"
                 required
                 className="w-full rounded-xl border border-[#a68a56]/30 bg-[#050504] px-3 py-2 font-nautical-mono text-sm text-[#ebe4d5] focus:border-[#d4af37] focus:outline-none"
               />
