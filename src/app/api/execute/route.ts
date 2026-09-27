@@ -44,34 +44,33 @@ export async function POST(req: NextRequest) {
     }
 
     // Mode B: Batch Test-Case Runner (evaluates suite of test cases)
-    const batchResults: BatchTestResult[] = [];
-    let passedCount = 0;
+    const batchResults: BatchTestResult[] = await Promise.all(
+      (testCases as TestCase[]).map(async (tc) => {
+        const execResult: ExecutionResult = await executeCode(
+          language as Language,
+          code,
+          tc.input || ''
+        );
 
-    for (const tc of testCases as TestCase[]) {
-      const execResult: ExecutionResult = await executeCode(
-        language as Language,
-        code,
-        tc.input || ''
-      );
+        const normalizedActual = (execResult.stdout || '').replace(/\r\n/g, '\n').trim();
+        const normalizedExpected = (tc.expectedOutput || '').replace(/\r\n/g, '\n').trim();
+        const passed = execResult.isSuccess && normalizedActual === normalizedExpected;
 
-      const normalizedActual = (execResult.stdout || '').replace(/\r\n/g, '\n').trim();
-      const normalizedExpected = (tc.expectedOutput || '').replace(/\r\n/g, '\n').trim();
+        return {
+          testCaseId: tc.id || `tc-${Math.random().toString(36).substr(2, 5)}`,
+          passed,
+          input: tc.input,
+          expectedOutput: tc.expectedOutput,
+          actualOutput: normalizedActual,
+          statusDescription: execResult.statusDescription,
+          timeMs: execResult.timeMs,
+          memoryKb: execResult.memoryKb,
+          error: execResult.stderr || execResult.compileOutput || undefined,
+        };
+      })
+    );
 
-      const passed = execResult.isSuccess && normalizedActual === normalizedExpected;
-      if (passed) passedCount++;
-
-      batchResults.push({
-        testCaseId: tc.id || `tc-${Math.random().toString(36).substr(2, 5)}`,
-        passed,
-        input: tc.input,
-        expectedOutput: tc.expectedOutput,
-        actualOutput: normalizedActual,
-        statusDescription: execResult.statusDescription,
-        timeMs: execResult.timeMs,
-        memoryKb: execResult.memoryKb,
-        error: execResult.stderr || execResult.compileOutput || undefined,
-      });
-    }
+    const passedCount = batchResults.filter((b) => b.passed).length;
 
     const totalCount = testCases.length;
     const passRatio = totalCount > 0 ? passedCount / totalCount : 0;
