@@ -286,8 +286,9 @@ export async function upsertQuestion(sessionId: string, q: Partial<Question> & {
   if (q.testCases && q.testCases.length > 0) {
     // Delete existing and re-insert
     await supabase.from('test_cases').delete().eq('question_id', data.id);
+    const isUuid = (str?: string) => Boolean(str && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str));
     const tcRows = q.testCases.map((tc, idx) => ({
-      id: tc.id || undefined,
+      ...(isUuid(tc.id) ? { id: tc.id } : {}),
       question_id: data.id,
       input: tc.input,
       expected_output: tc.expectedOutput,

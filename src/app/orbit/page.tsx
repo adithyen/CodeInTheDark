@@ -1445,8 +1445,14 @@ export default function AdminPage() {
                       </td>
                       <td className="py-3 px-4 uppercase text-[#a68a56]">{s.language}</td>
                       <td className="py-3 px-4">
-                        <span className={`font-bold ${s.score > 0 ? 'text-[#d4af37]' : 'text-[#a68a56]'}`}>{s.score}</span>
-                        {(s as any).speedBonus > 0 && <span className="ml-1 text-[#f3d38c] text-[10px]">+{(s as any).speedBonus}</span>}
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className={`font-bold ${s.score > 0 ? 'text-[#d4af37]' : 'text-[#a68a56]'}`}>{s.score}</span>
+                          {(s as any).speedBonus > 0 && (
+                            <span className="text-[#f3d38c] text-[10px] bg-[#f3d38c]/10 border border-[#f3d38c]/30 rounded px-1 py-0.2" title={`Base: ${Math.max(0, s.score - (s as any).speedBonus)} + Speed: ${(s as any).speedBonus}`}>
+                              (+{(s as any).speedBonus} spd)
+                            </span>
+                          )}
+                        </div>
                       </td>
                       <td className="py-3 px-4 hidden md:table-cell text-[#ebe4d5]/80">{s.testCasesPassed}/{s.totalTestCases}</td>
 
@@ -1906,8 +1912,8 @@ export default function AdminPage() {
               <div>
                 <div className="font-cinzel text-sm font-bold text-[#ebe4d5]">{inspectedSubmission.participantName} — {inspectedSubmission.questionTitle}</div>
                 <div className="font-nautical-mono text-xs text-[#a68a56] mt-0.5 flex flex-wrap gap-3">
-                  <span>{inspectedSubmission.language.toUpperCase()} · Score: <strong className="text-[#d4af37]">{inspectedSubmission.score}</strong>
-                    {(inspectedSubmission as any).speedBonus > 0 && <span className="text-[#f3d38c] ml-1">(+{(inspectedSubmission as any).speedBonus} speed bonus)</span>}
+                  <span>{inspectedSubmission.language.toUpperCase()} · Total Score: <strong className="text-[#d4af37]">{inspectedSubmission.score}</strong>
+                    {(inspectedSubmission as any).speedBonus > 0 && <span className="text-[#f3d38c] ml-1">(includes +{(inspectedSubmission as any).speedBonus} speed bonus)</span>}
                   </span>
                   <span>{inspectedSubmission.testCasesPassed}/{inspectedSubmission.totalTestCases} test cases passed</span>
                   {inspectedSubmission.isAutoSubmit && <span className="rounded bg-[#1c160e] border border-[#d4af37]/40 px-1.5 py-0.5 text-[10px] text-[#f3d38c] font-cinzel">AUTO-SUBMITTED</span>}

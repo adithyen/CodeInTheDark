@@ -10,6 +10,7 @@ import {
   hasParticipantSubmitted,
 } from '@/lib/db';
 import { executeCode } from '@/lib/executor';
+import { calculateQuestionScore } from '@/lib/scoring';
 import { Language, Question } from '@/types';
 
 // ─────────────────────────────────────────────────────────────────────
@@ -194,7 +195,7 @@ export async function POST(req: NextRequest) {
 
       const testCases = question.testCases || [];
       let passedCount = 0;
-      const testCaseDetails: any[] = [];
+      let testCaseDetails: any[] = [];
 
       // If participant submitted empty code or starter code with no implementation, skip execution
       const trimmedCode = (item.code || '').trim();
@@ -202,70 +203,71 @@ export async function POST(req: NextRequest) {
       const hasMeaningfulCode = trimmedCode.length > 0 && trimmedCode !== starterTemplate;
 
       if (hasMeaningfulCode) {
-        for (const tc of testCases) {
-          try {
-            const res = await executeCode(item.language, item.code, tc.input);
-            const normalizedActual = (res.stdout || '').replace(/\r\n/g, '\n').trim();
-            const normalizedExpected = (tc.expectedOutput || '').replace(/\r\n/g, '\n').trim();
-            const passed = res.isSuccess && normalizedActual === normalizedExpected;
-            if (passed) passedCount++;
-
-            testCaseDetails.push({
-              testCaseId: tc.id,
-              passed,
-              actualOutput: tc.isHidden ? '[HIDDEN IN TEST RUNNER]' : normalizedActual,
-              expectedOutput: tc.isHidden ? '[HIDDEN]' : normalizedExpected,
-              isHidden: tc.isHidden,
-              error: res.stderr || undefined,
-            });
-          } catch (err: any) {
-            testCaseDetails.push({
-              testCaseId: tc.id,
-              passed: false,
-              actualOutput: '[EXECUTION ERROR]',
-              expectedOutput: tc.isHidden ? '[HIDDEN]' : tc.expectedOutput,
-              isHidden: tc.isHidden,
-              error: err.message,
-            });
-          }
-        }
+        testCaseDetails = await Promise.all(
+          testCases.map(async (tc) => {
+            try {
+              const res = await executeCode(item.language, item.code, tc.input);
+              const normalizedActual = (res.stdout || '').replace(/\r\n/g, '\n').trim();
+              const normalizedExpected = (tc.expectedOutput || '').replace(/\r\n/g, '\n').trim();
+              const passed = res.isSuccess && normalizedActual === normalizedExpected;
+              return {
+                testCaseId: tc.id,
+                passed,
+                actualOutput: tc.isHidden ? '[HIDDEN IN TEST RUNNER]' : normalizedActual,
+                expectedOutput: tc.isHidden ? '[HIDDEN]' : normalizedExpected,
+                isHidden: tc.isHidden,
+                error: res.stderr || undefined,
+              };
+            } catch (err: any) {
+              return {
+                testCaseId: tc.id,
+                passed: false,
+                actualOutput: '[EXECUTION ERROR]',
+                expectedOutput: tc.isHidden ? '[HIDDEN]' : tc.expectedOutput,
+                isHidden: tc.isHidden,
+                error: err.message,
+              };
+            }
+          })
+        );
+        passedCount = testCaseDetails.filter((t) => t.passed).length;
       } else {
         // No meaningful code written
-        for (const tc of testCases) {
-          testCaseDetails.push({
-            testCaseId: tc.id,
-            passed: false,
-            actualOutput: '[NO CODE SUBMITTED]',
-            expectedOutput: tc.isHidden ? '[HIDDEN]' : tc.expectedOutput,
-            isHidden: tc.isHidden,
-          });
-        }
+        testCaseDetails = testCases.map((tc) => ({
+          testCaseId: tc.id,
+          passed: false,
+          actualOutput: '[NO CODE SUBMITTED]',
+          expectedOutput: tc.isHidden ? '[HIDDEN]' : tc.expectedOutput,
+          isHidden: tc.isHidden,
+        }));
       }
 
       const totalCount = testCases.length;
-      const passRatio = totalCount > 0 ? passedCount / totalCount : 0;
-      const baseScore = Math.round(passRatio * question.points);
 
-      // Speed bonus: up to 25% extra for solving early
-      let speedBonus = 0;
-      if (targetSession?.challenge_starts_at && targetSession?.challenge_ends_at && passedCount > 0) {
-        const totalDurationMs = targetSession.challenge_ends_at - targetSession.challenge_starts_at;
-        const remainingMs = Math.max(0, targetSession.challenge_ends_at - now);
-        if (totalDurationMs > 0) {
-          speedBonus = Math.round(baseScore * (remainingMs / totalDurationMs) * 0.25);
-        }
-      }
-
-      const finalScore = baseScore + speedBonus;
-      grandTotalScore += finalScore;
-      grandTotalPassed += passedCount;
-      grandTotalTests += totalCount;
-
-      // Persist completed submission
+      // Extract question elapsed durations & sealing timestamps
       const questionElapsed = (item as any).elapsedMs || (now - (targetSession?.challenge_starts_at || now));
       const firstDuration = (item as any).firstDurationMs || questionElapsed;
       const firstSealedAt = (item as any).firstSealedAt || now;
       const lastSealedAt = (item as any).lastSealedAt || now;
+
+      // Contest total duration (if configured on session)
+      const sessionDurationMs = (targetSession?.challenge_starts_at && targetSession?.challenge_ends_at)
+        ? (targetSession.challenge_ends_at - targetSession.challenge_starts_at)
+        : undefined;
+
+      // Calculate score with dynamic speed vs accuracy metric (SAM)
+      const { baseScore, speedBonus, finalScore } = calculateQuestionScore({
+        points: question.points || 100,
+        testCasesPassed: passedCount,
+        totalTestCases: totalCount,
+        durationMs: firstDuration,
+        sessionDurationMs,
+        totalQuestions: questions.length,
+      });
+
+      grandTotalScore += finalScore;
+      grandTotalPassed += passedCount;
+      grandTotalTests += totalCount;
 
       await upsertSubmission({
         sessionId: targetSessionId,

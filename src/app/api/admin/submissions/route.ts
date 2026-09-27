@@ -7,7 +7,7 @@ import {
   getQuestionsForSession,
 } from '@/lib/db';
 import { executeCode } from '@/lib/executor';
-
+import { calculateQuestionScore } from '@/lib/scoring';
 import { isAdmin } from '@/lib/adminAuth';
 
 export async function GET(req: NextRequest) {
@@ -56,42 +56,74 @@ export async function POST(req: NextRequest) {
     if (!question) return NextResponse.json({ error: 'Question not found' }, { status: 404 });
 
     const testCases = question.testCases;
-    let passedCount = 0;
-    const testCaseDetails: any[] = [];
 
-    for (const tc of testCases) {
-      const res = await executeCode(sub.language, sub.code, tc.input);
-      const normalizedActual = (res.stdout || '').replace(/\r\n/g, '\n').trim();
-      const normalizedExpected = (tc.expectedOutput || '').replace(/\r\n/g, '\n').trim();
-      const passed = res.isSuccess && normalizedActual === normalizedExpected;
-      if (passed) passedCount++;
+    const testCaseDetails = await Promise.all(
+      testCases.map(async (tc) => {
+        try {
+          const res = await executeCode(sub.language, sub.code, tc.input);
+          const normalizedActual = (res.stdout || '').replace(/\r\n/g, '\n').trim();
+          const normalizedExpected = (tc.expectedOutput || '').replace(/\r\n/g, '\n').trim();
+          const passed = res.isSuccess && normalizedActual === normalizedExpected;
+          return {
+            testCaseId: tc.id,
+            passed,
+            actualOutput: tc.isHidden ? '[HIDDEN IN TEST RUNNER]' : normalizedActual,
+            expectedOutput: tc.isHidden ? '[HIDDEN]' : normalizedExpected,
+            isHidden: tc.isHidden,
+            error: res.stderr || undefined,
+          };
+        } catch (err: any) {
+          return {
+            testCaseId: tc.id,
+            passed: false,
+            actualOutput: '[EXECUTION ERROR]',
+            expectedOutput: tc.isHidden ? '[HIDDEN]' : tc.expectedOutput,
+            isHidden: tc.isHidden,
+            error: err.message,
+          };
+        }
+      })
+    );
 
-      testCaseDetails.push({
-        testCaseId: tc.id,
-        passed,
-        actualOutput: tc.isHidden ? '[HIDDEN IN TEST RUNNER]' : normalizedActual,
-        expectedOutput: tc.isHidden ? '[HIDDEN]' : normalizedExpected,
-        isHidden: tc.isHidden,
-        error: res.stderr || undefined,
-      });
-    }
-
+    const passedCount = testCaseDetails.filter(t => t.passed).length;
     const totalCount = testCases.length;
-    const passRatio = totalCount > 0 ? passedCount / totalCount : 0;
-    const baseScore = Math.round(passRatio * question.points);
+
+    // Fetch session details for benchmark scaling
+    const targetSession = await getSessionById(targetSessionId);
+    const sessionDurationMs = (targetSession?.challenge_starts_at && targetSession?.challenge_ends_at)
+      ? (targetSession.challenge_ends_at - targetSession.challenge_starts_at)
+      : undefined;
+
+    const durationMs = sub.firstExecTimeMs || sub.execTimeMs || 0;
+
+    const scoring = calculateQuestionScore({
+      points: question.points || 100,
+      testCasesPassed: passedCount,
+      totalTestCases: totalCount,
+      durationMs,
+      sessionDurationMs,
+      totalQuestions: questions.length,
+    });
 
     await upsertSubmission({
       ...sub,
       sessionId: targetSessionId,
       testCasesPassed: passedCount,
       totalTestCases: totalCount,
-      score: baseScore,
-      speedBonus: 0,
+      score: scoring.finalScore,
+      speedBonus: scoring.speedBonus,
       evaluationStatus: 'completed',
       testCaseDetails,
     });
 
-    return NextResponse.json({ success: true, testCasesPassed: passedCount, totalTestCases: totalCount, score: baseScore });
+    return NextResponse.json({
+      success: true,
+      testCasesPassed: passedCount,
+      totalTestCases: totalCount,
+      baseScore: scoring.baseScore,
+      speedBonus: scoring.speedBonus,
+      score: scoring.finalScore,
+    });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
