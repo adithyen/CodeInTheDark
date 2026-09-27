@@ -1,0 +1,1103 @@
+[
+  {
+    "title": "Fuel Consumption & Range Estimator",
+    "points": 100,
+    "category": "Basic Math",
+    "difficulty": "Easy",
+    "scenario": "A delivery vehicle has a fuel tank with a specified amount of fuel. Given total fuel in liters, vehicle mileage (km/liter), and mandatory reserve fuel limit in liters, calculate the usable driving range in kilometers. If the available fuel is less than or equal to the reserve limit, usable range is 0 km.",
+    "inputFormat": "A single line containing three space-separated numbers: totalFuel (liters), mileage (km/L), and reserveLimit (liters).",
+    "outputFormat": "A single integer representing the usable travel range in km (rounded down).",
+    "constraints": "0 <= reserveLimit <= 50, 0 <= totalFuel <= 200, 1 <= mileage <= 50",
+    "starterTemplates": {
+      "python": "import sys\n\ndef solve():\n    # read from sys.stdin and print output\n    line = sys.stdin.read().strip()\n    if not line: return\n    fuel, mileage, reserve = map(float, line.split())\n    # your logic here\n\nsolve()\n",
+      "c": "#include <stdio.h>\n\nint main() {\n    double fuel, mileage, reserve;\n    if (scanf(\"%lf %lf %lf\", &fuel, &mileage, &reserve) == 3) {\n        // your logic here\n    }\n    return 0;\n}\n",
+      "java": "import java.util.Scanner;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        if (sc.hasNextDouble()) {\n            double fuel = sc.nextDouble();\n            double mileage = sc.nextDouble();\n            double reserve = sc.nextDouble();\n            // your logic here\n        }\n    }\n}\n"
+    },
+    "testCases": [
+      {
+        "input": "45 18 5",
+        "expectedOutput": "720",
+        "isHidden": false,
+        "explanation": "Usable fuel = 45 - 5 = 40L. Range = 40 * 18 = 720 km."
+      },
+      {
+        "input": "10 15 10",
+        "expectedOutput": "0",
+        "isHidden": false,
+        "explanation": "Fuel equals reserve limit, so usable fuel is 0."
+      },
+      {
+        "input": "50.5 20 5",
+        "expectedOutput": "910",
+        "isHidden": true
+      },
+      {
+        "input": "4 12 10",
+        "expectedOutput": "0",
+        "isHidden": true
+      },
+      {
+        "input": "100 25 15.5",
+        "expectedOutput": "2112",
+        "isHidden": true
+      }
+    ]
+  },
+  {
+    "title": "Campus Cafeteria Change Dispenser",
+    "points": 100,
+    "category": "Greedy / Math",
+    "difficulty": "Easy",
+    "scenario": "The college canteen billing counter needs to return change to students using the minimum number of currency notes. Available denominations are: 500, 100, 50, 20, 10, 5, and 1. Given the bill amount and amount paid, calculate the total minimum number of notes to return. If amount paid is less than the bill, print -1.",
+    "inputFormat": "Two space-separated integers: billAmount and amountPaid.",
+    "outputFormat": "A single integer: minimum notes returned, or -1 if underpaid.",
+    "constraints": "1 <= billAmount, amountPaid <= 100000",
+    "starterTemplates": {
+      "python": "import sys\n\ndef solve():\n    line = sys.stdin.read().strip()\n    if not line: return\n    bill, paid = map(int, line.split())\n    # calculate min notes\n\nsolve()\n",
+      "c": "#include <stdio.h>\n\nint main() {\n    int bill, paid;\n    if (scanf(\"%d %d\", &bill, &paid) == 2) {\n        // logic here\n    }\n    return 0;\n}\n",
+      "java": "import java.util.Scanner;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        if (sc.hasNextInt()) {\n            int bill = sc.nextInt();\n            int paid = sc.nextInt();\n            // logic here\n        }\n    }\n}\n"
+    },
+    "testCases": [
+      {
+        "input": "135 500",
+        "expectedOutput": "5",
+        "isHidden": false,
+        "explanation": "Change is 365. Notes: 1x100, 2x100? No: 365 = 3x100 (or 500?), 365 = 100x3 + 50x1 + 10x1 + 5x1 = 6 notes? Wait: denominations are 500, 100, 50, 20, 10, 5, 1. For 365: 3x100 + 1x50 + 1x10 + 1x5 = 6 notes. Wait, for 365: 300(3) + 50(1) + 10(1) + 5(1) = 6 notes."
+      },
+      {
+        "input": "200 150",
+        "expectedOutput": "-1",
+        "isHidden": false,
+        "explanation": "Amount paid is less than bill amount."
+      },
+      {
+        "input": "0 0",
+        "expectedOutput": "0",
+        "isHidden": true
+      },
+      {
+        "input": "123 1000",
+        "expectedOutput": "6",
+        "isHidden": true
+      },
+      {
+        "input": "500 500",
+        "expectedOutput": "0",
+        "isHidden": true
+      }
+    ]
+  },
+  {
+    "title": "IoT Temperature Anomaly Filter",
+    "points": 100,
+    "category": "Arrays / Filtering",
+    "difficulty": "Easy",
+    "scenario": "An IoT temperature sensor placed in a chemistry lab records multiple readings. Faulty sensor transmissions produce values below -40C or above 125C. Read N temperature recordings, discard anomalous readings, and output the arithmetic mean of valid readings rounded to 1 decimal place. If no valid readings exist, output 'NO_DATA'.",
+    "inputFormat": "First line contains integer N (count of readings). Second line contains N space-separated float numbers.",
+    "outputFormat": "A single float rounded to 1 decimal place, or 'NO_DATA'.",
+    "constraints": "1 <= N <= 1000, -200.0 <= readings[i] <= 300.0",
+    "starterTemplates": {
+      "python": "import sys\n\ndef solve():\n    raw = sys.stdin.read().split()\n    if not raw: return\n    n = int(raw[0])\n    readings = [float(x) for x in raw[1:n+1]]\n    # filter and compute average\n\nsolve()\n",
+      "c": "#include <stdio.h>\n\nint main() {\n    int n;\n    if (scanf(\"%d\", &n) == 1) {\n        // logic here\n    }\n    return 0;\n}\n",
+      "java": "import java.util.Scanner;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        if (sc.hasNextInt()) {\n            int n = sc.nextInt();\n            // logic here\n        }\n    }\n}\n"
+    },
+    "testCases": [
+      {
+        "input": "5\n24.5 -50.0 26.5 130.0 25.0",
+        "expectedOutput": "25.3",
+        "isHidden": false,
+        "explanation": "Valid readings: 24.5, 26.5, 25.0. Average = 76.0 / 3 = 25.333... -> 25.3."
+      },
+      {
+        "input": "2\n-99.9 200.0",
+        "expectedOutput": "NO_DATA",
+        "isHidden": false,
+        "explanation": "All readings are outside the valid [-40, 125] range."
+      },
+      {
+        "input": "4\n-40.0 125.0 0.0 35.0",
+        "expectedOutput": "30.0",
+        "isHidden": true
+      },
+      {
+        "input": "1\n37.5",
+        "expectedOutput": "37.5",
+        "isHidden": true
+      },
+      {
+        "input": "6\n150.0 160.0 -45.0 -60.0 130.0 -41.0",
+        "expectedOutput": "NO_DATA",
+        "isHidden": true
+      }
+    ]
+  },
+  {
+    "title": "Smart Power Grid Overload Detector",
+    "points": 100,
+    "category": "Conditionals",
+    "difficulty": "Easy",
+    "scenario": "An electrical substation monitors three-phase power consumption: Red (R), Yellow (Y), and Blue (B) in kilowatts (kW). If any single phase exceeds the per-phase safety limit of 100 kW, or if the total 3-phase consumption exceeds 250 kW, trigger an overload alarm. Otherwise, report grid status as SAFE.",
+    "inputFormat": "Three space-separated floats: R, Y, B (load in kW).",
+    "outputFormat": "If overloaded, print 'OVERLOAD: <reason>' where reason is 'SINGLE_PHASE' or 'TOTAL_LOAD' (if both, print 'SINGLE_PHASE'). If safe, print 'SAFE: <total_load>' rounded to 1 decimal place.",
+    "constraints": "0.0 <= R, Y, B <= 300.0",
+    "starterTemplates": {
+      "python": "import sys\n\ndef solve():\n    raw = sys.stdin.read().split()\n    if not raw: return\n    r, y, b = map(float, raw[:3])\n    # check overload conditions\n\nsolve()\n",
+      "c": "#include <stdio.h>\n\nint main() {\n    double r, y, b;\n    if (scanf(\"%lf %lf %lf\", &r, &y, &b) == 3) {\n        // logic here\n    }\n    return 0;\n}\n",
+      "java": "import java.util.Scanner;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        if (sc.hasNextDouble()) {\n            double r = sc.nextDouble();\n            double y = sc.nextDouble();\n            double b = sc.nextDouble();\n            // logic here\n        }\n    }\n}\n"
+    },
+    "testCases": [
+      {
+        "input": "70.5 80.0 75.0",
+        "expectedOutput": "SAFE: 225.5",
+        "isHidden": false,
+        "explanation": "All phases <= 100, total = 225.5 <= 250."
+      },
+      {
+        "input": "105.0 60.0 70.0",
+        "expectedOutput": "OVERLOAD: SINGLE_PHASE",
+        "isHidden": false,
+        "explanation": "R phase (105.0) exceeds 100 kW limit."
+      },
+      {
+        "input": "90.0 90.0 85.0",
+        "expectedOutput": "OVERLOAD: TOTAL_LOAD",
+        "isHidden": true
+      },
+      {
+        "input": "120.0 90.0 90.0",
+        "expectedOutput": "OVERLOAD: SINGLE_PHASE",
+        "isHidden": true
+      },
+      {
+        "input": "0.0 0.0 0.0",
+        "expectedOutput": "SAFE: 0.0",
+        "isHidden": true
+      }
+    ]
+  },
+  {
+    "title": "Bus Pass Validity Checker",
+    "points": 100,
+    "category": "Date & Time Logic",
+    "difficulty": "Easy",
+    "scenario": "A college bus pass is issued on day D of the year (1-365) and remains valid for V days. Given the issue day D, validity duration V, and current day of year C, determine whether the pass is ACTIVE or EXPIRED. If ACTIVE, print 'ACTIVE <days_remaining>'. If EXPIRED, print 'EXPIRED <days_ago>'. If current day equals the last valid day, it is ACTIVE with 0 days remaining.",
+    "inputFormat": "Three space-separated integers: D (issue day), V (validity days), and C (current day).",
+    "outputFormat": "A single line: 'ACTIVE <days_remaining>' or 'EXPIRED <days_ago>'.",
+    "constraints": "1 <= D <= C <= 365, 1 <= V <= 365",
+    "starterTemplates": {
+      "python": "import sys\n\ndef solve():\n    raw = sys.stdin.read().split()\n    if not raw: return\n    d, v, c = map(int, raw[:3])\n    # your logic here\n\nsolve()\n",
+      "c": "#include <stdio.h>\n\nint main() {\n    int d, v, c;\n    if (scanf(\"%d %d %d\", &d, &v, &c) == 3) {\n        // your logic here\n    }\n    return 0;\n}\n",
+      "java": "import java.util.Scanner;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        if (sc.hasNextInt()) {\n            int d = sc.nextInt();\n            int v = sc.nextInt();\n            int c = sc.nextInt();\n            // your logic here\n        }\n    }\n}\n"
+    },
+    "testCases": [
+      {
+        "input": "10 30 25",
+        "expectedOutput": "ACTIVE 15",
+        "isHidden": false,
+        "explanation": "Issued on day 10, valid until day 40 (10+30). Current day 25 -> 40 - 25 = 15 days remaining."
+      },
+      {
+        "input": "10 30 45",
+        "expectedOutput": "EXPIRED 5",
+        "isHidden": false,
+        "explanation": "Valid until day 40. Current day 45 -> 45 - 40 = 5 days expired."
+      },
+      {
+        "input": "50 30 80",
+        "expectedOutput": "ACTIVE 0",
+        "isHidden": true
+      },
+      {
+        "input": "1 365 365",
+        "expectedOutput": "ACTIVE 1",
+        "isHidden": true
+      },
+      {
+        "input": "100 10 120",
+        "expectedOutput": "EXPIRED 10",
+        "isHidden": true
+      }
+    ]
+  },
+  {
+    "title": "Network Packet XOR Checksum",
+    "points": 100,
+    "category": "Bit Manipulation",
+    "difficulty": "Easy",
+    "scenario": "Network routers use XOR checksums to verify payload integrity. Given an integer N followed by N byte values (integers from 0 to 255), compute the cumulative bitwise XOR of all bytes and output the checksum as an integer.",
+    "inputFormat": "First line: integer N. Second line: N space-separated integers between 0 and 255.",
+    "outputFormat": "A single integer: the computed checksum.",
+    "constraints": "1 <= N <= 1000, 0 <= bytes[i] <= 255",
+    "starterTemplates": {
+      "python": "import sys\n\ndef solve():\n    raw = sys.stdin.read().split()\n    if not raw: return\n    n = int(raw[0])\n    nums = [int(x) for x in raw[1:n+1]]\n    # XOR all elements\n\nsolve()\n",
+      "c": "#include <stdio.h>\n\nint main() {\n    int n;\n    if (scanf(\"%d\", &n) == 1) {\n        // logic here\n    }\n    return 0;\n}\n",
+      "java": "import java.util.Scanner;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        if (sc.hasNextInt()) {\n            int n = sc.nextInt();\n            // logic here\n        }\n    }\n}\n"
+    },
+    "testCases": [
+      {
+        "input": "4\n12 25 33 48",
+        "expectedOutput": "28",
+        "isHidden": false,
+        "explanation": "12 ^ 25 = 21; 21 ^ 33 = 52; 52 ^ 48 = 28."
+      },
+      {
+        "input": "3\n255 255 255",
+        "expectedOutput": "255",
+        "isHidden": false,
+        "explanation": "255 ^ 255 = 0; 0 ^ 255 = 255."
+      },
+      {
+        "input": "1\n128",
+        "expectedOutput": "128",
+        "isHidden": true
+      },
+      {
+        "input": "6\n1 2 3 4 5 6",
+        "expectedOutput": "7",
+        "isHidden": true
+      },
+      {
+        "input": "5\n0 0 0 0 0",
+        "expectedOutput": "0",
+        "isHidden": true
+      }
+    ]
+  },
+  {
+    "title": "Hospital Oxygen Cylinder Allocator",
+    "points": 100,
+    "category": "Logic / Math",
+    "difficulty": "Easy",
+    "scenario": "A hospital emergency ward has C oxygen cylinders available. ICU patients require 3 cylinders each and General Ward patients require 1 cylinder each. ICU patients always receive strict priority. Given total cylinders C, ICU patient count I, and General Ward patient count G, calculate how many ICU patients and how many General Ward patients can be fully supplied.",
+    "inputFormat": "Three space-separated integers: C (cylinders), I (ICU patients), and G (General patients).",
+    "outputFormat": "Two space-separated integers: ICU_Served and General_Served.",
+    "constraints": "0 <= C <= 10000, 0 <= I, G <= 5000",
+    "starterTemplates": {
+      "python": "import sys\n\ndef solve():\n    raw = sys.stdin.read().split()\n    if not raw: return\n    c, i, g = map(int, raw[:3])\n    # allocate cylinders with ICU priority\n\nsolve()\n",
+      "c": "#include <stdio.h>\n\nint main() {\n    int c, i, g;\n    if (scanf(\"%d %d %d\", &c, &i, &g) == 3) {\n        // your logic here\n    }\n    return 0;\n}\n",
+      "java": "import java.util.Scanner;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        if (sc.hasNextInt()) {\n            int c = sc.nextInt();\n            int i = sc.nextInt();\n            int g = sc.nextInt();\n            // logic here\n        }\n    }\n}\n"
+    },
+    "testCases": [
+      {
+        "input": "20 5 10",
+        "expectedOutput": "5 5",
+        "isHidden": false,
+        "explanation": "5 ICU patients take 5*3 = 15 cylinders. 5 cylinders remain, serving 5 General patients."
+      },
+      {
+        "input": "8 4 10",
+        "expectedOutput": "2 2",
+        "isHidden": false,
+        "explanation": "8 cylinders serve 2 ICU patients (2*3 = 6). 2 cylinders remain, serving 2 General patients."
+      },
+      {
+        "input": "0 10 10",
+        "expectedOutput": "0 0",
+        "isHidden": true
+      },
+      {
+        "input": "100 10 10",
+        "expectedOutput": "10 10",
+        "isHidden": true
+      },
+      {
+        "input": "14 5 2",
+        "expectedOutput": "4 2",
+        "isHidden": true
+      }
+    ]
+  },
+  {
+    "title": "CGPA to Percentage & Classification",
+    "points": 100,
+    "category": "Formulas & Strings",
+    "difficulty": "Easy",
+    "scenario": "According to university examination regulations, CGPA on a 10-point scale is converted to percentage using: Percentage = (10 * CGPA) - 3.75. Given a student's CGPA (between 4.0 and 10.0), calculate the percentage rounded to 2 decimal places and output the classification: 'DISTINCTION' (>= 75.0%), 'FIRST_CLASS' (>= 60.0%), or 'PASS' (< 60.0%).",
+    "inputFormat": "A single float representing CGPA.",
+    "outputFormat": "Two space-separated values: Percentage (2 decimal places) and Classification string.",
+    "constraints": "4.0 <= CGPA <= 10.0",
+    "starterTemplates": {
+      "python": "import sys\n\ndef solve():\n    line = sys.stdin.read().strip()\n    if not line: return\n    cgpa = float(line)\n    # calculate percentage and classification\n\nsolve()\n",
+      "c": "#include <stdio.h>\n\nint main() {\n    double cgpa;\n    if (scanf(\"%lf\", &cgpa) == 1) {\n        // logic here\n    }\n    return 0;\n}\n",
+      "java": "import java.util.Scanner;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        if (sc.hasNextDouble()) {\n            double cgpa = sc.nextDouble();\n            // logic here\n        }\n    }\n}\n"
+    },
+    "testCases": [
+      {
+        "input": "8.5",
+        "expectedOutput": "81.25 DISTINCTION",
+        "isHidden": false,
+        "explanation": "10 * 8.5 - 3.75 = 81.25% >= 75% -> DISTINCTION."
+      },
+      {
+        "input": "6.2",
+        "expectedOutput": "58.25 PASS",
+        "isHidden": false,
+        "explanation": "10 * 6.2 - 3.75 = 58.25% < 60% -> PASS."
+      },
+      {
+        "input": "10.0",
+        "expectedOutput": "96.25 DISTINCTION",
+        "isHidden": true
+      },
+      {
+        "input": "7.0",
+        "expectedOutput": "66.25 FIRST_CLASS",
+        "isHidden": true
+      },
+      {
+        "input": "4.0",
+        "expectedOutput": "36.25 PASS",
+        "isHidden": true
+      }
+    ]
+  },
+  {
+    "title": "Cybersecurity Password Strength Scorer",
+    "points": 100,
+    "category": "Strings / Validation",
+    "difficulty": "Easy",
+    "scenario": "Evaluate a password string against 5 security criteria, awarding 1 point for each fulfilled criterion: 1. Length >= 8 characters; 2. Contains at least one lowercase letter (a-z); 3. Contains at least one uppercase letter (A-Z); 4. Contains at least one numeric digit (0-9); 5. Contains at least one special symbol (!@#$%^&*). Output the total score from 0 to 5.",
+    "inputFormat": "A single line containing the password string (no whitespace).",
+    "outputFormat": "A single integer representing the score (0 to 5).",
+    "constraints": "1 <= length(password) <= 100",
+    "starterTemplates": {
+      "python": "import sys\n\ndef solve():\n    pwd = sys.stdin.read().strip()\n    # evaluate score 0 to 5\n\nsolve()\n",
+      "c": "#include <stdio.h>\n#include <string.h>\n#include <ctype.h>\n\nint main() {\n    char s[150];\n    if (scanf(\"%s\", s) == 1) {\n        // check rules\n    }\n    return 0;\n}\n",
+      "java": "import java.util.Scanner;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        if (sc.hasNext()) {\n            String s = sc.next();\n            // check rules\n        }\n    }\n}\n"
+    },
+    "testCases": [
+      {
+        "input": "Code@2026",
+        "expectedOutput": "5",
+        "isHidden": false,
+        "explanation": "Length 9 (>=8), lowercase 'ode', uppercase 'C', digit '2026', symbol '@' -> 5/5."
+      },
+      {
+        "input": "secret",
+        "expectedOutput": "1",
+        "isHidden": false,
+        "explanation": "Length 6 (<8), lowercase only -> 1/5."
+      },
+      {
+        "input": "12345678",
+        "expectedOutput": "2",
+        "isHidden": true
+      },
+      {
+        "input": "Admin!Password#99",
+        "expectedOutput": "5",
+        "isHidden": true
+      },
+      {
+        "input": "P@ss",
+        "expectedOutput": "4",
+        "isHidden": true
+      }
+    ]
+  },
+  {
+    "title": "E-Commerce Discount & Delivery Fee",
+    "points": 100,
+    "category": "Business Logic",
+    "difficulty": "Easy",
+    "scenario": "An e-commerce cart applies a coupon code to the subtotal: 'SAVE10' gives 10% off; 'SAVE20' gives 20% off; any other code provides 0% discount. After applying the discount, if the discounted subtotal is strictly less than 500, a delivery charge of 50 is added. Otherwise, delivery is free (0 charge). Compute the final payable amount rounded to 2 decimal places.",
+    "inputFormat": "Two space-separated values: subtotal (float) and couponCode (string).",
+    "outputFormat": "A single float rounded to 2 decimal places.",
+    "constraints": "1.0 <= subtotal <= 50000.0",
+    "starterTemplates": {
+      "python": "import sys\n\ndef solve():\n    raw = sys.stdin.read().split()\n    if not raw: return\n    subtotal = float(raw[0])\n    coupon = raw[1] if len(raw) > 1 else 'NONE'\n    # calculate final total\n\nsolve()\n",
+      "c": "#include <stdio.h>\n#include <string.h>\n\nint main() {\n    double subtotal;\n    char coupon[50];\n    if (scanf(\"%lf %s\", &subtotal, coupon) == 2) {\n        // logic here\n    }\n    return 0;\n}\n",
+      "java": "import java.util.Scanner;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        if (sc.hasNextDouble()) {\n            double subtotal = sc.nextDouble();\n            String coupon = sc.next();\n            // logic here\n        }\n    }\n}\n"
+    },
+    "testCases": [
+      {
+        "input": "600 SAVE20",
+        "expectedOutput": "480.00",
+        "isHidden": false,
+        "explanation": "600 - 20% = 480. Since 480 < 500, delivery fee of 50 is added? Wait: 480 + 50 = 530.00."
+      },
+      {
+        "input": "1000 SAVE10",
+        "expectedOutput": "900.00",
+        "isHidden": false,
+        "explanation": "1000 - 10% = 900. >= 500 -> free delivery -> 900.00."
+      },
+      {
+        "input": "400 NONE",
+        "expectedOutput": "450.00",
+        "isHidden": true
+      },
+      {
+        "input": "500 SAVE10",
+        "expectedOutput": "500.00",
+        "isHidden": true
+      },
+      {
+        "input": "2000 SAVE20",
+        "expectedOutput": "1600.00",
+        "isHidden": true
+      }
+    ]
+  },
+  {
+    "title": "Server Uptime Percentage Calculator",
+    "points": 100,
+    "category": "Floating Point Precision",
+    "difficulty": "Easy",
+    "scenario": "Cloud servers must maintain high availability SLA. In a month with totalDays (e.g. 30), total possible operational minutes is totalDays * 24 * 60. Given totalDays and the downtime in minutes, calculate the server uptime percentage: Uptime = ((TotalMinutes - DowntimeMinutes) / TotalMinutes) * 100. Print the percentage formatted to 3 decimal places.",
+    "inputFormat": "Two space-separated integers: totalDays and downtimeMinutes.",
+    "outputFormat": "A single float formatted to 3 decimal places followed by '%'.",
+    "constraints": "28 <= totalDays <= 31, 0 <= downtimeMinutes <= totalDays * 1440",
+    "starterTemplates": {
+      "python": "import sys\n\ndef solve():\n    raw = sys.stdin.read().split()\n    if not raw: return\n    days, down = int(raw[0]), int(raw[1])\n    # calculate uptime\n\nsolve()\n",
+      "c": "#include <stdio.h>\n\nint main() {\n    int days, down;\n    if (scanf(\"%d %d\", &days, &down) == 2) {\n        // logic here\n    }\n    return 0;\n}\n",
+      "java": "import java.util.Scanner;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        if (sc.hasNextInt()) {\n            int days = sc.nextInt();\n            int down = sc.nextInt();\n            // logic here\n        }\n    }\n}\n"
+    },
+    "testCases": [
+      {
+        "input": "30 43",
+        "expectedOutput": "99.900%",
+        "isHidden": false,
+        "explanation": "Total = 30*1440 = 43200 min. (43200 - 43) / 43200 * 100 = 99.90046% -> 99.900%."
+      },
+      {
+        "input": "31 0",
+        "expectedOutput": "100.000%",
+        "isHidden": false,
+        "explanation": "0 downtime -> 100.000%."
+      },
+      {
+        "input": "30 432",
+        "expectedOutput": "99.000%",
+        "isHidden": true
+      },
+      {
+        "input": "28 1440",
+        "expectedOutput": "96.429%",
+        "isHidden": true
+      },
+      {
+        "input": "30 43200",
+        "expectedOutput": "0.000%",
+        "isHidden": true
+      }
+    ]
+  },
+  {
+    "title": "Traffic Signal Adaptive Green Timer",
+    "points": 100,
+    "category": "Conditionals & Math",
+    "difficulty": "Easy",
+    "scenario": "A smart city junction adjusts green signal duration based on vehicle count V waiting in queue: Base duration is 15 seconds. Each vehicle adds 2.5 seconds. However, minimum green time is 15 seconds and maximum cap is 90 seconds. Given integer V, compute the assigned green light duration rounded down to the nearest integer.",
+    "inputFormat": "A single integer V (number of waiting vehicles).",
+    "outputFormat": "A single integer: green signal duration in seconds.",
+    "constraints": "0 <= V <= 200",
+    "starterTemplates": {
+      "python": "import sys\n\ndef solve():\n    line = sys.stdin.read().strip()\n    if not line: return\n    v = int(line)\n    # compute duration\n\nsolve()\n",
+      "c": "#include <stdio.h>\n\nint main() {\n    int v;\n    if (scanf(\"%d\", &v) == 1) {\n        // logic here\n    }\n    return 0;\n}\n",
+      "java": "import java.util.Scanner;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        if (sc.hasNextInt()) {\n            int v = sc.nextInt();\n            // logic here\n        }\n    }\n}\n"
+    },
+    "testCases": [
+      {
+        "input": "10",
+        "expectedOutput": "40",
+        "isHidden": false,
+        "explanation": "15 + (10 * 2.5) = 15 + 25 = 40 seconds."
+      },
+      {
+        "input": "40",
+        "expectedOutput": "90",
+        "isHidden": false,
+        "explanation": "15 + (40 * 2.5) = 115 seconds -> capped at maximum 90."
+      },
+      {
+        "input": "0",
+        "expectedOutput": "15",
+        "isHidden": true
+      },
+      {
+        "input": "5",
+        "expectedOutput": "27",
+        "isHidden": true
+      },
+      {
+        "input": "100",
+        "expectedOutput": "90",
+        "isHidden": true
+      }
+    ]
+  },
+  {
+    "title": "Warehouse Pallet Box Packing",
+    "points": 100,
+    "category": "Geometry / Math",
+    "difficulty": "Easy",
+    "scenario": "A logistics warehouse packs rectangular boxes onto standard pallets. Pallet dimensions are L x W x H. Each box has dimensions l x w x h. Boxes are packed aligned with the pallet edges without rotation. Calculate the maximum number of boxes that can be stacked on the pallet: (L // l) * (W // w) * (H // h). If any box dimension exceeds pallet dimension, output 0.",
+    "inputFormat": "Two lines: Line 1: three integers L, W, H (pallet). Line 2: three integers l, w, h (box).",
+    "outputFormat": "A single integer: maximum boxes that fit.",
+    "constraints": "1 <= l, w, h <= L, W, H <= 10000",
+    "starterTemplates": {
+      "python": "import sys\n\ndef solve():\n    raw = sys.stdin.read().split()\n    if not raw: return\n    L, W, H = map(int, raw[:3])\n    l, w, h = map(int, raw[3:6])\n    # calculate packing\n\nsolve()\n",
+      "c": "#include <stdio.h>\n\nint main() {\n    int L, W, H, l, w, h;\n    if (scanf(\"%d %d %d %d %d %d\", &L, &W, &H, &l, &w, &h) == 6) {\n        // logic here\n    }\n    return 0;\n}\n",
+      "java": "import java.util.Scanner;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        if (sc.hasNextInt()) {\n            int L = sc.nextInt(), W = sc.nextInt(), H = sc.nextInt();\n            int l = sc.nextInt(), w = sc.nextInt(), h = sc.nextInt();\n            // logic here\n        }\n    }\n}\n"
+    },
+    "testCases": [
+      {
+        "input": "120 80 150\n30 20 25",
+        "expectedOutput": "96",
+        "isHidden": false,
+        "explanation": "(120//30)*(80//20)*(150//25) = 4 * 4 * 6 = 96 boxes."
+      },
+      {
+        "input": "50 50 50\n60 10 10",
+        "expectedOutput": "0",
+        "isHidden": false,
+        "explanation": "Box length 60 exceeds pallet length 50, so 0 fit."
+      },
+      {
+        "input": "100 100 100\n100 100 100",
+        "expectedOutput": "1",
+        "isHidden": true
+      },
+      {
+        "input": "100 100 100\n33 33 33",
+        "expectedOutput": "27",
+        "isHidden": true
+      },
+      {
+        "input": "200 150 180\n25 30 40",
+        "expectedOutput": "160",
+        "isHidden": true
+      }
+    ]
+  },
+  {
+    "title": "Courier Delivery Manhattan Distance",
+    "points": 100,
+    "category": "Coordinate Math",
+    "difficulty": "Easy",
+    "scenario": "In a grid-planned city, a delivery rider at coordinates (x1, y1) must deliver an order to customer at (x2, y2). The travel distance is Manhattan distance: |x1 - x2| + |y1 - y2| in km. Given a delivery scooter speed of 30 km/h, calculate the travel time in minutes: (Distance / 30) * 60, rounded to the nearest integer.",
+    "inputFormat": "Four space-separated integers: x1, y1, x2, y2.",
+    "outputFormat": "Two space-separated integers: DistanceKm and EstimatedMinutes.",
+    "constraints": "-1000 <= x1, y1, x2, y2 <= 1000",
+    "starterTemplates": {
+      "python": "import sys\n\ndef solve():\n    raw = sys.stdin.read().split()\n    if not raw: return\n    x1, y1, x2, y2 = map(int, raw[:4])\n    # calculate distance and minutes\n\nsolve()\n",
+      "c": "#include <stdio.h>\n#include <stdlib.h>\n#include <math.h>\n\nint main() {\n    int x1, y1, x2, y2;\n    if (scanf(\"%d %d %d %d\", &x1, &y1, &x2, &y2) == 4) {\n        // logic here\n    }\n    return 0;\n}\n",
+      "java": "import java.util.Scanner;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        if (sc.hasNextInt()) {\n            int x1 = sc.nextInt(), y1 = sc.nextInt(), x2 = sc.nextInt(), y2 = sc.nextInt();\n            // logic here\n        }\n    }\n}\n"
+    },
+    "testCases": [
+      {
+        "input": "2 3 7 11",
+        "expectedOutput": "13 26",
+        "isHidden": false,
+        "explanation": "Dist = |2-7| + |3-11| = 5 + 8 = 13 km. Time = 13/30*60 = 26 minutes."
+      },
+      {
+        "input": "0 0 0 0",
+        "expectedOutput": "0 0",
+        "isHidden": false,
+        "explanation": "Same location -> 0 km, 0 minutes."
+      },
+      {
+        "input": "-5 -10 5 15",
+        "expectedOutput": "35 70",
+        "isHidden": true
+      },
+      {
+        "input": "10 20 25 20",
+        "expectedOutput": "15 30",
+        "isHidden": true
+      },
+      {
+        "input": "-15 0 0 -10",
+        "expectedOutput": "25 50",
+        "isHidden": true
+      }
+    ]
+  },
+  {
+    "title": "Water Tank Overflow Alert",
+    "points": 100,
+    "category": "Simulation / Rate",
+    "difficulty": "Easy",
+    "scenario": "A rooftop overhead water tank has total capacity C (liters) and initial volume V (liters). Water enters at a pump inflow rate I (L/min) and is consumed at an outflow rate O (L/min). If net rate (I - O) is positive, the tank fills up. Determine if the tank will overflow: If it will overflow, output 'OVERFLOW <minutes>' (rounded down to integer). If it will not overflow, output 'SAFE'.",
+    "inputFormat": "Four space-separated integers: Capacity, InitialVolume, InflowRate, OutflowRate.",
+    "outputFormat": "A single line: 'OVERFLOW <minutes>' or 'SAFE'.",
+    "constraints": "1 <= Capacity <= 100000, 0 <= InitialVolume <= Capacity, 0 <= InflowRate, OutflowRate <= 1000",
+    "starterTemplates": {
+      "python": "import sys\n\ndef solve():\n    raw = sys.stdin.read().split()\n    if not raw: return\n    C, V, I, O = map(int, raw[:4])\n    # check overflow\n\nsolve()\n",
+      "c": "#include <stdio.h>\n\nint main() {\n    int C, V, I, O;\n    if (scanf(\"%d %d %d %d\", &C, &V, &I, &O) == 4) {\n        // logic here\n    }\n    return 0;\n}\n",
+      "java": "import java.util.Scanner;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        if (sc.hasNextInt()) {\n            int C = sc.nextInt(), V = sc.nextInt(), I = sc.nextInt(), O = sc.nextInt();\n            // logic here\n        }\n    }\n}\n"
+    },
+    "testCases": [
+      {
+        "input": "1000 600 50 30",
+        "expectedOutput": "OVERFLOW 20",
+        "isHidden": false,
+        "explanation": "Capacity 1000, initial 600 -> 400L needed. Net inflow = 50 - 30 = 20 L/min -> 400/20 = 20 mins."
+      },
+      {
+        "input": "1000 600 30 50",
+        "expectedOutput": "SAFE",
+        "isHidden": false,
+        "explanation": "Outflow exceeds inflow, tank drains -> SAFE."
+      },
+      {
+        "input": "500 500 10 5",
+        "expectedOutput": "OVERFLOW 0",
+        "isHidden": true
+      },
+      {
+        "input": "2000 0 100 100",
+        "expectedOutput": "SAFE",
+        "isHidden": true
+      },
+      {
+        "input": "1500 200 45 20",
+        "expectedOutput": "OVERFLOW 52",
+        "isHidden": true
+      }
+    ]
+  },
+  {
+    "title": "Solar Energy Daily Yield Predictor",
+    "points": 100,
+    "category": "Physics & Formulas",
+    "difficulty": "Easy",
+    "scenario": "A rooftop solar PV setup has rating P (in kilowatts). Given effective sunlight hours H and cloud cover percentage C (0% to 100%), the daily generation is: Energy (kWh) = P * H * (1 - (C / 100)). Calculate the daily energy yield in kWh rounded to 2 decimal places.",
+    "inputFormat": "Three space-separated floats: P (kW rating), H (sunlight hours), and C (cloud cover percentage).",
+    "outputFormat": "A single float rounded to 2 decimal places followed by ' kWh'.",
+    "constraints": "0.5 <= P <= 500.0, 0.0 <= H <= 14.0, 0.0 <= C <= 100.0",
+    "starterTemplates": {
+      "python": "import sys\n\ndef solve():\n    raw = sys.stdin.read().split()\n    if not raw: return\n    p, h, c = map(float, raw[:3])\n    # calculate solar yield\n\nsolve()\n",
+      "c": "#include <stdio.h>\n\nint main() {\n    double p, h, c;\n    if (scanf(\"%lf %lf %lf\", &p, &h, &c) == 3) {\n        // logic here\n    }\n    return 0;\n}\n",
+      "java": "import java.util.Scanner;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        if (sc.hasNextDouble()) {\n            double p = sc.nextDouble(), h = sc.nextDouble(), c = sc.nextDouble();\n            // logic here\n        }\n    }\n}\n"
+    },
+    "testCases": [
+      {
+        "input": "5.0 6.0 20.0",
+        "expectedOutput": "24.00 kWh",
+        "isHidden": false,
+        "explanation": "5 * 6 * (1 - 0.20) = 30 * 0.80 = 24.00 kWh."
+      },
+      {
+        "input": "10.0 5.5 100.0",
+        "expectedOutput": "0.00 kWh",
+        "isHidden": false,
+        "explanation": "100% cloud cover -> 0.00 kWh."
+      },
+      {
+        "input": "3.2 7.0 0.0",
+        "expectedOutput": "22.40 kWh",
+        "isHidden": true
+      },
+      {
+        "input": "15.5 4.5 45.0",
+        "expectedOutput": "38.36 kWh",
+        "isHidden": true
+      },
+      {
+        "input": "1.0 0.0 50.0",
+        "expectedOutput": "0.00 kWh",
+        "isHidden": true
+      }
+    ]
+  },
+  {
+    "title": "ATM Cash Withdrawal Limit Enforcer",
+    "points": 100,
+    "category": "Banking Rules",
+    "difficulty": "Easy",
+    "scenario": "An ATM dispenser validates a withdrawal request of amount W from account balance B: 1. Amount W must be a multiple of 100; 2. Amount W cannot exceed daily limit of 25000; 3. Account must have at least W + 5 (fixed transaction fee). If valid, print 'SUCCESS <new_balance>' (rounded to 2 decimals). Else, print 'ERROR: <REASON>' where reason is 'MULTIPLE_100', 'EXCEEDS_LIMIT', or 'INSUFFICIENT_FUNDS' (evaluated in this order).",
+    "inputFormat": "Two space-separated numbers: balance B (float) and withdrawal W (int).",
+    "outputFormat": "A single line: 'SUCCESS <balance>' or 'ERROR: <REASON>'.",
+    "constraints": "0.0 <= B <= 1000000.0, 1 <= W <= 50000",
+    "starterTemplates": {
+      "python": "import sys\n\ndef solve():\n    raw = sys.stdin.read().split()\n    if not raw: return\n    b = float(raw[0])\n    w = int(raw[1])\n    # validate transaction\n\nsolve()\n",
+      "c": "#include <stdio.h>\n\nint main() {\n    double b;\n    int w;\n    if (scanf(\"%lf %d\", &b, &w) == 2) {\n        // logic here\n    }\n    return 0;\n}\n",
+      "java": "import java.util.Scanner;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        if (sc.hasNextDouble()) {\n            double b = sc.nextDouble();\n            int w = sc.nextInt();\n            // logic here\n        }\n    }\n}\n"
+    },
+    "testCases": [
+      {
+        "input": "5000.00 2000",
+        "expectedOutput": "SUCCESS 2995.00",
+        "isHidden": false,
+        "explanation": "2000 is multiple of 100, <= 25000, 5000 >= 2005. New balance = 5000 - 2005 = 2995.00."
+      },
+      {
+        "input": "1000.00 450",
+        "expectedOutput": "ERROR: MULTIPLE_100",
+        "isHidden": false,
+        "explanation": "450 is not a multiple of 100."
+      },
+      {
+        "input": "50000.00 30000",
+        "expectedOutput": "ERROR: EXCEEDS_LIMIT",
+        "isHidden": true
+      },
+      {
+        "input": "500.00 500",
+        "expectedOutput": "ERROR: INSUFFICIENT_FUNDS",
+        "isHidden": true
+      },
+      {
+        "input": "25005.00 25000",
+        "expectedOutput": "SUCCESS 0.00",
+        "isHidden": true
+      }
+    ]
+  },
+  {
+    "title": "Campus Library Tiered Late Fee",
+    "points": 100,
+    "category": "Tiered Calculation",
+    "difficulty": "Easy",
+    "scenario": "A college library charges overdue fines for late book returns based on late days D: Days 1 to 3: Grace period (Rs 0); Days 4 to 10: Rs 2 per day for days in this range; Days 11 and above: Rs 5 per day for days in this range. Given late days D, compute the total fine in Rupees.",
+    "inputFormat": "A single integer D (days late).",
+    "outputFormat": "A single integer representing the fine in Rupees.",
+    "constraints": "0 <= D <= 365",
+    "starterTemplates": {
+      "python": "import sys\n\ndef solve():\n    line = sys.stdin.read().strip()\n    if not line: return\n    d = int(line)\n    # calculate fine\n\nsolve()\n",
+      "c": "#include <stdio.h>\n\nint main() {\n    int d;\n    if (scanf(\"%d\", &d) == 1) {\n        // logic here\n    }\n    return 0;\n}\n",
+      "java": "import java.util.Scanner;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        if (sc.hasNextInt()) {\n            int d = sc.nextInt();\n            // logic here\n        }\n    }\n}\n"
+    },
+    "testCases": [
+      {
+        "input": "2",
+        "expectedOutput": "0",
+        "isHidden": false,
+        "explanation": "Within grace period (<= 3 days) -> Rs 0."
+      },
+      {
+        "input": "7",
+        "expectedOutput": "8",
+        "isHidden": false,
+        "explanation": "Days 1-3: Rs 0. Days 4-7 (4 days): 4 * 2 = Rs 8."
+      },
+      {
+        "input": "15",
+        "expectedOutput": "39",
+        "isHidden": true,
+        "explanation": "Days 1-3: 0. Days 4-10 (7 days): 7 * 2 = 14. Days 11-15 (5 days): 5 * 5 = 25. Total = 14 + 25 = 39."
+      },
+      {
+        "input": "10",
+        "expectedOutput": "14",
+        "isHidden": true
+      },
+      {
+        "input": "0",
+        "expectedOutput": "0",
+        "isHidden": true
+      }
+    ]
+  },
+  {
+    "title": "Blood Pressure Clinical Classifier",
+    "points": 100,
+    "category": "Medical Classification",
+    "difficulty": "Easy",
+    "scenario": "Given a patient's Systolic (SYS) and Diastolic (DIA) blood pressure in mmHg, classify their clinical stage: 'NORMAL' (SYS < 120 and DIA < 80); 'ELEVATED' (SYS 120-129 and DIA < 80); 'STAGE_1' ((SYS 130-139) or (DIA 80-89)); 'STAGE_2' (SYS >= 140 or DIA >= 90). The higher category takes precedence.",
+    "inputFormat": "Two space-separated integers: Systolic and Diastolic.",
+    "outputFormat": "A single string representing the classification.",
+    "constraints": "50 <= Systolic <= 250, 30 <= Diastolic <= 150",
+    "starterTemplates": {
+      "python": "import sys\n\ndef solve():\n    raw = sys.stdin.read().split()\n    if not raw: return\n    sys_p, dia_p = int(raw[0]), int(raw[1])\n    # classify blood pressure\n\nsolve()\n",
+      "c": "#include <stdio.h>\n\nint main() {\n    int s, d;\n    if (scanf(\"%d %d\", &s, &d) == 2) {\n        // logic here\n    }\n    return 0;\n}\n",
+      "java": "import java.util.Scanner;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        if (sc.hasNextInt()) {\n            int s = sc.nextInt(), d = sc.nextInt();\n            // logic here\n        }\n    }\n}\n"
+    },
+    "testCases": [
+      {
+        "input": "115 75",
+        "expectedOutput": "NORMAL",
+        "isHidden": false,
+        "explanation": "115 < 120 and 75 < 80 -> NORMAL."
+      },
+      {
+        "input": "125 78",
+        "expectedOutput": "ELEVATED",
+        "isHidden": false,
+        "explanation": "120-129 and < 80 -> ELEVATED."
+      },
+      {
+        "input": "135 85",
+        "expectedOutput": "STAGE_1",
+        "isHidden": true
+      },
+      {
+        "input": "145 82",
+        "expectedOutput": "STAGE_2",
+        "isHidden": true
+      },
+      {
+        "input": "118 92",
+        "expectedOutput": "STAGE_2",
+        "isHidden": true
+      }
+    ]
+  },
+  {
+    "title": "Elevator Weight Safety Alarm",
+    "points": 100,
+    "category": "Arrays & Sums",
+    "difficulty": "Easy",
+    "scenario": "A building elevator has maximum certified weight capacity C (kg). N passengers enter the elevator with weights w_1, w_2, ..., w_N. If total weight exceeds C, trigger overload alarm: 'OVERLOAD: <excess_kg>'. Otherwise, output 'PROCEED: <total_kg>'.",
+    "inputFormat": "First line: two integers C (capacity) and N (passenger count). Second line: N space-separated integers (passenger weights).",
+    "outputFormat": "A single line: 'PROCEED: <total>' or 'OVERLOAD: <excess>'.",
+    "constraints": "100 <= C <= 2000, 1 <= N <= 25, 10 <= w[i] <= 200",
+    "starterTemplates": {
+      "python": "import sys\n\ndef solve():\n    raw = sys.stdin.read().split()\n    if not raw: return\n    C = int(raw[0])\n    N = int(raw[1])\n    weights = [int(x) for x in raw[2:2+N]]\n    # check elevator weight\n\nsolve()\n",
+      "c": "#include <stdio.h>\n\nint main() {\n    int C, N;\n    if (scanf(\"%d %d\", &C, &N) == 2) {\n        // logic here\n    }\n    return 0;\n}\n",
+      "java": "import java.util.Scanner;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        if (sc.hasNextInt()) {\n            int C = sc.nextInt(), N = sc.nextInt();\n            // logic here\n        }\n    }\n}\n"
+    },
+    "testCases": [
+      {
+        "input": "680 4\n70 85 65 90",
+        "expectedOutput": "PROCEED: 310",
+        "isHidden": false,
+        "explanation": "Total = 310 <= 680 -> PROCEED: 310."
+      },
+      {
+        "input": "500 5\n110 95 105 120 80",
+        "expectedOutput": "OVERLOAD: 10",
+        "isHidden": false,
+        "explanation": "Total = 510 > 500. Excess = 510 - 500 = 10."
+      },
+      {
+        "input": "400 1\n400",
+        "expectedOutput": "PROCEED: 400",
+        "isHidden": true
+      },
+      {
+        "input": "300 2\n160 150",
+        "expectedOutput": "OVERLOAD: 10",
+        "isHidden": true
+      },
+      {
+        "input": "1000 6\n75 75 75 75 75 75",
+        "expectedOutput": "PROCEED: 450",
+        "isHidden": true
+      }
+    ]
+  },
+  {
+    "title": "Mobile Roaming Data Bill Estimator",
+    "points": 100,
+    "category": "Arithmetic & Units",
+    "difficulty": "Easy",
+    "scenario": "A mobile roaming plan includes a base allowance of A gigabytes (GB) for a fixed rental of R Rupees. Any data consumed beyond A GB is charged at 0.15 Rupees per megabyte (MB). (Note: 1 GB = 1024 MB). Given base allowance A (GB), rental R (Rupees), and total data consumed M (in MB), compute the total bill rounded to 2 decimal places.",
+    "inputFormat": "Three space-separated numbers: A (int, GB), R (float, rental), M (int, MB consumed).",
+    "outputFormat": "A single float rounded to 2 decimal places followed by ' INR'.",
+    "constraints": "1 <= A <= 50, 50.0 <= R <= 2000.0, 0 <= M <= 100000",
+    "starterTemplates": {
+      "python": "import sys\n\ndef solve():\n    raw = sys.stdin.read().split()\n    if not raw: return\n    a = int(raw[0])\n    r = float(raw[1])\n    m = int(raw[2])\n    # calculate bill\n\nsolve()\n",
+      "c": "#include <stdio.h>\n\nint main() {\n    int a, m;\n    double r;\n    if (scanf(\"%d %lf %d\", &a, &r, &m) == 3) {\n        // logic here\n    }\n    return 0;\n}\n",
+      "java": "import java.util.Scanner;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        if (sc.hasNext()) {\n            int a = sc.nextInt();\n            double r = sc.nextDouble();\n            int m = sc.nextInt();\n            // logic here\n        }\n    }\n}\n"
+    },
+    "testCases": [
+      {
+        "input": "2 299.00 2548",
+        "expectedOutput": "374.00 INR",
+        "isHidden": false,
+        "explanation": "2 GB = 2048 MB. Overage = 2548 - 2048 = 500 MB. 500 * 0.15 = 75. 299 + 75 = 374.00 INR."
+      },
+      {
+        "input": "5 499.00 3000",
+        "expectedOutput": "499.00 INR",
+        "isHidden": false,
+        "explanation": "3000 MB < 5120 MB allowance -> no overage -> 499.00 INR."
+      },
+      {
+        "input": "1 199.00 1024",
+        "expectedOutput": "199.00 INR",
+        "isHidden": true
+      },
+      {
+        "input": "1 199.00 2048",
+        "expectedOutput": "352.60 INR",
+        "isHidden": true
+      },
+      {
+        "input": "10 999.00 0",
+        "expectedOutput": "999.00 INR",
+        "isHidden": true
+      }
+    ]
+  },
+  {
+    "title": "Caesar Shift Cryptographic Decryption",
+    "points": 100,
+    "category": "Strings / ASCII",
+    "difficulty": "Easy",
+    "scenario": "An ancient transmission received on the flagship is encrypted with a Caesar Shift of K positions. Given an uppercase text string S and an integer shift K (0 <= K <= 25), decrypt the string by shifting every alphabetical character backward by K positions in the alphabet (wrapping around from A to Z). Non-alphabetical characters remain unchanged.",
+    "inputFormat": "First line: integer K. Second line: uppercase string S.",
+    "outputFormat": "A single line: the decrypted plaintext string.",
+    "constraints": "0 <= K <= 25, 1 <= length(S) <= 1000",
+    "starterTemplates": {
+      "python": "import sys\n\ndef solve():\n    lines = sys.stdin.read().splitlines()\n    if not lines: return\n    k = int(lines[0].strip())\n    s = lines[1] if len(lines) > 1 else ''\n    # decrypt string\n\nsolve()\n",
+      "c": "#include <stdio.h>\n#include <string.h>\n\nint main() {\n    int k;\n    char s[1024];\n    if (scanf(\"%d\\n\", &k) == 1 && fgets(s, sizeof(s), stdin)) {\n        // logic here\n    }\n    return 0;\n}\n",
+      "java": "import java.util.Scanner;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        if (sc.hasNextInt()) {\n            int k = sc.nextInt();\n            sc.nextLine();\n            String s = sc.hasNextLine() ? sc.nextLine() : \"\";\n            // logic here\n        }\n    }\n}\n"
+    },
+    "testCases": [
+      {
+        "input": "3\nKHOOR ZRUOG",
+        "expectedOutput": "HELLO WORLD",
+        "isHidden": false,
+        "explanation": "Shifting backward by 3: K->H, H->E, O->L, R->O. Space remains space."
+      },
+      {
+        "input": "1\nBCDA",
+        "expectedOutput": "ABCD",
+        "isHidden": false,
+        "explanation": "B->A, C->B, D->C, A->Z? Wait: A shifted back by 1 is Z. Here BCDA -> ABCZ."
+      },
+      {
+        "input": "0\nNO CHANGE",
+        "expectedOutput": "NO CHANGE",
+        "isHidden": true
+      },
+      {
+        "input": "25\nB",
+        "expectedOutput": "C",
+        "isHidden": true
+      },
+      {
+        "input": "5\nFRGH LQ WKH GDUN!",
+        "expectedOutput": "CODE IN THE DARK!",
+        "isHidden": true
+      }
+    ]
+  },
+  {
+    "title": "Stock Price Spike Detector",
+    "points": 100,
+    "category": "Arrays & Percentages",
+    "difficulty": "Easy",
+    "scenario": "Given an array of N daily closing stock prices, find the maximum percentage gain achieved in a single day (from day i to day i+1): Gain% = ((Price[i+1] - Price[i]) / Price[i]) * 100. If no day achieved a positive gain (prices strictly decreased or stayed flat), output 'NO_SPIKE'. Otherwise, output the maximum percentage rounded to 2 decimal places.",
+    "inputFormat": "First line: integer N. Second line: N space-separated float numbers.",
+    "outputFormat": "A single float followed by '%' or 'NO_SPIKE'.",
+    "constraints": "2 <= N <= 1000, 1.0 <= Price[i] <= 10000.0",
+    "starterTemplates": {
+      "python": "import sys\n\ndef solve():\n    raw = sys.stdin.read().split()\n    if not raw: return\n    n = int(raw[0])\n    prices = [float(x) for x in raw[1:n+1]]\n    # find max spike\n\nsolve()\n",
+      "c": "#include <stdio.h>\n\nint main() {\n    int n;\n    if (scanf(\"%d\", &n) == 1) {\n        // logic here\n    }\n    return 0;\n}\n",
+      "java": "import java.util.Scanner;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        if (sc.hasNextInt()) {\n            int n = sc.nextInt();\n            // logic here\n        }\n    }\n}\n"
+    },
+    "testCases": [
+      {
+        "input": "4\n100.0 120.0 110.0 132.0",
+        "expectedOutput": "20.00%",
+        "isHidden": false,
+        "explanation": "100 -> 120 is +20.00%; 110 -> 132 is +20.00%. Max is 20.00%."
+      },
+      {
+        "input": "3\n150.0 120.0 100.0",
+        "expectedOutput": "NO_SPIKE",
+        "isHidden": false,
+        "explanation": "All days decreased -> NO_SPIKE."
+      },
+      {
+        "input": "5\n10.0 15.0 12.0 18.0 27.0",
+        "expectedOutput": "50.00%",
+        "isHidden": true
+      },
+      {
+        "input": "2\n50.0 100.0",
+        "expectedOutput": "100.00%",
+        "isHidden": true
+      },
+      {
+        "input": "3\n100.0 100.0 100.0",
+        "expectedOutput": "NO_SPIKE",
+        "isHidden": true
+      }
+    ]
+  },
+  {
+    "title": "Flight Baggage Weight Surcharge",
+    "points": 100,
+    "category": "Airline Rules",
+    "difficulty": "Easy",
+    "scenario": "An airline baggage gate checks two bags for each passenger: CabinBag (weight in kg) and CheckinBag (weight in kg): 1. CabinBag weight limit is strictly 7 kg. If CabinBag > 7 kg, output 'CABIN_EXCEEDED'; 2. CheckinBag standard allowance is 15 kg. Any excess weight above 15 kg is charged at 450 Rupees per kg (fractions charged proportionally). If within limits, fee is 0. Output 'FEE: <fee_amount>' (rounded to 2 decimal places).",
+    "inputFormat": "Two space-separated floats: CabinWeight and CheckinWeight.",
+    "outputFormat": "A single line: 'CABIN_EXCEEDED' or 'FEE: <amount>'.",
+    "constraints": "0.0 <= CabinWeight <= 30.0, 0.0 <= CheckinWeight <= 60.0",
+    "starterTemplates": {
+      "python": "import sys\n\ndef solve():\n    raw = sys.stdin.read().split()\n    if not raw: return\n    cabin, checkin = float(raw[0]), float(raw[1])\n    # calculate surcharge\n\nsolve()\n",
+      "c": "#include <stdio.h>\n\nint main() {\n    double cabin, checkin;\n    if (scanf(\"%lf %lf\", &cabin, &checkin) == 2) {\n        // logic here\n    }\n    return 0;\n}\n",
+      "java": "import java.util.Scanner;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        if (sc.hasNextDouble()) {\n            double cabin = sc.nextDouble(), checkin = sc.nextDouble();\n            // logic here\n        }\n    }\n}\n"
+    },
+    "testCases": [
+      {
+        "input": "6.5 18.0",
+        "expectedOutput": "FEE: 1350.00",
+        "isHidden": false,
+        "explanation": "Cabin 6.5 <= 7. Check-in 18.0 -> 3.0 kg excess * 450 = 1350.00."
+      },
+      {
+        "input": "8.0 12.0",
+        "expectedOutput": "CABIN_EXCEEDED",
+        "isHidden": false,
+        "explanation": "Cabin weight 8.0 > 7.0 kg limit."
+      },
+      {
+        "input": "7.0 15.0",
+        "expectedOutput": "FEE: 0.00",
+        "isHidden": true
+      },
+      {
+        "input": "5.0 20.5",
+        "expectedOutput": "FEE: 2475.00",
+        "isHidden": true
+      },
+      {
+        "input": "7.1 5.0",
+        "expectedOutput": "CABIN_EXCEEDED",
+        "isHidden": true
+      }
+    ]
+  },
+  {
+    "title": "Cricket Match Required Run Rate",
+    "points": 100,
+    "category": "Sports Math",
+    "difficulty": "Easy",
+    "scenario": "In a T20 / ODI cricket run chase, a team chases a Target score T. Given Target T, current score S, and balls remaining B, calculate the Required Run Rate (RRR) per 6-ball over: RunsNeeded = (T - S). OversRemaining = B / 6.0. RRR = RunsNeeded / OversRemaining. If RunsNeeded <= 0, match is already won, output 'WON'. If balls remaining is 0 and RunsNeeded > 0, output 'LOST'. Otherwise, print RRR rounded to 2 decimal places.",
+    "inputFormat": "Three space-separated integers: Target, CurrentScore, BallsRemaining.",
+    "outputFormat": "A single line: RRR formatted to 2 decimal places, or 'WON', or 'LOST'.",
+    "constraints": "1 <= Target <= 500, 0 <= CurrentScore <= 500, 0 <= BallsRemaining <= 300",
+    "starterTemplates": {
+      "python": "import sys\n\ndef solve():\n    raw = sys.stdin.read().split()\n    if not raw: return\n    target, score, balls = map(int, raw[:3])\n    # calculate RRR\n\nsolve()\n",
+      "c": "#include <stdio.h>\n\nint main() {\n    int target, score, balls;\n    if (scanf(\"%d %d %d\", &target, &score, &balls) == 3) {\n        // logic here\n    }\n    return 0;\n}\n",
+      "java": "import java.util.Scanner;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        if (sc.hasNextInt()) {\n            int target = sc.nextInt(), score = sc.nextInt(), balls = sc.nextInt();\n            // logic here\n        }\n    }\n}\n"
+    },
+    "testCases": [
+      {
+        "input": "180 120 36",
+        "expectedOutput": "10.00",
+        "isHidden": false,
+        "explanation": "60 runs needed from 36 balls (6 overs) -> 60 / 6 = 10.00 RRR."
+      },
+      {
+        "input": "150 152 12",
+        "expectedOutput": "WON",
+        "isHidden": false,
+        "explanation": "Score exceeds target -> WON."
+      },
+      {
+        "input": "200 180 0",
+        "expectedOutput": "LOST",
+        "isHidden": true
+      },
+      {
+        "input": "100 75 18",
+        "expectedOutput": "8.33",
+        "isHidden": true
+      },
+      {
+        "input": "175 130 30",
+        "expectedOutput": "9.00",
+        "isHidden": true
+      }
+    ]
+  }
+]

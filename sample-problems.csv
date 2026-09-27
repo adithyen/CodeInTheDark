@@ -1,0 +1,788 @@
+title,points,category,difficulty,scenario,inputFormat,outputFormat,constraints,starter_python,starter_c,starter_java,testCases_json
+"Fuel Consumption & Range Estimator","100","Basic Math","Easy","A delivery vehicle has a fuel tank with a specified amount of fuel. Given total fuel in liters, vehicle mileage (km/liter), and mandatory reserve fuel limit in liters, calculate the usable driving range in kilometers. If the available fuel is less than or equal to the reserve limit, usable range is 0 km.","A single line containing three space-separated numbers: totalFuel (liters), mileage (km/L), and reserveLimit (liters).","A single integer representing the usable travel range in km (rounded down).","0 <= reserveLimit <= 50, 0 <= totalFuel <= 200, 1 <= mileage <= 50","import sys
+
+def solve():
+    # read from sys.stdin and print output
+    line = sys.stdin.read().strip()
+    if not line: return
+    fuel, mileage, reserve = map(float, line.split())
+    # your logic here
+
+solve()
+","#include <stdio.h>
+
+int main() {
+    double fuel, mileage, reserve;
+    if (scanf(""%lf %lf %lf"", &fuel, &mileage, &reserve) == 3) {
+        // your logic here
+    }
+    return 0;
+}
+","import java.util.Scanner;
+
+public class Main {
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        if (sc.hasNextDouble()) {
+            double fuel = sc.nextDouble();
+            double mileage = sc.nextDouble();
+            double reserve = sc.nextDouble();
+            // your logic here
+        }
+    }
+}
+","[{""input"":""45 18 5"",""expectedOutput"":""720"",""isHidden"":false,""explanation"":""Usable fuel = 45 - 5 = 40L. Range = 40 * 18 = 720 km.""},{""input"":""10 15 10"",""expectedOutput"":""0"",""isHidden"":false,""explanation"":""Fuel equals reserve limit, so usable fuel is 0.""},{""input"":""50.5 20 5"",""expectedOutput"":""910"",""isHidden"":true},{""input"":""4 12 10"",""expectedOutput"":""0"",""isHidden"":true},{""input"":""100 25 15.5"",""expectedOutput"":""2112"",""isHidden"":true}]"
+"Campus Cafeteria Change Dispenser","100","Greedy / Math","Easy","The college canteen billing counter needs to return change to students using the minimum number of currency notes. Available denominations are: 500, 100, 50, 20, 10, 5, and 1. Given the bill amount and amount paid, calculate the total minimum number of notes to return. If amount paid is less than the bill, print -1.","Two space-separated integers: billAmount and amountPaid.","A single integer: minimum notes returned, or -1 if underpaid.","1 <= billAmount, amountPaid <= 100000","import sys
+
+def solve():
+    line = sys.stdin.read().strip()
+    if not line: return
+    bill, paid = map(int, line.split())
+    # calculate min notes
+
+solve()
+","#include <stdio.h>
+
+int main() {
+    int bill, paid;
+    if (scanf(""%d %d"", &bill, &paid) == 2) {
+        // logic here
+    }
+    return 0;
+}
+","import java.util.Scanner;
+
+public class Main {
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        if (sc.hasNextInt()) {
+            int bill = sc.nextInt();
+            int paid = sc.nextInt();
+            // logic here
+        }
+    }
+}
+","[{""input"":""135 500"",""expectedOutput"":""5"",""isHidden"":false,""explanation"":""Change is 365. Notes: 1x100, 2x100? No: 365 = 3x100 (or 500?), 365 = 100x3 + 50x1 + 10x1 + 5x1 = 6 notes? Wait: denominations are 500, 100, 50, 20, 10, 5, 1. For 365: 3x100 + 1x50 + 1x10 + 1x5 = 6 notes. Wait, for 365: 300(3) + 50(1) + 10(1) + 5(1) = 6 notes.""},{""input"":""200 150"",""expectedOutput"":""-1"",""isHidden"":false,""explanation"":""Amount paid is less than bill amount.""},{""input"":""0 0"",""expectedOutput"":""0"",""isHidden"":true},{""input"":""123 1000"",""expectedOutput"":""6"",""isHidden"":true},{""input"":""500 500"",""expectedOutput"":""0"",""isHidden"":true}]"
+"IoT Temperature Anomaly Filter","100","Arrays / Filtering","Easy","An IoT temperature sensor placed in a chemistry lab records multiple readings. Faulty sensor transmissions produce values below -40C or above 125C. Read N temperature recordings, discard anomalous readings, and output the arithmetic mean of valid readings rounded to 1 decimal place. If no valid readings exist, output 'NO_DATA'.","First line contains integer N (count of readings). Second line contains N space-separated float numbers.","A single float rounded to 1 decimal place, or 'NO_DATA'.","1 <= N <= 1000, -200.0 <= readings[i] <= 300.0","import sys
+
+def solve():
+    raw = sys.stdin.read().split()
+    if not raw: return
+    n = int(raw[0])
+    readings = [float(x) for x in raw[1:n+1]]
+    # filter and compute average
+
+solve()
+","#include <stdio.h>
+
+int main() {
+    int n;
+    if (scanf(""%d"", &n) == 1) {
+        // logic here
+    }
+    return 0;
+}
+","import java.util.Scanner;
+
+public class Main {
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        if (sc.hasNextInt()) {
+            int n = sc.nextInt();
+            // logic here
+        }
+    }
+}
+","[{""input"":""5\n24.5 -50.0 26.5 130.0 25.0"",""expectedOutput"":""25.3"",""isHidden"":false,""explanation"":""Valid readings: 24.5, 26.5, 25.0. Average = 76.0 / 3 = 25.333... -> 25.3.""},{""input"":""2\n-99.9 200.0"",""expectedOutput"":""NO_DATA"",""isHidden"":false,""explanation"":""All readings are outside the valid [-40, 125] range.""},{""input"":""4\n-40.0 125.0 0.0 35.0"",""expectedOutput"":""30.0"",""isHidden"":true},{""input"":""1\n37.5"",""expectedOutput"":""37.5"",""isHidden"":true},{""input"":""6\n150.0 160.0 -45.0 -60.0 130.0 -41.0"",""expectedOutput"":""NO_DATA"",""isHidden"":true}]"
+"Smart Power Grid Overload Detector","100","Conditionals","Easy","An electrical substation monitors three-phase power consumption: Red (R), Yellow (Y), and Blue (B) in kilowatts (kW). If any single phase exceeds the per-phase safety limit of 100 kW, or if the total 3-phase consumption exceeds 250 kW, trigger an overload alarm. Otherwise, report grid status as SAFE.","Three space-separated floats: R, Y, B (load in kW).","If overloaded, print 'OVERLOAD: <reason>' where reason is 'SINGLE_PHASE' or 'TOTAL_LOAD' (if both, print 'SINGLE_PHASE'). If safe, print 'SAFE: <total_load>' rounded to 1 decimal place.","0.0 <= R, Y, B <= 300.0","import sys
+
+def solve():
+    raw = sys.stdin.read().split()
+    if not raw: return
+    r, y, b = map(float, raw[:3])
+    # check overload conditions
+
+solve()
+","#include <stdio.h>
+
+int main() {
+    double r, y, b;
+    if (scanf(""%lf %lf %lf"", &r, &y, &b) == 3) {
+        // logic here
+    }
+    return 0;
+}
+","import java.util.Scanner;
+
+public class Main {
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        if (sc.hasNextDouble()) {
+            double r = sc.nextDouble();
+            double y = sc.nextDouble();
+            double b = sc.nextDouble();
+            // logic here
+        }
+    }
+}
+","[{""input"":""70.5 80.0 75.0"",""expectedOutput"":""SAFE: 225.5"",""isHidden"":false,""explanation"":""All phases <= 100, total = 225.5 <= 250.""},{""input"":""105.0 60.0 70.0"",""expectedOutput"":""OVERLOAD: SINGLE_PHASE"",""isHidden"":false,""explanation"":""R phase (105.0) exceeds 100 kW limit.""},{""input"":""90.0 90.0 85.0"",""expectedOutput"":""OVERLOAD: TOTAL_LOAD"",""isHidden"":true},{""input"":""120.0 90.0 90.0"",""expectedOutput"":""OVERLOAD: SINGLE_PHASE"",""isHidden"":true},{""input"":""0.0 0.0 0.0"",""expectedOutput"":""SAFE: 0.0"",""isHidden"":true}]"
+"Bus Pass Validity Checker","100","Date & Time Logic","Easy","A college bus pass is issued on day D of the year (1-365) and remains valid for V days. Given the issue day D, validity duration V, and current day of year C, determine whether the pass is ACTIVE or EXPIRED. If ACTIVE, print 'ACTIVE <days_remaining>'. If EXPIRED, print 'EXPIRED <days_ago>'. If current day equals the last valid day, it is ACTIVE with 0 days remaining.","Three space-separated integers: D (issue day), V (validity days), and C (current day).","A single line: 'ACTIVE <days_remaining>' or 'EXPIRED <days_ago>'.","1 <= D <= C <= 365, 1 <= V <= 365","import sys
+
+def solve():
+    raw = sys.stdin.read().split()
+    if not raw: return
+    d, v, c = map(int, raw[:3])
+    # your logic here
+
+solve()
+","#include <stdio.h>
+
+int main() {
+    int d, v, c;
+    if (scanf(""%d %d %d"", &d, &v, &c) == 3) {
+        // your logic here
+    }
+    return 0;
+}
+","import java.util.Scanner;
+
+public class Main {
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        if (sc.hasNextInt()) {
+            int d = sc.nextInt();
+            int v = sc.nextInt();
+            int c = sc.nextInt();
+            // your logic here
+        }
+    }
+}
+","[{""input"":""10 30 25"",""expectedOutput"":""ACTIVE 15"",""isHidden"":false,""explanation"":""Issued on day 10, valid until day 40 (10+30). Current day 25 -> 40 - 25 = 15 days remaining.""},{""input"":""10 30 45"",""expectedOutput"":""EXPIRED 5"",""isHidden"":false,""explanation"":""Valid until day 40. Current day 45 -> 45 - 40 = 5 days expired.""},{""input"":""50 30 80"",""expectedOutput"":""ACTIVE 0"",""isHidden"":true},{""input"":""1 365 365"",""expectedOutput"":""ACTIVE 1"",""isHidden"":true},{""input"":""100 10 120"",""expectedOutput"":""EXPIRED 10"",""isHidden"":true}]"
+"Network Packet XOR Checksum","100","Bit Manipulation","Easy","Network routers use XOR checksums to verify payload integrity. Given an integer N followed by N byte values (integers from 0 to 255), compute the cumulative bitwise XOR of all bytes and output the checksum as an integer.","First line: integer N. Second line: N space-separated integers between 0 and 255.","A single integer: the computed checksum.","1 <= N <= 1000, 0 <= bytes[i] <= 255","import sys
+
+def solve():
+    raw = sys.stdin.read().split()
+    if not raw: return
+    n = int(raw[0])
+    nums = [int(x) for x in raw[1:n+1]]
+    # XOR all elements
+
+solve()
+","#include <stdio.h>
+
+int main() {
+    int n;
+    if (scanf(""%d"", &n) == 1) {
+        // logic here
+    }
+    return 0;
+}
+","import java.util.Scanner;
+
+public class Main {
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        if (sc.hasNextInt()) {
+            int n = sc.nextInt();
+            // logic here
+        }
+    }
+}
+","[{""input"":""4\n12 25 33 48"",""expectedOutput"":""28"",""isHidden"":false,""explanation"":""12 ^ 25 = 21; 21 ^ 33 = 52; 52 ^ 48 = 28.""},{""input"":""3\n255 255 255"",""expectedOutput"":""255"",""isHidden"":false,""explanation"":""255 ^ 255 = 0; 0 ^ 255 = 255.""},{""input"":""1\n128"",""expectedOutput"":""128"",""isHidden"":true},{""input"":""6\n1 2 3 4 5 6"",""expectedOutput"":""7"",""isHidden"":true},{""input"":""5\n0 0 0 0 0"",""expectedOutput"":""0"",""isHidden"":true}]"
+"Hospital Oxygen Cylinder Allocator","100","Logic / Math","Easy","A hospital emergency ward has C oxygen cylinders available. ICU patients require 3 cylinders each and General Ward patients require 1 cylinder each. ICU patients always receive strict priority. Given total cylinders C, ICU patient count I, and General Ward patient count G, calculate how many ICU patients and how many General Ward patients can be fully supplied.","Three space-separated integers: C (cylinders), I (ICU patients), and G (General patients).","Two space-separated integers: ICU_Served and General_Served.","0 <= C <= 10000, 0 <= I, G <= 5000","import sys
+
+def solve():
+    raw = sys.stdin.read().split()
+    if not raw: return
+    c, i, g = map(int, raw[:3])
+    # allocate cylinders with ICU priority
+
+solve()
+","#include <stdio.h>
+
+int main() {
+    int c, i, g;
+    if (scanf(""%d %d %d"", &c, &i, &g) == 3) {
+        // your logic here
+    }
+    return 0;
+}
+","import java.util.Scanner;
+
+public class Main {
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        if (sc.hasNextInt()) {
+            int c = sc.nextInt();
+            int i = sc.nextInt();
+            int g = sc.nextInt();
+            // logic here
+        }
+    }
+}
+","[{""input"":""20 5 10"",""expectedOutput"":""5 5"",""isHidden"":false,""explanation"":""5 ICU patients take 5*3 = 15 cylinders. 5 cylinders remain, serving 5 General patients.""},{""input"":""8 4 10"",""expectedOutput"":""2 2"",""isHidden"":false,""explanation"":""8 cylinders serve 2 ICU patients (2*3 = 6). 2 cylinders remain, serving 2 General patients.""},{""input"":""0 10 10"",""expectedOutput"":""0 0"",""isHidden"":true},{""input"":""100 10 10"",""expectedOutput"":""10 10"",""isHidden"":true},{""input"":""14 5 2"",""expectedOutput"":""4 2"",""isHidden"":true}]"
+"CGPA to Percentage & Classification","100","Formulas & Strings","Easy","According to university examination regulations, CGPA on a 10-point scale is converted to percentage using: Percentage = (10 * CGPA) - 3.75. Given a student's CGPA (between 4.0 and 10.0), calculate the percentage rounded to 2 decimal places and output the classification: 'DISTINCTION' (>= 75.0%), 'FIRST_CLASS' (>= 60.0%), or 'PASS' (< 60.0%).","A single float representing CGPA.","Two space-separated values: Percentage (2 decimal places) and Classification string.","4.0 <= CGPA <= 10.0","import sys
+
+def solve():
+    line = sys.stdin.read().strip()
+    if not line: return
+    cgpa = float(line)
+    # calculate percentage and classification
+
+solve()
+","#include <stdio.h>
+
+int main() {
+    double cgpa;
+    if (scanf(""%lf"", &cgpa) == 1) {
+        // logic here
+    }
+    return 0;
+}
+","import java.util.Scanner;
+
+public class Main {
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        if (sc.hasNextDouble()) {
+            double cgpa = sc.nextDouble();
+            // logic here
+        }
+    }
+}
+","[{""input"":""8.5"",""expectedOutput"":""81.25 DISTINCTION"",""isHidden"":false,""explanation"":""10 * 8.5 - 3.75 = 81.25% >= 75% -> DISTINCTION.""},{""input"":""6.2"",""expectedOutput"":""58.25 PASS"",""isHidden"":false,""explanation"":""10 * 6.2 - 3.75 = 58.25% < 60% -> PASS.""},{""input"":""10.0"",""expectedOutput"":""96.25 DISTINCTION"",""isHidden"":true},{""input"":""7.0"",""expectedOutput"":""66.25 FIRST_CLASS"",""isHidden"":true},{""input"":""4.0"",""expectedOutput"":""36.25 PASS"",""isHidden"":true}]"
+"Cybersecurity Password Strength Scorer","100","Strings / Validation","Easy","Evaluate a password string against 5 security criteria, awarding 1 point for each fulfilled criterion: 1. Length >= 8 characters; 2. Contains at least one lowercase letter (a-z); 3. Contains at least one uppercase letter (A-Z); 4. Contains at least one numeric digit (0-9); 5. Contains at least one special symbol (!@#$%^&*). Output the total score from 0 to 5.","A single line containing the password string (no whitespace).","A single integer representing the score (0 to 5).","1 <= length(password) <= 100","import sys
+
+def solve():
+    pwd = sys.stdin.read().strip()
+    # evaluate score 0 to 5
+
+solve()
+","#include <stdio.h>
+#include <string.h>
+#include <ctype.h>
+
+int main() {
+    char s[150];
+    if (scanf(""%s"", s) == 1) {
+        // check rules
+    }
+    return 0;
+}
+","import java.util.Scanner;
+
+public class Main {
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        if (sc.hasNext()) {
+            String s = sc.next();
+            // check rules
+        }
+    }
+}
+","[{""input"":""Code@2026"",""expectedOutput"":""5"",""isHidden"":false,""explanation"":""Length 9 (>=8), lowercase 'ode', uppercase 'C', digit '2026', symbol '@' -> 5/5.""},{""input"":""secret"",""expectedOutput"":""1"",""isHidden"":false,""explanation"":""Length 6 (<8), lowercase only -> 1/5.""},{""input"":""12345678"",""expectedOutput"":""2"",""isHidden"":true},{""input"":""Admin!Password#99"",""expectedOutput"":""5"",""isHidden"":true},{""input"":""P@ss"",""expectedOutput"":""4"",""isHidden"":true}]"
+"E-Commerce Discount & Delivery Fee","100","Business Logic","Easy","An e-commerce cart applies a coupon code to the subtotal: 'SAVE10' gives 10% off; 'SAVE20' gives 20% off; any other code provides 0% discount. After applying the discount, if the discounted subtotal is strictly less than 500, a delivery charge of 50 is added. Otherwise, delivery is free (0 charge). Compute the final payable amount rounded to 2 decimal places.","Two space-separated values: subtotal (float) and couponCode (string).","A single float rounded to 2 decimal places.","1.0 <= subtotal <= 50000.0","import sys
+
+def solve():
+    raw = sys.stdin.read().split()
+    if not raw: return
+    subtotal = float(raw[0])
+    coupon = raw[1] if len(raw) > 1 else 'NONE'
+    # calculate final total
+
+solve()
+","#include <stdio.h>
+#include <string.h>
+
+int main() {
+    double subtotal;
+    char coupon[50];
+    if (scanf(""%lf %s"", &subtotal, coupon) == 2) {
+        // logic here
+    }
+    return 0;
+}
+","import java.util.Scanner;
+
+public class Main {
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        if (sc.hasNextDouble()) {
+            double subtotal = sc.nextDouble();
+            String coupon = sc.next();
+            // logic here
+        }
+    }
+}
+","[{""input"":""600 SAVE20"",""expectedOutput"":""480.00"",""isHidden"":false,""explanation"":""600 - 20% = 480. Since 480 < 500, delivery fee of 50 is added? Wait: 480 + 50 = 530.00.""},{""input"":""1000 SAVE10"",""expectedOutput"":""900.00"",""isHidden"":false,""explanation"":""1000 - 10% = 900. >= 500 -> free delivery -> 900.00.""},{""input"":""400 NONE"",""expectedOutput"":""450.00"",""isHidden"":true},{""input"":""500 SAVE10"",""expectedOutput"":""500.00"",""isHidden"":true},{""input"":""2000 SAVE20"",""expectedOutput"":""1600.00"",""isHidden"":true}]"
+"Server Uptime Percentage Calculator","100","Floating Point Precision","Easy","Cloud servers must maintain high availability SLA. In a month with totalDays (e.g. 30), total possible operational minutes is totalDays * 24 * 60. Given totalDays and the downtime in minutes, calculate the server uptime percentage: Uptime = ((TotalMinutes - DowntimeMinutes) / TotalMinutes) * 100. Print the percentage formatted to 3 decimal places.","Two space-separated integers: totalDays and downtimeMinutes.","A single float formatted to 3 decimal places followed by '%'.","28 <= totalDays <= 31, 0 <= downtimeMinutes <= totalDays * 1440","import sys
+
+def solve():
+    raw = sys.stdin.read().split()
+    if not raw: return
+    days, down = int(raw[0]), int(raw[1])
+    # calculate uptime
+
+solve()
+","#include <stdio.h>
+
+int main() {
+    int days, down;
+    if (scanf(""%d %d"", &days, &down) == 2) {
+        // logic here
+    }
+    return 0;
+}
+","import java.util.Scanner;
+
+public class Main {
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        if (sc.hasNextInt()) {
+            int days = sc.nextInt();
+            int down = sc.nextInt();
+            // logic here
+        }
+    }
+}
+","[{""input"":""30 43"",""expectedOutput"":""99.900%"",""isHidden"":false,""explanation"":""Total = 30*1440 = 43200 min. (43200 - 43) / 43200 * 100 = 99.90046% -> 99.900%.""},{""input"":""31 0"",""expectedOutput"":""100.000%"",""isHidden"":false,""explanation"":""0 downtime -> 100.000%.""},{""input"":""30 432"",""expectedOutput"":""99.000%"",""isHidden"":true},{""input"":""28 1440"",""expectedOutput"":""96.429%"",""isHidden"":true},{""input"":""30 43200"",""expectedOutput"":""0.000%"",""isHidden"":true}]"
+"Traffic Signal Adaptive Green Timer","100","Conditionals & Math","Easy","A smart city junction adjusts green signal duration based on vehicle count V waiting in queue: Base duration is 15 seconds. Each vehicle adds 2.5 seconds. However, minimum green time is 15 seconds and maximum cap is 90 seconds. Given integer V, compute the assigned green light duration rounded down to the nearest integer.","A single integer V (number of waiting vehicles).","A single integer: green signal duration in seconds.","0 <= V <= 200","import sys
+
+def solve():
+    line = sys.stdin.read().strip()
+    if not line: return
+    v = int(line)
+    # compute duration
+
+solve()
+","#include <stdio.h>
+
+int main() {
+    int v;
+    if (scanf(""%d"", &v) == 1) {
+        // logic here
+    }
+    return 0;
+}
+","import java.util.Scanner;
+
+public class Main {
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        if (sc.hasNextInt()) {
+            int v = sc.nextInt();
+            // logic here
+        }
+    }
+}
+","[{""input"":""10"",""expectedOutput"":""40"",""isHidden"":false,""explanation"":""15 + (10 * 2.5) = 15 + 25 = 40 seconds.""},{""input"":""40"",""expectedOutput"":""90"",""isHidden"":false,""explanation"":""15 + (40 * 2.5) = 115 seconds -> capped at maximum 90.""},{""input"":""0"",""expectedOutput"":""15"",""isHidden"":true},{""input"":""5"",""expectedOutput"":""27"",""isHidden"":true},{""input"":""100"",""expectedOutput"":""90"",""isHidden"":true}]"
+"Warehouse Pallet Box Packing","100","Geometry / Math","Easy","A logistics warehouse packs rectangular boxes onto standard pallets. Pallet dimensions are L x W x H. Each box has dimensions l x w x h. Boxes are packed aligned with the pallet edges without rotation. Calculate the maximum number of boxes that can be stacked on the pallet: (L // l) * (W // w) * (H // h). If any box dimension exceeds pallet dimension, output 0.","Two lines: Line 1: three integers L, W, H (pallet). Line 2: three integers l, w, h (box).","A single integer: maximum boxes that fit.","1 <= l, w, h <= L, W, H <= 10000","import sys
+
+def solve():
+    raw = sys.stdin.read().split()
+    if not raw: return
+    L, W, H = map(int, raw[:3])
+    l, w, h = map(int, raw[3:6])
+    # calculate packing
+
+solve()
+","#include <stdio.h>
+
+int main() {
+    int L, W, H, l, w, h;
+    if (scanf(""%d %d %d %d %d %d"", &L, &W, &H, &l, &w, &h) == 6) {
+        // logic here
+    }
+    return 0;
+}
+","import java.util.Scanner;
+
+public class Main {
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        if (sc.hasNextInt()) {
+            int L = sc.nextInt(), W = sc.nextInt(), H = sc.nextInt();
+            int l = sc.nextInt(), w = sc.nextInt(), h = sc.nextInt();
+            // logic here
+        }
+    }
+}
+","[{""input"":""120 80 150\n30 20 25"",""expectedOutput"":""96"",""isHidden"":false,""explanation"":""(120//30)*(80//20)*(150//25) = 4 * 4 * 6 = 96 boxes.""},{""input"":""50 50 50\n60 10 10"",""expectedOutput"":""0"",""isHidden"":false,""explanation"":""Box length 60 exceeds pallet length 50, so 0 fit.""},{""input"":""100 100 100\n100 100 100"",""expectedOutput"":""1"",""isHidden"":true},{""input"":""100 100 100\n33 33 33"",""expectedOutput"":""27"",""isHidden"":true},{""input"":""200 150 180\n25 30 40"",""expectedOutput"":""160"",""isHidden"":true}]"
+"Courier Delivery Manhattan Distance","100","Coordinate Math","Easy","In a grid-planned city, a delivery rider at coordinates (x1, y1) must deliver an order to customer at (x2, y2). The travel distance is Manhattan distance: |x1 - x2| + |y1 - y2| in km. Given a delivery scooter speed of 30 km/h, calculate the travel time in minutes: (Distance / 30) * 60, rounded to the nearest integer.","Four space-separated integers: x1, y1, x2, y2.","Two space-separated integers: DistanceKm and EstimatedMinutes.","-1000 <= x1, y1, x2, y2 <= 1000","import sys
+
+def solve():
+    raw = sys.stdin.read().split()
+    if not raw: return
+    x1, y1, x2, y2 = map(int, raw[:4])
+    # calculate distance and minutes
+
+solve()
+","#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
+
+int main() {
+    int x1, y1, x2, y2;
+    if (scanf(""%d %d %d %d"", &x1, &y1, &x2, &y2) == 4) {
+        // logic here
+    }
+    return 0;
+}
+","import java.util.Scanner;
+
+public class Main {
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        if (sc.hasNextInt()) {
+            int x1 = sc.nextInt(), y1 = sc.nextInt(), x2 = sc.nextInt(), y2 = sc.nextInt();
+            // logic here
+        }
+    }
+}
+","[{""input"":""2 3 7 11"",""expectedOutput"":""13 26"",""isHidden"":false,""explanation"":""Dist = |2-7| + |3-11| = 5 + 8 = 13 km. Time = 13/30*60 = 26 minutes.""},{""input"":""0 0 0 0"",""expectedOutput"":""0 0"",""isHidden"":false,""explanation"":""Same location -> 0 km, 0 minutes.""},{""input"":""-5 -10 5 15"",""expectedOutput"":""35 70"",""isHidden"":true},{""input"":""10 20 25 20"",""expectedOutput"":""15 30"",""isHidden"":true},{""input"":""-15 0 0 -10"",""expectedOutput"":""25 50"",""isHidden"":true}]"
+"Water Tank Overflow Alert","100","Simulation / Rate","Easy","A rooftop overhead water tank has total capacity C (liters) and initial volume V (liters). Water enters at a pump inflow rate I (L/min) and is consumed at an outflow rate O (L/min). If net rate (I - O) is positive, the tank fills up. Determine if the tank will overflow: If it will overflow, output 'OVERFLOW <minutes>' (rounded down to integer). If it will not overflow, output 'SAFE'.","Four space-separated integers: Capacity, InitialVolume, InflowRate, OutflowRate.","A single line: 'OVERFLOW <minutes>' or 'SAFE'.","1 <= Capacity <= 100000, 0 <= InitialVolume <= Capacity, 0 <= InflowRate, OutflowRate <= 1000","import sys
+
+def solve():
+    raw = sys.stdin.read().split()
+    if not raw: return
+    C, V, I, O = map(int, raw[:4])
+    # check overflow
+
+solve()
+","#include <stdio.h>
+
+int main() {
+    int C, V, I, O;
+    if (scanf(""%d %d %d %d"", &C, &V, &I, &O) == 4) {
+        // logic here
+    }
+    return 0;
+}
+","import java.util.Scanner;
+
+public class Main {
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        if (sc.hasNextInt()) {
+            int C = sc.nextInt(), V = sc.nextInt(), I = sc.nextInt(), O = sc.nextInt();
+            // logic here
+        }
+    }
+}
+","[{""input"":""1000 600 50 30"",""expectedOutput"":""OVERFLOW 20"",""isHidden"":false,""explanation"":""Capacity 1000, initial 600 -> 400L needed. Net inflow = 50 - 30 = 20 L/min -> 400/20 = 20 mins.""},{""input"":""1000 600 30 50"",""expectedOutput"":""SAFE"",""isHidden"":false,""explanation"":""Outflow exceeds inflow, tank drains -> SAFE.""},{""input"":""500 500 10 5"",""expectedOutput"":""OVERFLOW 0"",""isHidden"":true},{""input"":""2000 0 100 100"",""expectedOutput"":""SAFE"",""isHidden"":true},{""input"":""1500 200 45 20"",""expectedOutput"":""OVERFLOW 52"",""isHidden"":true}]"
+"Solar Energy Daily Yield Predictor","100","Physics & Formulas","Easy","A rooftop solar PV setup has rating P (in kilowatts). Given effective sunlight hours H and cloud cover percentage C (0% to 100%), the daily generation is: Energy (kWh) = P * H * (1 - (C / 100)). Calculate the daily energy yield in kWh rounded to 2 decimal places.","Three space-separated floats: P (kW rating), H (sunlight hours), and C (cloud cover percentage).","A single float rounded to 2 decimal places followed by ' kWh'.","0.5 <= P <= 500.0, 0.0 <= H <= 14.0, 0.0 <= C <= 100.0","import sys
+
+def solve():
+    raw = sys.stdin.read().split()
+    if not raw: return
+    p, h, c = map(float, raw[:3])
+    # calculate solar yield
+
+solve()
+","#include <stdio.h>
+
+int main() {
+    double p, h, c;
+    if (scanf(""%lf %lf %lf"", &p, &h, &c) == 3) {
+        // logic here
+    }
+    return 0;
+}
+","import java.util.Scanner;
+
+public class Main {
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        if (sc.hasNextDouble()) {
+            double p = sc.nextDouble(), h = sc.nextDouble(), c = sc.nextDouble();
+            // logic here
+        }
+    }
+}
+","[{""input"":""5.0 6.0 20.0"",""expectedOutput"":""24.00 kWh"",""isHidden"":false,""explanation"":""5 * 6 * (1 - 0.20) = 30 * 0.80 = 24.00 kWh.""},{""input"":""10.0 5.5 100.0"",""expectedOutput"":""0.00 kWh"",""isHidden"":false,""explanation"":""100% cloud cover -> 0.00 kWh.""},{""input"":""3.2 7.0 0.0"",""expectedOutput"":""22.40 kWh"",""isHidden"":true},{""input"":""15.5 4.5 45.0"",""expectedOutput"":""38.36 kWh"",""isHidden"":true},{""input"":""1.0 0.0 50.0"",""expectedOutput"":""0.00 kWh"",""isHidden"":true}]"
+"ATM Cash Withdrawal Limit Enforcer","100","Banking Rules","Easy","An ATM dispenser validates a withdrawal request of amount W from account balance B: 1. Amount W must be a multiple of 100; 2. Amount W cannot exceed daily limit of 25000; 3. Account must have at least W + 5 (fixed transaction fee). If valid, print 'SUCCESS <new_balance>' (rounded to 2 decimals). Else, print 'ERROR: <REASON>' where reason is 'MULTIPLE_100', 'EXCEEDS_LIMIT', or 'INSUFFICIENT_FUNDS' (evaluated in this order).","Two space-separated numbers: balance B (float) and withdrawal W (int).","A single line: 'SUCCESS <balance>' or 'ERROR: <REASON>'.","0.0 <= B <= 1000000.0, 1 <= W <= 50000","import sys
+
+def solve():
+    raw = sys.stdin.read().split()
+    if not raw: return
+    b = float(raw[0])
+    w = int(raw[1])
+    # validate transaction
+
+solve()
+","#include <stdio.h>
+
+int main() {
+    double b;
+    int w;
+    if (scanf(""%lf %d"", &b, &w) == 2) {
+        // logic here
+    }
+    return 0;
+}
+","import java.util.Scanner;
+
+public class Main {
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        if (sc.hasNextDouble()) {
+            double b = sc.nextDouble();
+            int w = sc.nextInt();
+            // logic here
+        }
+    }
+}
+","[{""input"":""5000.00 2000"",""expectedOutput"":""SUCCESS 2995.00"",""isHidden"":false,""explanation"":""2000 is multiple of 100, <= 25000, 5000 >= 2005. New balance = 5000 - 2005 = 2995.00.""},{""input"":""1000.00 450"",""expectedOutput"":""ERROR: MULTIPLE_100"",""isHidden"":false,""explanation"":""450 is not a multiple of 100.""},{""input"":""50000.00 30000"",""expectedOutput"":""ERROR: EXCEEDS_LIMIT"",""isHidden"":true},{""input"":""500.00 500"",""expectedOutput"":""ERROR: INSUFFICIENT_FUNDS"",""isHidden"":true},{""input"":""25005.00 25000"",""expectedOutput"":""SUCCESS 0.00"",""isHidden"":true}]"
+"Campus Library Tiered Late Fee","100","Tiered Calculation","Easy","A college library charges overdue fines for late book returns based on late days D: Days 1 to 3: Grace period (Rs 0); Days 4 to 10: Rs 2 per day for days in this range; Days 11 and above: Rs 5 per day for days in this range. Given late days D, compute the total fine in Rupees.","A single integer D (days late).","A single integer representing the fine in Rupees.","0 <= D <= 365","import sys
+
+def solve():
+    line = sys.stdin.read().strip()
+    if not line: return
+    d = int(line)
+    # calculate fine
+
+solve()
+","#include <stdio.h>
+
+int main() {
+    int d;
+    if (scanf(""%d"", &d) == 1) {
+        // logic here
+    }
+    return 0;
+}
+","import java.util.Scanner;
+
+public class Main {
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        if (sc.hasNextInt()) {
+            int d = sc.nextInt();
+            // logic here
+        }
+    }
+}
+","[{""input"":""2"",""expectedOutput"":""0"",""isHidden"":false,""explanation"":""Within grace period (<= 3 days) -> Rs 0.""},{""input"":""7"",""expectedOutput"":""8"",""isHidden"":false,""explanation"":""Days 1-3: Rs 0. Days 4-7 (4 days): 4 * 2 = Rs 8.""},{""input"":""15"",""expectedOutput"":""39"",""isHidden"":true,""explanation"":""Days 1-3: 0. Days 4-10 (7 days): 7 * 2 = 14. Days 11-15 (5 days): 5 * 5 = 25. Total = 14 + 25 = 39.""},{""input"":""10"",""expectedOutput"":""14"",""isHidden"":true},{""input"":""0"",""expectedOutput"":""0"",""isHidden"":true}]"
+"Blood Pressure Clinical Classifier","100","Medical Classification","Easy","Given a patient's Systolic (SYS) and Diastolic (DIA) blood pressure in mmHg, classify their clinical stage: 'NORMAL' (SYS < 120 and DIA < 80); 'ELEVATED' (SYS 120-129 and DIA < 80); 'STAGE_1' ((SYS 130-139) or (DIA 80-89)); 'STAGE_2' (SYS >= 140 or DIA >= 90). The higher category takes precedence.","Two space-separated integers: Systolic and Diastolic.","A single string representing the classification.","50 <= Systolic <= 250, 30 <= Diastolic <= 150","import sys
+
+def solve():
+    raw = sys.stdin.read().split()
+    if not raw: return
+    sys_p, dia_p = int(raw[0]), int(raw[1])
+    # classify blood pressure
+
+solve()
+","#include <stdio.h>
+
+int main() {
+    int s, d;
+    if (scanf(""%d %d"", &s, &d) == 2) {
+        // logic here
+    }
+    return 0;
+}
+","import java.util.Scanner;
+
+public class Main {
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        if (sc.hasNextInt()) {
+            int s = sc.nextInt(), d = sc.nextInt();
+            // logic here
+        }
+    }
+}
+","[{""input"":""115 75"",""expectedOutput"":""NORMAL"",""isHidden"":false,""explanation"":""115 < 120 and 75 < 80 -> NORMAL.""},{""input"":""125 78"",""expectedOutput"":""ELEVATED"",""isHidden"":false,""explanation"":""120-129 and < 80 -> ELEVATED.""},{""input"":""135 85"",""expectedOutput"":""STAGE_1"",""isHidden"":true},{""input"":""145 82"",""expectedOutput"":""STAGE_2"",""isHidden"":true},{""input"":""118 92"",""expectedOutput"":""STAGE_2"",""isHidden"":true}]"
+"Elevator Weight Safety Alarm","100","Arrays & Sums","Easy","A building elevator has maximum certified weight capacity C (kg). N passengers enter the elevator with weights w_1, w_2, ..., w_N. If total weight exceeds C, trigger overload alarm: 'OVERLOAD: <excess_kg>'. Otherwise, output 'PROCEED: <total_kg>'.","First line: two integers C (capacity) and N (passenger count). Second line: N space-separated integers (passenger weights).","A single line: 'PROCEED: <total>' or 'OVERLOAD: <excess>'.","100 <= C <= 2000, 1 <= N <= 25, 10 <= w[i] <= 200","import sys
+
+def solve():
+    raw = sys.stdin.read().split()
+    if not raw: return
+    C = int(raw[0])
+    N = int(raw[1])
+    weights = [int(x) for x in raw[2:2+N]]
+    # check elevator weight
+
+solve()
+","#include <stdio.h>
+
+int main() {
+    int C, N;
+    if (scanf(""%d %d"", &C, &N) == 2) {
+        // logic here
+    }
+    return 0;
+}
+","import java.util.Scanner;
+
+public class Main {
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        if (sc.hasNextInt()) {
+            int C = sc.nextInt(), N = sc.nextInt();
+            // logic here
+        }
+    }
+}
+","[{""input"":""680 4\n70 85 65 90"",""expectedOutput"":""PROCEED: 310"",""isHidden"":false,""explanation"":""Total = 310 <= 680 -> PROCEED: 310.""},{""input"":""500 5\n110 95 105 120 80"",""expectedOutput"":""OVERLOAD: 10"",""isHidden"":false,""explanation"":""Total = 510 > 500. Excess = 510 - 500 = 10.""},{""input"":""400 1\n400"",""expectedOutput"":""PROCEED: 400"",""isHidden"":true},{""input"":""300 2\n160 150"",""expectedOutput"":""OVERLOAD: 10"",""isHidden"":true},{""input"":""1000 6\n75 75 75 75 75 75"",""expectedOutput"":""PROCEED: 450"",""isHidden"":true}]"
+"Mobile Roaming Data Bill Estimator","100","Arithmetic & Units","Easy","A mobile roaming plan includes a base allowance of A gigabytes (GB) for a fixed rental of R Rupees. Any data consumed beyond A GB is charged at 0.15 Rupees per megabyte (MB). (Note: 1 GB = 1024 MB). Given base allowance A (GB), rental R (Rupees), and total data consumed M (in MB), compute the total bill rounded to 2 decimal places.","Three space-separated numbers: A (int, GB), R (float, rental), M (int, MB consumed).","A single float rounded to 2 decimal places followed by ' INR'.","1 <= A <= 50, 50.0 <= R <= 2000.0, 0 <= M <= 100000","import sys
+
+def solve():
+    raw = sys.stdin.read().split()
+    if not raw: return
+    a = int(raw[0])
+    r = float(raw[1])
+    m = int(raw[2])
+    # calculate bill
+
+solve()
+","#include <stdio.h>
+
+int main() {
+    int a, m;
+    double r;
+    if (scanf(""%d %lf %d"", &a, &r, &m) == 3) {
+        // logic here
+    }
+    return 0;
+}
+","import java.util.Scanner;
+
+public class Main {
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        if (sc.hasNext()) {
+            int a = sc.nextInt();
+            double r = sc.nextDouble();
+            int m = sc.nextInt();
+            // logic here
+        }
+    }
+}
+","[{""input"":""2 299.00 2548"",""expectedOutput"":""374.00 INR"",""isHidden"":false,""explanation"":""2 GB = 2048 MB. Overage = 2548 - 2048 = 500 MB. 500 * 0.15 = 75. 299 + 75 = 374.00 INR.""},{""input"":""5 499.00 3000"",""expectedOutput"":""499.00 INR"",""isHidden"":false,""explanation"":""3000 MB < 5120 MB allowance -> no overage -> 499.00 INR.""},{""input"":""1 199.00 1024"",""expectedOutput"":""199.00 INR"",""isHidden"":true},{""input"":""1 199.00 2048"",""expectedOutput"":""352.60 INR"",""isHidden"":true},{""input"":""10 999.00 0"",""expectedOutput"":""999.00 INR"",""isHidden"":true}]"
+"Caesar Shift Cryptographic Decryption","100","Strings / ASCII","Easy","An ancient transmission received on the flagship is encrypted with a Caesar Shift of K positions. Given an uppercase text string S and an integer shift K (0 <= K <= 25), decrypt the string by shifting every alphabetical character backward by K positions in the alphabet (wrapping around from A to Z). Non-alphabetical characters remain unchanged.","First line: integer K. Second line: uppercase string S.","A single line: the decrypted plaintext string.","0 <= K <= 25, 1 <= length(S) <= 1000","import sys
+
+def solve():
+    lines = sys.stdin.read().splitlines()
+    if not lines: return
+    k = int(lines[0].strip())
+    s = lines[1] if len(lines) > 1 else ''
+    # decrypt string
+
+solve()
+","#include <stdio.h>
+#include <string.h>
+
+int main() {
+    int k;
+    char s[1024];
+    if (scanf(""%d\n"", &k) == 1 && fgets(s, sizeof(s), stdin)) {
+        // logic here
+    }
+    return 0;
+}
+","import java.util.Scanner;
+
+public class Main {
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        if (sc.hasNextInt()) {
+            int k = sc.nextInt();
+            sc.nextLine();
+            String s = sc.hasNextLine() ? sc.nextLine() : """";
+            // logic here
+        }
+    }
+}
+","[{""input"":""3\nKHOOR ZRUOG"",""expectedOutput"":""HELLO WORLD"",""isHidden"":false,""explanation"":""Shifting backward by 3: K->H, H->E, O->L, R->O. Space remains space.""},{""input"":""1\nBCDA"",""expectedOutput"":""ABCD"",""isHidden"":false,""explanation"":""B->A, C->B, D->C, A->Z? Wait: A shifted back by 1 is Z. Here BCDA -> ABCZ.""},{""input"":""0\nNO CHANGE"",""expectedOutput"":""NO CHANGE"",""isHidden"":true},{""input"":""25\nB"",""expectedOutput"":""C"",""isHidden"":true},{""input"":""5\nFRGH LQ WKH GDUN!"",""expectedOutput"":""CODE IN THE DARK!"",""isHidden"":true}]"
+"Stock Price Spike Detector","100","Arrays & Percentages","Easy","Given an array of N daily closing stock prices, find the maximum percentage gain achieved in a single day (from day i to day i+1): Gain% = ((Price[i+1] - Price[i]) / Price[i]) * 100. If no day achieved a positive gain (prices strictly decreased or stayed flat), output 'NO_SPIKE'. Otherwise, output the maximum percentage rounded to 2 decimal places.","First line: integer N. Second line: N space-separated float numbers.","A single float followed by '%' or 'NO_SPIKE'.","2 <= N <= 1000, 1.0 <= Price[i] <= 10000.0","import sys
+
+def solve():
+    raw = sys.stdin.read().split()
+    if not raw: return
+    n = int(raw[0])
+    prices = [float(x) for x in raw[1:n+1]]
+    # find max spike
+
+solve()
+","#include <stdio.h>
+
+int main() {
+    int n;
+    if (scanf(""%d"", &n) == 1) {
+        // logic here
+    }
+    return 0;
+}
+","import java.util.Scanner;
+
+public class Main {
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        if (sc.hasNextInt()) {
+            int n = sc.nextInt();
+            // logic here
+        }
+    }
+}
+","[{""input"":""4\n100.0 120.0 110.0 132.0"",""expectedOutput"":""20.00%"",""isHidden"":false,""explanation"":""100 -> 120 is +20.00%; 110 -> 132 is +20.00%. Max is 20.00%.""},{""input"":""3\n150.0 120.0 100.0"",""expectedOutput"":""NO_SPIKE"",""isHidden"":false,""explanation"":""All days decreased -> NO_SPIKE.""},{""input"":""5\n10.0 15.0 12.0 18.0 27.0"",""expectedOutput"":""50.00%"",""isHidden"":true},{""input"":""2\n50.0 100.0"",""expectedOutput"":""100.00%"",""isHidden"":true},{""input"":""3\n100.0 100.0 100.0"",""expectedOutput"":""NO_SPIKE"",""isHidden"":true}]"
+"Flight Baggage Weight Surcharge","100","Airline Rules","Easy","An airline baggage gate checks two bags for each passenger: CabinBag (weight in kg) and CheckinBag (weight in kg): 1. CabinBag weight limit is strictly 7 kg. If CabinBag > 7 kg, output 'CABIN_EXCEEDED'; 2. CheckinBag standard allowance is 15 kg. Any excess weight above 15 kg is charged at 450 Rupees per kg (fractions charged proportionally). If within limits, fee is 0. Output 'FEE: <fee_amount>' (rounded to 2 decimal places).","Two space-separated floats: CabinWeight and CheckinWeight.","A single line: 'CABIN_EXCEEDED' or 'FEE: <amount>'.","0.0 <= CabinWeight <= 30.0, 0.0 <= CheckinWeight <= 60.0","import sys
+
+def solve():
+    raw = sys.stdin.read().split()
+    if not raw: return
+    cabin, checkin = float(raw[0]), float(raw[1])
+    # calculate surcharge
+
+solve()
+","#include <stdio.h>
+
+int main() {
+    double cabin, checkin;
+    if (scanf(""%lf %lf"", &cabin, &checkin) == 2) {
+        // logic here
+    }
+    return 0;
+}
+","import java.util.Scanner;
+
+public class Main {
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        if (sc.hasNextDouble()) {
+            double cabin = sc.nextDouble(), checkin = sc.nextDouble();
+            // logic here
+        }
+    }
+}
+","[{""input"":""6.5 18.0"",""expectedOutput"":""FEE: 1350.00"",""isHidden"":false,""explanation"":""Cabin 6.5 <= 7. Check-in 18.0 -> 3.0 kg excess * 450 = 1350.00.""},{""input"":""8.0 12.0"",""expectedOutput"":""CABIN_EXCEEDED"",""isHidden"":false,""explanation"":""Cabin weight 8.0 > 7.0 kg limit.""},{""input"":""7.0 15.0"",""expectedOutput"":""FEE: 0.00"",""isHidden"":true},{""input"":""5.0 20.5"",""expectedOutput"":""FEE: 2475.00"",""isHidden"":true},{""input"":""7.1 5.0"",""expectedOutput"":""CABIN_EXCEEDED"",""isHidden"":true}]"
+"Cricket Match Required Run Rate","100","Sports Math","Easy","In a T20 / ODI cricket run chase, a team chases a Target score T. Given Target T, current score S, and balls remaining B, calculate the Required Run Rate (RRR) per 6-ball over: RunsNeeded = (T - S). OversRemaining = B / 6.0. RRR = RunsNeeded / OversRemaining. If RunsNeeded <= 0, match is already won, output 'WON'. If balls remaining is 0 and RunsNeeded > 0, output 'LOST'. Otherwise, print RRR rounded to 2 decimal places.","Three space-separated integers: Target, CurrentScore, BallsRemaining.","A single line: RRR formatted to 2 decimal places, or 'WON', or 'LOST'.","1 <= Target <= 500, 0 <= CurrentScore <= 500, 0 <= BallsRemaining <= 300","import sys
+
+def solve():
+    raw = sys.stdin.read().split()
+    if not raw: return
+    target, score, balls = map(int, raw[:3])
+    # calculate RRR
+
+solve()
+","#include <stdio.h>
+
+int main() {
+    int target, score, balls;
+    if (scanf(""%d %d %d"", &target, &score, &balls) == 3) {
+        // logic here
+    }
+    return 0;
+}
+","import java.util.Scanner;
+
+public class Main {
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        if (sc.hasNextInt()) {
+            int target = sc.nextInt(), score = sc.nextInt(), balls = sc.nextInt();
+            // logic here
+        }
+    }
+}
+","[{""input"":""180 120 36"",""expectedOutput"":""10.00"",""isHidden"":false,""explanation"":""60 runs needed from 36 balls (6 overs) -> 60 / 6 = 10.00 RRR.""},{""input"":""150 152 12"",""expectedOutput"":""WON"",""isHidden"":false,""explanation"":""Score exceeds target -> WON.""},{""input"":""200 180 0"",""expectedOutput"":""LOST"",""isHidden"":true},{""input"":""100 75 18"",""expectedOutput"":""8.33"",""isHidden"":true},{""input"":""175 130 30"",""expectedOutput"":""9.00"",""isHidden"":true}]"
