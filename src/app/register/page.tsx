@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { Shield, ArrowRight, CheckCircle2, User, Phone, GraduationCap, Monitor, AlertCircle, Clock, Lock, Loader2, Compass } from 'lucide-react';
 import { ContestSession } from '@/types';
 import NauticalCompass from '@/components/NauticalCompass';
-import { searchColleges } from '@/lib/colleges';
+import { searchColleges, CollegeSearchResult } from '@/lib/colleges';
 
 type GateStatus = 'loading' | 'not_open' | 'late_closed' | 'open' | 'active' | 'ended';
 
@@ -16,7 +16,7 @@ export default function RegisterPage() {
   const [phone, setPhone] = useState('');
   const [college, setCollege] = useState('');
   const [terminalId, setTerminalId] = useState('');
-  const [collegeSuggestions, setCollegeSuggestions] = useState<string[]>([]);
+  const [collegeSuggestions, setCollegeSuggestions] = useState<CollegeSearchResult[]>([]);
   const [showCollegeDropdown, setShowCollegeDropdown] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -462,12 +462,9 @@ export default function RegisterPage() {
 
           {/* 2. Phone Number */}
           <div>
-            <label className="mb-1.5 flex items-center justify-between text-xs font-medium text-[#f3d38c]">
-              <span className="flex items-center gap-1.5">
-                <Phone className="h-3.5 w-3.5 text-[#d4af37]" />
-                Phone Number
-              </span>
-              <span className="text-[10px] text-[#a68a56]">Admin Only · Strictly Confidential</span>
+            <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-[#f3d38c]">
+              <Phone className="h-3.5 w-3.5 text-[#d4af37]" />
+              Phone Number
             </label>
             <input
               type="tel"
@@ -484,12 +481,9 @@ export default function RegisterPage() {
 
           {/* 3. College with Live Autocomplete Suggestions */}
           <div className="relative">
-            <label className="mb-1.5 flex items-center justify-between text-xs font-medium text-[#f3d38c]">
-              <span className="flex items-center gap-1.5">
-                <GraduationCap className="h-3.5 w-3.5 text-[#d4af37]" />
-                College / Institution
-              </span>
-              <span className="text-[10px] text-[#a68a56]">KTU Affiliated</span>
+            <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-[#f3d38c]">
+              <GraduationCap className="h-3.5 w-3.5 text-[#d4af37]" />
+              College
             </label>
             <input
               type="text"
@@ -508,7 +502,7 @@ export default function RegisterPage() {
               onBlur={() => {
                 setTimeout(() => setShowCollegeDropdown(false), 250);
               }}
-              placeholder="Start typing your college (e.g. Barton Hill, CET...)"
+              placeholder="Start typing your college (e.g. Sree Chitra Thirunal...)"
               required
               className="w-full rounded-xl border border-[#a68a56]/30 bg-[#050504]/80 px-3.5 py-2.5 text-sm text-[#ebe4d5] placeholder-[#a68a56]/40 transition-all focus:border-[#d4af37] focus:outline-none focus:ring-1 focus:ring-[#d4af37]/50"
             />
@@ -524,13 +518,20 @@ export default function RegisterPage() {
                     key={idx}
                     type="button"
                     onMouseDown={() => {
-                      setCollege(col);
+                      setCollege(col.name);
                       setShowCollegeDropdown(false);
                     }}
-                    className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left font-nautical-mono text-xs text-[#ebe4d5] hover:bg-[#1c160e] hover:text-[#f3d38c] transition-colors"
+                    className="flex w-full items-center justify-between gap-2 rounded-lg px-2.5 py-2 text-left font-nautical-mono text-xs text-[#ebe4d5] hover:bg-[#1c160e] hover:text-[#f3d38c] transition-colors"
                   >
-                    <GraduationCap className="h-3 w-3 shrink-0 text-[#d4af37]" />
-                    <span className="truncate">{col}</span>
+                    <div className="flex items-center gap-2 min-w-0 flex-1">
+                      <GraduationCap className="h-3 w-3 shrink-0 text-[#d4af37]" />
+                      <span className="truncate">{col.name}</span>
+                    </div>
+                    {col.code && (
+                      <span className="shrink-0 text-[10px] font-bold text-[#d4af37] bg-[#1c160e] px-1.5 py-0.5 rounded border border-[#d4af37]/30">
+                        {col.code}
+                      </span>
+                    )}
                   </button>
                 ))}
               </div>
@@ -553,22 +554,6 @@ export default function RegisterPage() {
               placeholder="e.g. LAB-02-SEAT-14"
               className="w-full rounded-xl border border-[#a68a56]/30 bg-[#050504]/80 px-3.5 py-2.5 text-sm text-[#ebe4d5] placeholder-[#a68a56]/40 transition-all focus:border-[#d4af37] focus:outline-none focus:ring-1 focus:ring-[#d4af37]/50"
             />
-          </div>
-
-          {/* System Check Pill */}
-          <div className="rounded-xl border border-[#a68a56]/20 bg-[#050504]/60 p-3 text-[11px] text-[#a68a56] space-y-1.5">
-            <div className="flex items-center gap-2 text-[#f3d38c]">
-              <CheckCircle2 className="h-3.5 w-3.5 text-[#d4af37]" />
-              <span>Fullscreen lock &amp; anti-cheat shield armed</span>
-            </div>
-            <div className="flex items-center gap-2 text-[#f3d38c]">
-              <CheckCircle2 className="h-3.5 w-3.5 text-[#d4af37]" />
-              <span>C, Python, Java compiler runpack primed</span>
-            </div>
-            <div className="flex items-center gap-2 text-[#f3d38c]">
-              <CheckCircle2 className="h-3.5 w-3.5 text-[#d4af37]" />
-              <span>Persistent Supabase PostgreSQL backend active</span>
-            </div>
           </div>
 
           <button
