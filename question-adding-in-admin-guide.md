@@ -140,6 +140,6 @@ public class Main {
 Before opening registration for participants:
 
 - [ ] **Native Runner Running**: Ensure [`D:\Apps\START_RUNNER.bat`](file:///D:/Apps/START_RUNNER.bat) is running on your host machine.
-- [ ] **Tunnel URL Set in Vercel**: Verify that the `.trycloudflare.com` URL matches `PISTON_URL` in Vercel environment variables.
+- [ ] **Runner URL Set in Vercel**: Verify that `PISTON_URL` in Vercel environment variables is set to your permanent static URL: `https://marine-turbine-synthesis.ngrok-free.dev`.
 - [ ] **Test with "Run Code" in Arena**: Open the arena with a test participant and click "Run Code" on each question to verify that Python, C, and Java compile and return `Accepted` on public test cases.
 - [ ] **Check Session Phase**: Ensure the contest session is in `setup` or `registration` before contestants arrive.

@@ -126,7 +126,7 @@ When a participant seals their code and submits:
      ```
 
 3. **Cloudflare Tunnel Routing**:
-   * The request is routed securely over HTTPS via the Cloudflare Tunnel (`https://xxxx.trycloudflare.com`) to port `2000` on your host PC.
+   * The request is routed securely over HTTPS via the permanent Ngrok tunnel (`https://marine-turbine-synthesis.ngrok-free.dev`) to port `2000` on your host PC.
 
 ---
 

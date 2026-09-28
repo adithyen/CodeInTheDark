@@ -38,7 +38,11 @@ async function executeWithPiston(
   const startTime = Date.now();
   const response = await fetch(url, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      'ngrok-skip-browser-warning': 'true',
+      'User-Agent': 'CodeInTheDark-11-11-Runner',
+    },
     body: JSON.stringify({
       language: target.lang,
       version: target.version,
