@@ -8,7 +8,7 @@ import CountdownTimer from '@/components/CountdownTimer';
 import { useAntiCheat } from '@/hooks/useAntiCheat';
 import { Question, Language, Participant, ContestState, ContestPhase } from '@/types';
 import {
-  Send, RotateCcw, ShieldAlert, Terminal, Wifi, WifiOff,
+  Send, RotateCcw, ShieldAlert, ShieldCheck, Terminal, Wifi, WifiOff,
   PanelLeftClose, PanelLeftOpen, ZoomIn, ZoomOut, X,
   Loader2, Lock, ChevronRight, ChevronLeft, ChevronDown, ChevronUp,
   Bookmark, BookmarkCheck, CheckCircle2, AlertCircle, Eye, FileWarning,
@@ -151,6 +151,7 @@ export default function ArenaPage() {
       initialStrikes: participant?.strikes || 0,
       initialLockedOut: participant?.isLockedOut || false,
       enabled: !!participant && !showLobby && !isSubmitted,
+      disableStrikes: Boolean(contest?.disableStrikes),
       onStrikeUpdate: (s, l) => setParticipant(p => p ? { ...p, strikes: s, isLockedOut: l } : null),
     });
 
@@ -969,6 +970,7 @@ export default function ArenaPage() {
         warningModalOpen={warningModalOpen}
         warningMessage={warningMessage}
         hudWarning={hudWarning}
+        disableStrikes={Boolean(contest?.disableStrikes)}
         onRequestFullscreen={requestFullscreen}
       />
 
@@ -1020,10 +1022,17 @@ export default function ArenaPage() {
             <span className="text-[#ebe4d5]/80">{participant.terminalId}</span>
           </div>
 
-          <div className="hidden md:flex items-center gap-1.5 font-nautical-mono text-xs text-[#a68a56]">
-            <ShieldAlert className="h-3.5 w-3.5 text-[#d4af37]" />
-            <span>Strikes: <strong className={strikes > 0 ? 'text-red-400' : 'text-[#f3d38c]'}>{strikes}/3</strong></span>
-          </div>
+          {contest?.disableStrikes ? (
+            <div className="flex items-center gap-1.5 rounded-lg border border-emerald-500/40 bg-emerald-950/40 px-2.5 py-1 font-nautical-mono text-xs text-emerald-300 shadow-[0_0_10px_rgba(16,185,129,0.2)]" title="Anti-cheat strikes are disabled by contest organizer (Testing Mode)">
+              <ShieldCheck className="h-3.5 w-3.5 text-emerald-400" />
+              <span>Strikes: <strong className="text-emerald-200">∞ (Testing Mode)</strong></span>
+            </div>
+          ) : (
+            <div className="hidden md:flex items-center gap-1.5 font-nautical-mono text-xs text-[#a68a56]">
+              <ShieldAlert className="h-3.5 w-3.5 text-[#d4af37]" />
+              <span>Strikes: <strong className={strikes > 0 ? 'text-red-400' : 'text-[#f3d38c]'}>{strikes}/3</strong></span>
+            </div>
+          )}
 
           {/* Cloud Sync Status Indicator */}
           <div className="hidden sm:flex items-center gap-1.5 font-nautical-mono text-xs">

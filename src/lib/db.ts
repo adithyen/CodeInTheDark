@@ -170,6 +170,66 @@ export async function deleteSession(id: string): Promise<boolean> {
   }
 }
 
+/**
+ * Resets a contest session back to the 'setup' phase as if it was never run:
+ * - Keeps session name/label, duration settings, capacity, questions, and test cases 100% intact.
+ * - Completely deletes all submissions, violations, and participants for this session.
+ * - Resets session timestamps and phase to 'setup', reopening the muster window cleanly.
+ */
+export async function resetSession(id: string): Promise<ContestSession | null> {
+  try {
+    // 1. Delete all submissions belonging to this session
+    const { error: subErr } = await supabase
+      .from('submissions')
+      .delete()
+      .eq('session_id', id);
+    if (subErr) console.error('Error deleting submissions during resetSession:', subErr);
+
+    // 2. Delete all violations belonging to this session
+    const { error: violErr } = await supabase
+      .from('violations')
+      .delete()
+      .eq('session_id', id);
+    if (violErr) console.error('Error deleting violations during resetSession:', violErr);
+
+    // 3. Delete all participants belonging to this session
+    const { error: partErr } = await supabase
+      .from('participants')
+      .delete()
+      .eq('session_id', id);
+    if (partErr) console.error('Error deleting participants during resetSession:', partErr);
+
+    // 4. Reset contest_sessions row back to setup state
+    const { data: updated, error: sessErr } = await supabase
+      .from('contest_sessions')
+      .update({
+        phase: 'setup',
+        registration_opens_at: null,
+        registration_ends_at: null,
+        challenge_starts_at: null,
+        challenge_ends_at: null,
+        pause_started_at: null,
+        is_paused: false,
+        is_reveal_mode: false,
+        announcement: null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (sessErr) {
+      console.error('Error resetting session row:', sessErr);
+      return null;
+    }
+
+    return updated as ContestSession;
+  } catch (err) {
+    console.error('Fatal error during resetSession:', err);
+    return null;
+  }
+}
+
 
 /**
  * Auto-transition: if registration ended and auto_start is on, flip to active.

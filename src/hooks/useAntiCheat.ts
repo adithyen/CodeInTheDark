@@ -19,6 +19,7 @@ interface UseAntiCheatOptions {
   initialLockedOut?: boolean;
   maxStrikes?: number;
   enabled?: boolean;
+  disableStrikes?: boolean;
   onViolation?: (type: ViolationType, details: string) => void;
   onStrikeUpdate?: (strikes: number, isLockedOut: boolean) => void;
 }
@@ -32,6 +33,7 @@ export function useAntiCheat({
   initialLockedOut = false,
   maxStrikes = 3,
   enabled = true,
+  disableStrikes = false,
   onViolation,
   onStrikeUpdate,
 }: UseAntiCheatOptions) {
@@ -41,8 +43,8 @@ export function useAntiCheat({
     }
     return false;
   });
-  const [strikes, setStrikes] = useState(initialStrikes);
-  const [isLockedOut, setIsLockedOut] = useState(initialLockedOut);
+  const [strikes, setStrikes] = useState(disableStrikes ? 0 : initialStrikes);
+  const [isLockedOut, setIsLockedOut] = useState(disableStrikes ? false : initialLockedOut);
   const [warningModalOpen, setWarningModalOpen] = useState(false);
   const [warningMessage, setWarningMessage] = useState('');
   const [countdown, setCountdown] = useState(10);
@@ -55,13 +57,18 @@ export function useAntiCheat({
 
   // Sync initial strikes when props update
   useEffect(() => {
+    if (disableStrikes) {
+      setStrikes(0);
+      setIsLockedOut(false);
+      return;
+    }
     if (initialStrikes > strikes) {
       setStrikes(initialStrikes);
     }
     if (initialLockedOut) {
       setIsLockedOut(true);
     }
-  }, [initialStrikes, initialLockedOut, strikes]);
+  }, [disableStrikes, initialStrikes, initialLockedOut, strikes]);
 
   // Display ephemeral HUD warning banner on blocked keystroke
   const showHudWarning = useCallback((message: string) => {
@@ -111,7 +118,16 @@ export function useAntiCheat({
   // Dispatch violation to backend with instant optimistic client update
   const logViolation = useCallback(
     async (type: ViolationType, details: string) => {
-      if (!enabled || isLockedOut) return;
+      if (!enabled) return;
+
+      // ── Testing Mode: Anti-cheat strikes completely bypassed ────────
+      if (disableStrikes) {
+        showHudWarning(`🛡️ Anti-Cheat (Testing Mode): ${details} [Strikes Disabled: ∞]`);
+        if (onViolation) onViolation(type, details);
+        return;
+      }
+
+      if (isLockedOut) return;
 
       triggerAlarmSound();
       if (onViolation) onViolation(type, details);
@@ -166,7 +182,7 @@ export function useAntiCheat({
         console.error('Failed to log violation to server:', err);
       }
     },
-    [enabled, isLockedOut, strikes, maxStrikes, participantId, participantName, rollNumber, terminalId, triggerAlarmSound, onViolation, onStrikeUpdate]
+    [enabled, disableStrikes, isLockedOut, strikes, maxStrikes, participantId, participantName, rollNumber, terminalId, triggerAlarmSound, showHudWarning, onViolation, onStrikeUpdate]
   );
 
   // Request Fullscreen & Engage Chrome Keyboard Lock API
@@ -409,6 +425,7 @@ export function useAntiCheat({
     isFullscreen,
     strikes,
     isLockedOut,
+    disableStrikes: Boolean(disableStrikes),
     warningModalOpen,
     warningMessage,
     countdown,

@@ -14,6 +14,7 @@ interface AntiCheatShieldProps {
   warningModalOpen: boolean;
   warningMessage: string;
   hudWarning: string | null;
+  disableStrikes?: boolean;
   onRequestFullscreen: () => void;
 }
 
@@ -27,6 +28,7 @@ export default function AntiCheatShield({
   warningModalOpen,
   warningMessage,
   hudWarning,
+  disableStrikes = false,
   onRequestFullscreen,
 }: AntiCheatShieldProps) {
   return (
@@ -98,14 +100,28 @@ export default function AntiCheatShield({
               </p>
 
               <div className="mb-5 rounded-xl border border-amber-500/40 bg-[#050504]/80 p-3 font-nautical-mono text-xs text-[#f3d38c]">
-                <div className="flex items-center justify-center gap-2">
-                  <span>Current Strikes:</span>
-                  <strong className="text-red-400 text-sm">{strikes} / 3</strong>
-                </div>
-                {strikes >= 2 && (
-                  <p className="mt-1.5 text-red-400 font-bold text-[11px]">
-                    ⚠️ CRITICAL: 1 MORE STRIKE CAUSES PERMANENT DISQUALIFICATION
-                  </p>
+                {disableStrikes ? (
+                  <div>
+                    <div className="flex items-center justify-center gap-2">
+                      <span>Strikes:</span>
+                      <strong className="text-emerald-400 text-sm">∞ (Testing Mode · Disabled)</strong>
+                    </div>
+                    <p className="mt-1.5 text-emerald-300/90 font-medium text-[11px]">
+                      🛡️ Anti-cheat strikes are disabled by contest organizer. No penalties applied.
+                    </p>
+                  </div>
+                ) : (
+                  <div>
+                    <div className="flex items-center justify-center gap-2">
+                      <span>Current Strikes:</span>
+                      <strong className="text-red-400 text-sm">{strikes} / 3</strong>
+                    </div>
+                    {strikes >= 2 && (
+                      <p className="mt-1.5 text-red-400 font-bold text-[11px]">
+                        ⚠️ CRITICAL: 1 MORE STRIKE CAUSES PERMANENT DISQUALIFICATION
+                      </p>
+                    )}
+                  </div>
                 )}
               </div>
 
@@ -129,6 +145,11 @@ export default function AntiCheatShield({
                     IRONCLAD MARITIME AEGIS
                   </h2>
                   <p className="font-nautical-mono text-xs text-[#a68a56]">11:11 Chapter II · Integrity Gate</p>
+                  {disableStrikes && (
+                    <span className="mt-1 inline-flex items-center gap-1 rounded border border-emerald-500/40 bg-emerald-950/50 px-2 py-0.5 font-nautical-mono text-[10px] text-emerald-300">
+                      <Shield className="h-3 w-3 text-emerald-400" /> Strikes Disabled (Testing Mode)
+                    </span>
+                  )}
                 </div>
               </div>
 

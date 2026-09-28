@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import {
   getActiveSession,
+  getSessionById,
   getParticipantById,
   updateParticipant,
   insertViolation,
@@ -18,12 +19,22 @@ export async function POST(req: NextRequest) {
     }
 
     let targetSessionId = reqSessionId;
-    if (!targetSessionId) {
-      const session = await getActiveSession();
-      targetSessionId = session?.id ?? null;
+    let session = targetSessionId ? await getSessionById(targetSessionId) : await getActiveSession();
+    if (!session) {
+      return NextResponse.json({ error: 'No active session found' }, { status: 403 });
     }
-    if (!targetSessionId) {
-      return NextResponse.json({ error: 'No active session' }, { status: 403 });
+    targetSessionId = session.id;
+
+    // ── Bypass Anti-Cheat strikes if disabled in testing mode ─────────
+    if (session.disable_strikes) {
+      return NextResponse.json({
+        success: true,
+        strikes: 0,
+        strikeCount: 0,
+        isLockedOut: false,
+        strikesDisabled: true,
+        message: 'Anti-cheat strikes are disabled for this session (Testing Mode).',
+      });
     }
 
     const participant = await getParticipantById(participantId);

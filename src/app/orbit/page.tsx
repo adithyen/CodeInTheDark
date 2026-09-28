@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import Editor from '@monaco-editor/react';
 import {
-  ShieldCheck, Play, Pause, Plus, RotateCcw, Clock, Sparkles,
+  ShieldCheck, Shield, Play, Pause, Plus, RotateCcw, Clock, Sparkles,
   Users, FileCode, Download, Trash2, ExternalLink, AlertTriangle, Code2,
   CheckCircle2, Eye, Lock, FileSpreadsheet, Layers, Upload,
   RefreshCw, ShieldAlert, Undo2, Search, ChevronDown, PlusCircle,
@@ -128,6 +128,12 @@ export default function AdminPage() {
   const [sessionToDelete, setSessionToDelete] = useState<ContestSession | null>(null);
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
   const [deleteLoading, setDeleteLoading] = useState(false);
+
+  // Reset session modal
+  const [showResetSessionModal, setShowResetSessionModal] = useState(false);
+  const [sessionToReset, setSessionToReset] = useState<ContestSession | null>(null);
+  const [resetConfirmText, setResetConfirmText] = useState('');
+  const [resetLoading, setResetLoading] = useState(false);
 
   // Session selector dropdown
   const [selectorOpen, setSelectorOpen] = useState(false);
@@ -397,6 +403,46 @@ export default function AdminPage() {
     setDeleteLoading(false);
   };
 
+  const openResetModal = (session: ContestSession) => {
+    setSessionToReset(session);
+    setResetConfirmText('');
+    setShowResetSessionModal(true);
+  };
+
+  const handleResetSession = async () => {
+    if (!sessionToReset) return;
+    if (resetConfirmText.trim().toUpperCase() !== 'RESET') {
+      return alert('Please type RESET to confirm voyage reset.');
+    }
+    setResetLoading(true);
+    try {
+      const res = await fetch('/api/contest', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'resetSession',
+          passkey,
+          sessionId: sessionToReset.id,
+        }),
+      });
+      const d = await res.json();
+      if (res.ok) {
+        setShowResetSessionModal(false);
+        setSessionToReset(null);
+        setResetConfirmText('');
+        // Switch to setup tab so organizer immediately sees fresh setup and open muster window button
+        setActiveTab('setup');
+        await fetchAllData(passkey, sessionToReset.id);
+        alert(`Voyage "${sessionToReset.label}" successfully reset back to Setup stage! All questions & duration settings are preserved, and participant records have been wiped clean.`);
+      } else {
+        alert(d.error || 'Failed to reset voyage');
+      }
+    } catch {
+      alert('Network error while resetting voyage');
+    }
+    setResetLoading(false);
+  };
+
   // ────────────────────────────────────────────────────────────────────────────
   // Question actions
   // ────────────────────────────────────────────────────────────────────────────
@@ -663,6 +709,11 @@ export default function AdminPage() {
           {/* Status Pills */}
           <div className="flex items-center gap-2">
             {currentSession && <PhaseBadge phase={currentSession.phase} />}
+            {viewingSession?.disable_strikes && (
+              <span className="hidden sm:inline-flex items-center gap-1 rounded-full border border-emerald-500/40 bg-emerald-950/60 px-2.5 py-0.5 font-nautical-mono text-[10px] text-emerald-300 font-semibold shadow-[0_0_8px_rgba(16,185,129,0.2)]" title="Anti-cheat strikes are disabled for this session (Testing Mode)">
+                <ShieldCheck className="h-3 w-3 text-emerald-400" /> Strikes: ∞ (Test)
+              </span>
+            )}
             {isLive && (
               <button
                 onClick={() => contestAction('toggleReveal')}
@@ -732,6 +783,11 @@ export default function AdminPage() {
                   <h3 className="font-cinzel text-sm font-bold text-[#f3d38c] flex items-center gap-2">
                     <Settings className="h-4 w-4 text-[#d4af37]" /> Voyage Session Configuration
                     {viewingSession && <PhaseBadge phase={viewingSession.phase} />}
+                    {viewingSession?.disable_strikes && (
+                      <span className="px-2 py-0.5 rounded-full border border-emerald-500/40 bg-emerald-950/60 text-emerald-300 font-nautical-mono text-[10px] font-semibold inline-flex items-center gap-1 shadow-[0_0_8px_rgba(16,185,129,0.25)]">
+                        <ShieldCheck className="h-3 w-3 text-emerald-400" /> Strikes Disabled (∞)
+                      </span>
+                    )}
                   </h3>
                   <div className="mt-1 flex flex-wrap items-center gap-2">
                     <span className="font-cinzel text-base font-bold text-[#ebe4d5]">
@@ -746,6 +802,14 @@ export default function AdminPage() {
                 </div>
                 {viewingSession && (
                   <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => openResetModal(viewingSession)}
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-amber-500/40 bg-amber-950/25 px-3 py-1.5 font-cinzel text-xs text-amber-300 hover:bg-amber-900/35 hover:border-amber-400 transition-all bouncy-btn"
+                      title="Reset this voyage back to setup stage (preserves questions & duration, clears submissions & participants)"
+                    >
+                      <RotateCcw className="h-3.5 w-3.5 text-amber-400" />
+                      <span>Reset Voyage</span>
+                    </button>
                     <button
                       onClick={() => openRenameModal(viewingSession)}
                       className="inline-flex items-center gap-1.5 rounded-lg border border-[#a68a56]/30 bg-[#1c160e]/60 px-3 py-1.5 font-cinzel text-xs text-[#f3d38c] hover:border-[#d4af37] transition-all bouncy-btn"
@@ -765,7 +829,7 @@ export default function AdminPage() {
                   </div>
                 )}
               </div>
-              <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 <div>
                   <label className="block font-cinzel text-xs text-[#a68a56] mb-1">Challenge Duration (min)</label>
                   <div className="flex gap-2">
@@ -831,6 +895,58 @@ export default function AdminPage() {
                     </button>
                     <span className="font-nautical-mono text-[11px] text-[#ebe4d5]/70 truncate">
                       {viewingSession?.allow_late_join ? 'Late arrival permitted' : 'Closed once active'}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Disable Strikes Toggle (Testing Mode) */}
+                <div className="flex flex-col justify-end">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="font-cinzel text-xs text-[#a68a56]">Anti-Cheat Strikes</span>
+                    <span className={`font-nautical-mono text-[9px] font-bold px-1.5 py-0.5 rounded border uppercase tracking-wider ${
+                      viewingSession?.disable_strikes
+                        ? 'bg-emerald-950/60 text-emerald-400 border-emerald-500/40 shadow-[0_0_8px_rgba(16,185,129,0.25)]'
+                        : 'bg-[#18130c] text-amber-400 border-amber-500/30'
+                    }`}>
+                      {viewingSession?.disable_strikes ? '● DISABLED (∞)' : '○ 3 STRIKES'}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2.5 h-[34px]">
+                    <button
+                      type="button"
+                      role="switch"
+                      id="disable-strikes-toggle"
+                      aria-checked={Boolean(viewingSession?.disable_strikes)}
+                      onClick={() => {
+                        const nextVal = !viewingSession?.disable_strikes;
+                        if (viewingSession) {
+                          setSessions(prev => prev.map(s => s.id === viewingSession.id ? { ...s, disable_strikes: nextVal } : s));
+                          if (currentSession?.id === viewingSession.id) {
+                            setCurrentSession(prev => prev ? { ...prev, disable_strikes: nextVal } : prev);
+                          }
+                        }
+                        contestAction('updateConfig', {
+                          disableStrikes: nextVal,
+                          sessionId: viewingSession?.id,
+                        });
+                      }}
+                      className={`relative inline-flex h-6 w-12 shrink-0 cursor-pointer items-center rounded-full p-0.5 transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-emerald-500/40 ${
+                        viewingSession?.disable_strikes
+                          ? 'bg-gradient-to-r from-emerald-600 to-teal-400 shadow-[0_0_10px_rgba(16,185,129,0.35)]'
+                          : 'bg-[#1a140d] border border-[#a68a56]/40 hover:border-[#a68a56]'
+                      }`}
+                      title={viewingSession?.disable_strikes ? 'Anti-cheat strikes are DISABLED (Testing Mode)' : 'Standard 3 strikes anti-cheat is ACTIVE'}
+                    >
+                      <span
+                        className={`pointer-events-none inline-block h-5 w-5 rounded-full shadow-md transition-transform duration-200 ease-in-out ${
+                          viewingSession?.disable_strikes
+                            ? 'translate-x-6 bg-[#050504]'
+                            : 'translate-x-0 bg-[#8c734b]'
+                        }`}
+                      />
+                    </button>
+                    <span className="font-nautical-mono text-[11px] text-[#ebe4d5]/70 truncate" title="When active, participants will not receive strikes (allowed strikes = ∞)">
+                      {viewingSession?.disable_strikes ? 'Testing Mode (No Lockout)' : 'Strict Anti-Cheat (3 Max)'}
                     </span>
                   </div>
                 </div>
@@ -1259,6 +1375,11 @@ export default function AdminPage() {
                     {phase === 'reveal' ? '★ Solutions are currently unlocked for public review.' : 'Solutions and test cases remain sealed.'}
                   </span>
                   <div className="flex flex-wrap gap-2">
+                    <button onClick={() => viewingSession && openResetModal(viewingSession)}
+                      className="inline-flex items-center gap-1.5 rounded-xl border border-amber-500/50 bg-amber-950/40 px-4 py-2 font-cinzel text-xs font-bold text-amber-300 hover:bg-amber-900/50 hover:border-amber-400 shadow-[0_0_12px_rgba(245,158,11,0.25)] bouncy-btn"
+                      title="Reset this voyage back to setup stage (preserves questions & duration, clears submissions & participants so contest can be re-run)">
+                      <RotateCcw className="h-3.5 w-3.5 text-amber-400" /> Reset Voyage to Setup
+                    </button>
                     <a href="/leaderboard" target="_blank" rel="noreferrer"
                       className="inline-flex items-center gap-1.5 rounded-xl border border-[#d4af37]/40 bg-[#1c160e] px-4 py-2 font-cinzel text-xs font-semibold text-[#f3d38c] hover:border-[#d4af37] bouncy-btn">
                       <BarChart3 className="h-3.5 w-3.5 text-[#d4af37]" /> Official Leaderboard
@@ -1351,7 +1472,13 @@ export default function AdminPage() {
                       <td className="py-3 px-4 hidden sm:table-cell text-[#d4af37]">{p.terminalId}</td>
                       <td className="py-3 px-4 hidden md:table-cell uppercase text-[#a68a56]">{p.activeLanguage || '—'}</td>
                       <td className="py-3 px-4">
-                        <span className={`font-bold ${p.strikes >= 3 ? 'text-red-400' : p.strikes > 0 ? 'text-[#d4af37]' : 'text-[#a68a56]'}`}>{p.strikes}/3</span>
+                        {viewingSession?.disable_strikes ? (
+                          <span className="font-bold text-emerald-400 text-xs inline-flex items-center gap-1" title="Anti-cheat strikes are disabled for this session (Testing Mode)">
+                            <ShieldCheck className="h-3 w-3 text-emerald-400" /> ∞ (Testing)
+                          </span>
+                        ) : (
+                          <span className={`font-bold ${p.strikes >= 3 ? 'text-red-400' : p.strikes > 0 ? 'text-[#d4af37]' : 'text-[#a68a56]'}`}>{p.strikes}/3</span>
+                        )}
                       </td>
                       <td className="py-3 px-4">
                         <span className={`rounded border px-2 py-0.5 text-[10px] font-cinzel ${p.isLockedOut ? 'border-red-500/40 bg-red-950/60 text-red-300' : 'border-[#d4af37]/40 bg-[#1c160e] text-[#f3d38c]'}`}>
@@ -1768,6 +1895,77 @@ export default function AdminPage() {
               >
                 {deleteLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
                 Purge All Records
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Reset Voyage Modal (Strict Safeguard) */}
+      {showResetSessionModal && sessionToReset && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4 backdrop-blur-md">
+          <div className="w-full max-w-lg rounded-2xl border border-amber-500/50 bg-[#0c0a06] p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-amber-500/20 border-b pb-3">
+              <h3 className="font-cinzel text-lg font-bold text-amber-400 flex items-center gap-2">
+                <RotateCcw className="h-5 w-5 text-amber-500" /> Reset Voyage Session
+              </h3>
+              <button onClick={() => setShowResetSessionModal(false)} className="text-[#a68a56] hover:text-[#ebe4d5]">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="rounded-xl border border-amber-500/30 bg-amber-950/20 p-4 space-y-2">
+              <p className="font-cinzel text-xs font-bold text-amber-300">
+                You are about to reset voyage session back to Setup stage:
+              </p>
+              <p className="font-cinzel text-sm font-black text-white bg-black/60 px-3 py-1.5 rounded-lg border border-amber-500/40">
+                {sessionToReset.label}
+              </p>
+              <div className="font-nautical-mono text-[11px] text-amber-200/90 leading-relaxed pt-1 space-y-1">
+                <div className="text-emerald-400 font-bold">✓ Preserved (Kept 100% Intact):</div>
+                <ul className="list-disc list-inside pl-2 text-emerald-300/80 space-y-0.5">
+                  <li>Contest name, duration, capacity &amp; late join settings</li>
+                  <li>All Scrolls (Questions), Test Cases, and starter templates</li>
+                  <li>Anti-cheat toggle settings</li>
+                </ul>
+                <div className="text-red-400 font-bold pt-1">✗ Cleared &amp; Reset:</div>
+                <ul className="list-disc list-inside pl-2 text-red-300/80 space-y-0.5">
+                  <li>All Participant / Navigator registrations</li>
+                  <li>All Submissions, code snapshots, and scores</li>
+                  <li>All Anti-Cheat strikes &amp; violations</li>
+                  <li>Phase returns to <strong>Setup Stage</strong> so the Muster Window can be reopened fresh</li>
+                </ul>
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="block font-nautical-mono text-xs text-[#ebe4d5]">
+                To confirm resetting this voyage to setup, type <strong className="text-amber-400 font-bold tracking-widest">RESET</strong> below:
+              </label>
+              <input
+                type="text"
+                value={resetConfirmText}
+                onChange={e => setResetConfirmText(e.target.value)}
+                placeholder="RESET"
+                className="w-full rounded-xl border border-amber-500/40 bg-[#050504] px-3 py-2 font-nautical-mono text-sm text-[#ebe4d5] focus:border-amber-500 focus:outline-none"
+                autoFocus
+              />
+            </div>
+
+            <div className="flex justify-end gap-3 border-t border-amber-500/20 pt-4">
+              <button
+                onClick={() => setShowResetSessionModal(false)}
+                className="rounded-xl border border-[#a68a56]/30 bg-[#1c160e]/50 px-4 py-2 font-cinzel text-xs text-[#ebe4d5] hover:border-[#d4af37] bouncy-btn"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleResetSession}
+                disabled={resetLoading || resetConfirmText.trim().toUpperCase() !== 'RESET'}
+                className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-amber-600 to-amber-500 px-5 py-2 font-cinzel text-xs font-bold text-black hover:brightness-110 disabled:opacity-40 disabled:cursor-not-allowed bouncy-btn shadow-lg shadow-amber-950/60"
+              >
+                {resetLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RotateCcw className="h-4 w-4" />}
+                Reset Voyage to Setup
               </button>
             </div>
           </div>

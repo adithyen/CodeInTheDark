@@ -105,6 +105,7 @@ export interface ContestSession {
   is_reveal_mode?: boolean;
   max_participants?: number;
   allow_late_join?: boolean;
+  disable_strikes?: boolean;
 
   created_at?: string;
   updated_at?: string;
@@ -120,6 +121,7 @@ export interface ContestState {
   title: string;
   announcement?: string;
   isRevealMode: boolean;
+  disableStrikes?: boolean;
   // New session fields
   phase?: ContestPhase;
   sessionId?: string;

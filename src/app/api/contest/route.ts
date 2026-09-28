@@ -7,6 +7,7 @@ import {
   updateSession,
   renameSession,
   deleteSession,
+  resetSession,
   copyQuestionsToSession,
   autoTransitionSession,
 } from '@/lib/db';
@@ -24,6 +25,7 @@ function sessionToContestState(session: any) {
     title: session.label,
     announcement: session.announcement ?? '',
     isRevealMode: session.is_reveal_mode ?? false,
+    disableStrikes: Boolean(session.disable_strikes),
     // New fields
     phase: session.phase,
     sessionId: session.id,
@@ -216,6 +218,7 @@ export async function POST(req: NextRequest) {
         if (body.scheduledAt !== undefined) updates.scheduled_at = body.scheduledAt;
         if (body.maxParticipants !== undefined) updates.max_participants = body.maxParticipants;
         if (body.allowLateJoin !== undefined) updates.allow_late_join = body.allowLateJoin;
+        if (body.disableStrikes !== undefined) updates.disable_strikes = Boolean(body.disableStrikes);
         if (body.durationMinutes !== undefined) {
           const newDurMs = Number(body.durationMinutes) * 60 * 1000;
           updates.challenge_duration_ms = newDurMs;
@@ -232,6 +235,16 @@ export async function POST(req: NextRequest) {
         }
         if (body.autoStartOnRegClose !== undefined) updates.auto_start_on_reg_close = body.autoStartOnRegClose;
         session = (await updateSession(targetSessionId, updates))!;
+        break;
+      }
+
+      // ── RESET VOYAGE (BACK TO SETUP, PURGE PARTICIPANTS & SUBMISSIONS) ─
+      case 'resetSession': {
+        const reset = await resetSession(targetSessionId);
+        if (!reset) {
+          return NextResponse.json({ error: 'Failed to reset session records' }, { status: 500 });
+        }
+        session = reset;
         break;
       }
 
