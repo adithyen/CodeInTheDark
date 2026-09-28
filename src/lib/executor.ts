@@ -55,15 +55,7 @@ async function executeWithPiston(
 
   if (!response.ok) {
     const errText = await response.text();
-    return {
-      stdout: '',
-      stderr: `Piston execution error: ${response.status} - ${errText}`,
-      statusId: 13,
-      statusDescription: 'Execution Error',
-      timeMs: Date.now() - startTime,
-      memoryKb: 0,
-      isSuccess: false,
-    };
+    throw new Error(`Piston runner offline (HTTP ${response.status}): ${errText.slice(0, 100)}`);
   }
 
   const data = await response.json();
@@ -200,11 +192,15 @@ export async function executeCode(
 ): Promise<ExecutionResult> {
   const pistonUrl = process.env.PISTON_URL || process.env.NEXT_PUBLIC_PISTON_URL;
 
-  try {
-    if (pistonUrl && pistonUrl.trim()) {
+  if (pistonUrl && pistonUrl.trim()) {
+    try {
       return await executeWithPiston(pistonUrl.trim(), language, code, stdin);
+    } catch (pistonErr: any) {
+      console.warn('Piston runner offline/error, seamlessly falling back to Judge0 cloud:', pistonErr?.message || pistonErr);
     }
+  }
 
+  try {
     return await executeWithJudge0(language, code, stdin);
   } catch (error: any) {
     return {
