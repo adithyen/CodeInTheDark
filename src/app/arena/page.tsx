@@ -12,7 +12,7 @@ import {
   PanelLeftClose, PanelLeftOpen, ZoomIn, ZoomOut, X,
   Loader2, Lock, ChevronRight, ChevronLeft, ChevronDown, ChevronUp,
   Bookmark, BookmarkCheck, CheckCircle2, AlertCircle, Eye, FileWarning,
-  ArrowRight, Clock, Code2, Cloud, Check, AlertTriangle, RefreshCw
+  ArrowRight, Clock, Code2, Cloud, Check, AlertTriangle, RefreshCw, Compass
 } from 'lucide-react';
 
 // ─── 5 Standard Exam Question Statuses ─────────────────────────────────────────
@@ -1006,54 +1006,66 @@ export default function ArenaPage() {
       )}
 
       {/* ── Top Bar ─────────────────────────────────────────────────────────── */}
-      <div className="shrink-0 flex flex-wrap items-center justify-between border-b border-[#a68a56]/20 bg-[#090806]/95 px-4 py-2 sm:px-6 gap-2 select-none">
-        {/* Left: Participant status */}
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 rounded-lg border border-[#a68a56]/30 bg-[#1c160e]/80 px-2.5 py-1 font-nautical-mono text-xs text-[#f3d38c]">
-            <span className="h-2 w-2 rounded-full bg-[#d4af37] animate-pulse" />
-            <span>{participant.name}</span>
-            {participant.college && (
-              <>
-                <span className="text-[#a68a56]">·</span>
-                <span className="text-[#d4af37] max-w-[180px] truncate">{participant.college}</span>
-              </>
-            )}
-            <span className="text-[#a68a56]">·</span>
-            <span className="text-[#ebe4d5]/80">{participant.terminalId}</span>
+      <div className="shrink-0 flex items-center justify-between border-b border-[#a68a56]/20 bg-[#090806]/95 px-4 py-2 sm:px-6 gap-2 select-none min-h-[56px]">
+        {/* Left: Branding & Strikes/Cloud Status */}
+        <div className="flex items-center gap-3 shrink-0">
+          <div className="flex items-center gap-2">
+            <Compass className="h-4 w-4 text-[#d4af37] animate-[spin_16s_linear_infinite]" />
+            <span className="font-cinzel text-xs font-bold tracking-wider text-[#d4af37] hidden md:inline">
+              CODE IN THE DARK
+            </span>
           </div>
 
           {contest?.disableStrikes ? (
             <div className="flex items-center gap-1.5 rounded-lg border border-emerald-500/40 bg-emerald-950/40 px-2.5 py-1 font-nautical-mono text-xs text-emerald-300 shadow-[0_0_10px_rgba(16,185,129,0.2)]" title="Anti-cheat strikes are disabled by contest organizer (Testing Mode)">
               <ShieldCheck className="h-3.5 w-3.5 text-emerald-400" />
-              <span>Strikes: <strong className="text-emerald-200">∞ (Testing Mode)</strong></span>
+              <span>Strikes: <strong className="text-emerald-200">∞ (Test Mode)</strong></span>
             </div>
           ) : (
-            <div className="hidden md:flex items-center gap-1.5 font-nautical-mono text-xs text-[#a68a56]">
+            <div className="flex items-center gap-1.5 rounded-lg border border-[#a68a56]/30 bg-[#1c160e]/70 px-2.5 py-1 font-nautical-mono text-xs text-[#a68a56]">
               <ShieldAlert className="h-3.5 w-3.5 text-[#d4af37]" />
               <span>Strikes: <strong className={strikes > 0 ? 'text-red-400' : 'text-[#f3d38c]'}>{strikes}/3</strong></span>
             </div>
           )}
 
           {/* Cloud Sync Status Indicator */}
-          <div className="hidden sm:flex items-center gap-1.5 font-nautical-mono text-xs">
+          <div className="hidden lg:flex items-center gap-1.5 font-nautical-mono text-xs">
             {cloudSyncStatus === 'saving' ? (
               <span className="flex items-center gap-1 text-[#f3d38c] text-[11px]">
-                <RefreshCw className="h-3 w-3 animate-spin text-[#d4af37]" /> Saving to cloud...
+                <RefreshCw className="h-3 w-3 animate-spin text-[#d4af37]" /> Saving...
               </span>
             ) : cloudSyncStatus === 'offline' ? (
               <span className="flex items-center gap-1 text-amber-400 text-[11px]">
-                <WifiOff className="h-3 w-3" /> Offline (Local backup)
+                <WifiOff className="h-3 w-3" /> Offline
               </span>
             ) : (
               <span className="flex items-center gap-1 text-emerald-400/90 text-[11px]">
-                <Cloud className="h-3 w-3 text-emerald-400" /> Cloud Synced
+                <Cloud className="h-3 w-3 text-emerald-400" /> Synced
               </span>
             )}
           </div>
         </div>
 
+        {/* Center: Centered Participant Identity Badge */}
+        <div className="flex-1 flex justify-center items-center px-2 min-w-0">
+          <div className="flex items-center gap-2 rounded-full border border-[#a68a56]/40 bg-[#140f09]/95 px-4 py-1 shadow-inner font-nautical-mono text-xs text-[#f3d38c] max-w-lg truncate">
+            <span className="h-2 w-2 rounded-full bg-[#d4af37] animate-pulse shrink-0" />
+            <span className="font-semibold text-[#ebe4d5] truncate">{participant.name}</span>
+            {participant.college && (
+              <>
+                <span className="text-[#a68a56]/60">·</span>
+                <span className="text-[#d4af37] truncate max-w-[160px]">{participant.college}</span>
+              </>
+            )}
+            <span className="text-[#a68a56]/60">·</span>
+            <span className="rounded bg-[#d4af37]/15 border border-[#d4af37]/30 px-1.5 py-0.5 text-[10px] font-bold tracking-wide text-[#f3d38c] shrink-0">
+              {participant.terminalId}
+            </span>
+          </div>
+        </div>
+
         {/* Right: Controls & Global Submit Button */}
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2.5 shrink-0">
           <div className="hidden sm:flex items-center border border-[#a68a56]/20 rounded-lg bg-[#050504]/60 p-0.5">
             <button onClick={() => setEditorFontSize(p => Math.max(12, p - 1))} className="p-1 text-[#a68a56] hover:text-[#f3d38c]">
               <ZoomOut className="h-3.5 w-3.5" />
@@ -1081,59 +1093,76 @@ export default function ArenaPage() {
       {/* ── Two-Panel Arena Layout ───────────────────────────────────────────── */}
       <div className="flex flex-1 min-h-0 flex-col lg:flex-row overflow-hidden">
 
-        {/* Left: Problem Statement & Question Palette */}
+        {/* Left: Problem Statement & Question Palette (+50px wider) */}
         {!isDrawerCollapsed && (
-          <div className="w-full lg:w-[440px] xl:w-[480px] shrink-0 flex flex-col min-h-0 border-b lg:border-b-0 lg:border-r border-[#a68a56]/20 bg-[#090806]/95 overflow-hidden">
-            {/* Question Selector Tabs */}
-            <div className="shrink-0 border-b border-[#a68a56]/20 bg-[#090806]">
-              <div className="flex items-center gap-1.5 p-2 overflow-x-auto justify-between">
-                <div className="flex gap-1.5 overflow-x-auto py-1">
-                  {questions.map((q, idx) => {
-                    const st = getQStatus(q.id, questions);
-                    const cfg = statusConfig[st];
-                    const isSel = idx === activeQuestionIndex;
-                    const isQSealed = questionSealed[q.id];
-                    const qDur = questionDurations[q.id];
+          <div className="w-full lg:w-[495px] xl:w-[540px] shrink-0 flex flex-col min-h-0 border-b lg:border-b-0 lg:border-r border-[#a68a56]/20 bg-[#090806]/95 overflow-hidden">
+            {/* Header with Title and Collapse Drawer button */}
+            <div className="shrink-0 flex items-center justify-between px-3.5 py-2 border-b border-[#a68a56]/20 bg-[#0c0906]">
+              <div className="flex items-center gap-2">
+                <span className="font-cinzel text-xs font-bold tracking-wider text-[#d4af37]">QUESTIONS PALETTE</span>
+                <span className="font-nautical-mono text-[11px] text-[#8c7456]">({questions.length} Challenges)</span>
+              </div>
+              <button
+                onClick={() => setIsDrawerCollapsed(true)}
+                title="Collapse questions panel"
+                className="hidden lg:flex items-center gap-1 p-1 text-[#a68a56] hover:text-[#f3d38c] rounded hover:bg-[#1c160e]"
+              >
+                <PanelLeftClose className="h-4 w-4" />
+              </button>
+            </div>
 
-                    return (
-                      <button
-                        key={q.id}
-                        onClick={() => setActiveQuestionIndex(idx)}
-                        className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 font-nautical-mono text-xs transition-all whitespace-nowrap bouncy-btn border ${
-                          isSel
-                            ? 'border-[#d4af37] bg-[#1c160e] text-[#f3d38c] font-bold shadow-[0_0_12px_rgba(212,175,55,0.25)]'
-                            : `${cfg.borderClass} ${cfg.bgClass} text-[#a68a56] hover:bg-[#1c160e]/50`
-                        }`}
-                      >
-                        <span className={`h-2 w-2 rounded-full flex-shrink-0 ${cfg.dotClass}`} />
-                        <span>Q{idx + 1}</span>
-                        <span className="text-[10px] opacity-70">({q.points}p)</span>
-                        {isQSealed && qDur && (
-                          <span className="rounded bg-[#d4af37]/20 border border-[#d4af37]/40 px-1 py-0.2 text-[9px] font-bold text-[#f3d38c]">
+            {/* 4x2 Question Grid: displays all 8 questions at once with no scrollbars */}
+            <div className="shrink-0 p-2.5 bg-[#090806] border-b border-[#a68a56]/20">
+              <div className="grid grid-cols-4 gap-1.5">
+                {questions.map((q, idx) => {
+                  const st = getQStatus(q.id, questions);
+                  const cfg = statusConfig[st];
+                  const isSel = idx === activeQuestionIndex;
+                  const isQSealed = questionSealed[q.id];
+                  const qDur = questionDurations[q.id];
+
+                  return (
+                    <button
+                      key={q.id}
+                      onClick={() => setActiveQuestionIndex(idx)}
+                      className={`relative flex flex-col justify-between rounded-lg p-2 font-nautical-mono transition-all bouncy-btn border select-none ${
+                        isSel
+                          ? 'border-[#d4af37] bg-[#1c160e] text-[#f3d38c] font-bold shadow-[0_0_14px_rgba(212,175,55,0.35)] ring-1 ring-[#d4af37]/60'
+                          : `${cfg.borderClass} ${cfg.bgClass} text-[#a68a56] hover:bg-[#1c160e]/60 hover:text-[#ebe4d5]`
+                      }`}
+                    >
+                      <div className="flex items-center justify-between w-full">
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          <span className={`h-2 w-2 rounded-full shrink-0 ${cfg.dotClass}`} />
+                          <span className={`text-xs font-bold ${isSel ? 'text-[#f3d38c]' : 'text-[#ebe4d5]'}`}>Q{idx + 1}</span>
+                        </div>
+                        <span className="text-[10px] text-[#8c7456] font-medium shrink-0">{q.points}p</span>
+                      </div>
+
+                      <div className="flex items-center justify-between w-full mt-1.5 pt-1 border-t border-[#a68a56]/10 text-[9px]">
+                        {isQSealed && qDur ? (
+                          <span className="flex items-center gap-0.5 rounded bg-[#d4af37]/20 border border-[#d4af37]/40 px-1 py-0.2 font-bold text-[#f3d38c] truncate">
                             🔒 {fmtDuration(qDur)}
+                          </span>
+                        ) : (
+                          <span className={`truncate capitalize ${cfg.textClass}`}>
+                            {cfg.label}
                           </span>
                         )}
                         {markedSet.has(q.id) && (
-                          <Bookmark className="h-3 w-3 text-amber-400 fill-amber-400/40" />
+                          <Bookmark className="h-3 w-3 text-amber-400 fill-amber-400/40 shrink-0 ml-1" />
                         )}
-                      </button>
-                    );
-                  })}
-                </div>
-
-                <button
-                  onClick={() => setIsDrawerCollapsed(true)}
-                  className="hidden lg:flex p-1.5 text-gray-400 hover:text-white rounded hover:bg-white/5 shrink-0"
-                >
-                  <PanelLeftClose className="h-4 w-4" />
-                </button>
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
 
               {/* Status Legend Bar */}
-              <div className="flex flex-wrap gap-2 px-3 pb-2 pt-1 border-t border-[#a68a56]/10">
+              <div className="flex flex-wrap items-center justify-between gap-1 mt-2 pt-2 border-t border-[#a68a56]/15">
                 {Object.entries(statusConfig).map(([k, v]) => (
-                  <div key={k} className="flex items-center gap-1 font-nautical-mono text-[10px] text-[#8c7456]">
-                    <span className={`h-1.5 w-1.5 rounded-full ${v.dotClass}`} />
+                  <div key={k} className="flex items-center gap-1 font-nautical-mono text-[9px] text-[#8c7456]">
+                    <span className={`h-1.5 w-1.5 rounded-full shrink-0 ${v.dotClass}`} />
                     <span>{v.label}</span>
                   </div>
                 ))}
@@ -1216,7 +1245,7 @@ export default function ArenaPage() {
                   onClick={() => setIsDrawerCollapsed(false)}
                   className="flex items-center gap-1.5 rounded-lg border border-[#a68a56]/30 bg-[#1c160e]/50 px-2.5 py-1 font-cinzel text-xs text-[#f3d38c] hover:border-[#d4af37]"
                 >
-                  <PanelLeftOpen className="h-4 w-4" /><span>Scroll</span>
+                  <PanelLeftOpen className="h-4 w-4" /><span>Questions</span>
                 </button>
               )}
 
@@ -1303,33 +1332,33 @@ export default function ArenaPage() {
           </div>
 
           {/* ── Exam Bottom Action Bar: Code Stats + Navigation Controls ──────── */}
-          <div className="shrink-0 z-20 flex flex-wrap items-center justify-between border-t border-[#a68a56]/30 bg-[#090806] px-4 py-2.5 gap-2 select-none shadow-[0_-4px_20px_rgba(0,0,0,0.5)]">
+          <div className="shrink-0 z-20 flex items-center justify-between border-t border-[#a68a56]/30 bg-[#090806] px-4 py-2 select-none shadow-[0_-4px_20px_rgba(0,0,0,0.5)] min-h-[52px]">
             {/* Left: Code Stats & Cloud Save Status */}
-            <div className="flex items-center gap-3 font-nautical-mono text-[11px] text-[#a68a56]">
-              <span className="flex items-center gap-1 text-[#ebe4d5]">
+            <div className="flex items-center gap-2 font-nautical-mono text-[11px] text-[#a68a56] min-w-0 truncate">
+              <span className="flex items-center gap-1 text-[#ebe4d5] shrink-0">
                 <Code2 className="h-3 w-3 text-[#d4af37]" />
                 {currentCode.split('\n').length} lines
               </span>
-              <span>·</span>
-              <span>{currentCode.length} chars</span>
-              <span>·</span>
-              <span className="hidden sm:inline text-[#8c7456]">{lastSavedTimeStr}</span>
+              <span className="shrink-0">·</span>
+              <span className="shrink-0">{currentCode.length} chars</span>
+              <span className="shrink-0 hidden md:inline">·</span>
+              <span className="hidden md:inline text-[#8c7456] truncate">{lastSavedTimeStr}</span>
               {questionSealed[activeQId] && questionDurations[activeQId] && (
                 <>
-                  <span>·</span>
-                  <span className="text-emerald-400 font-bold hidden sm:inline">
+                  <span className="shrink-0 hidden lg:inline">·</span>
+                  <span className="text-emerald-400 font-bold hidden lg:inline shrink-0">
                     Sealed: {fmtDuration(questionDurations[activeQId])}
                   </span>
                 </>
               )}
             </div>
 
-            {/* Right: Question Navigation & Save Actions */}
-            <div className="flex items-center gap-2">
+            {/* Right: Question Navigation & Save Actions - strictly pinned right */}
+            <div className="ml-auto shrink-0 flex items-center gap-1.5 sm:gap-2">
               <button
                 onClick={() => setActiveQuestionIndex(Math.max(0, activeQuestionIndex - 1))}
                 disabled={activeQuestionIndex === 0}
-                className="flex items-center gap-1 rounded-xl border border-[#a68a56]/30 bg-[#1c160e]/50 px-3.5 py-1.5 font-cinzel text-xs text-[#ebe4d5] hover:border-[#d4af37] disabled:opacity-30 disabled:pointer-events-none transition-all bouncy-btn"
+                className="flex items-center gap-1 rounded-xl border border-[#a68a56]/30 bg-[#1c160e]/50 px-3 py-1.5 font-cinzel text-xs text-[#ebe4d5] hover:border-[#d4af37] disabled:opacity-30 disabled:pointer-events-none transition-all bouncy-btn"
               >
                 <ChevronLeft className="h-3.5 w-3.5" />
                 <span>Prev</span>
@@ -1337,7 +1366,7 @@ export default function ArenaPage() {
 
               <button
                 onClick={handleMarkForReviewAndNext}
-                className="flex items-center gap-1.5 rounded-xl border border-amber-500/40 bg-amber-950/20 px-3.5 py-1.5 font-cinzel text-xs text-amber-300 hover:border-amber-400 hover:bg-amber-950/40 transition-all bouncy-btn"
+                className="flex items-center gap-1.5 rounded-xl border border-amber-500/40 bg-amber-950/20 px-3 py-1.5 font-cinzel text-xs text-amber-300 hover:border-amber-400 hover:bg-amber-950/40 transition-all bouncy-btn"
               >
                 <Bookmark className="h-3.5 w-3.5 text-amber-400" />
                 <span>Mark &amp; Next</span>
@@ -1345,7 +1374,7 @@ export default function ArenaPage() {
 
               <button
                 onClick={handleSaveAndNext}
-                className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#d4af37] via-[#f3d38c] to-[#d4af37] px-5 py-2 font-cinzel text-xs font-black text-[#050504] shadow-[0_0_20px_rgba(212,175,55,0.35)] hover:brightness-110 active:scale-95 transition-all bouncy-btn"
+                className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#d4af37] via-[#f3d38c] to-[#d4af37] px-4 sm:px-5 py-1.5 sm:py-2 font-cinzel text-xs font-black text-[#050504] shadow-[0_0_20px_rgba(212,175,55,0.35)] hover:brightness-110 active:scale-95 transition-all bouncy-btn"
               >
                 <Check className="h-4 w-4 stroke-[3]" />
                 <span>{activeQuestionIndex === questions.length - 1 ? 'SAVE & REVIEW' : 'SAVE & NEXT'}</span>
@@ -1355,7 +1384,7 @@ export default function ArenaPage() {
               <button
                 onClick={() => setActiveQuestionIndex(Math.min(questions.length - 1, activeQuestionIndex + 1))}
                 disabled={activeQuestionIndex >= questions.length - 1}
-                className="flex items-center gap-1 rounded-xl border border-[#a68a56]/30 bg-[#1c160e]/50 px-3.5 py-1.5 font-cinzel text-xs text-[#ebe4d5] hover:border-[#d4af37] disabled:opacity-30 disabled:pointer-events-none transition-all bouncy-btn"
+                className="flex items-center gap-1 rounded-xl border border-[#a68a56]/30 bg-[#1c160e]/50 px-3 py-1.5 font-cinzel text-xs text-[#ebe4d5] hover:border-[#d4af37] disabled:opacity-30 disabled:pointer-events-none transition-all bouncy-btn"
               >
                 <span>Next</span>
                 <ChevronRight className="h-3.5 w-3.5" />
