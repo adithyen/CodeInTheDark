@@ -332,13 +332,17 @@ export async function upsertQuestion(sessionId: string, q: Partial<Question> & {
     updated_at: new Date().toISOString(),
   };
 
-  if (q.id) payload.id = q.id;
-
-  const { data } = await supabase
-    .from('questions')
-    .upsert(payload)
-    .select()
-    .single();
+  let data: any = null;
+  if (q.id) {
+    payload.id = q.id;
+    const res = await supabase.from('questions').upsert(payload).select().single();
+    data = res.data;
+    if (res.error) console.error('[upsertQuestion] Upsert error:', res.error);
+  } else {
+    const res = await supabase.from('questions').insert(payload).select().single();
+    data = res.data;
+    if (res.error) console.error('[upsertQuestion] Insert error:', res.error);
+  }
 
   if (!data) return null;
 
@@ -365,12 +369,24 @@ export async function upsertQuestion(sessionId: string, q: Partial<Question> & {
 }
 
 export async function deleteQuestion(id: string): Promise<void> {
-  await supabase.from('questions').delete().eq('id', id);
+  // Clean up dependent child rows first to avoid foreign key errors
+  await supabase.from('test_cases').delete().eq('question_id', id);
+  await supabase.from('submissions').delete().eq('question_id', id);
+  const { error } = await supabase.from('questions').delete().eq('id', id);
+  if (error) {
+    console.error('[deleteQuestion] Error deleting question', id, error);
+    throw new Error(error.message);
+  }
 }
 
 export async function bulkImportQuestions(sessionId: string, questions: Partial<Question>[]): Promise<void> {
-  // Delete existing questions for this session
-  await supabase.from('questions').delete().eq('session_id', sessionId);
+  // Delete existing questions and their test cases for this session
+  const { data: existingQs } = await supabase.from('questions').select('id').eq('session_id', sessionId);
+  if (existingQs && existingQs.length > 0) {
+    const qIds = existingQs.map(x => x.id);
+    await supabase.from('test_cases').delete().in('question_id', qIds);
+    await supabase.from('questions').delete().in('id', qIds);
+  }
 
   for (let i = 0; i < questions.length; i++) {
     const q = questions[i];

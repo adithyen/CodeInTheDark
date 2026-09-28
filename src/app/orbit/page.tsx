@@ -463,10 +463,22 @@ export default function AdminPage() {
 
   const handleDeleteQuestion = async (id: string) => {
     if (!confirm('Delete this question?')) return;
+    const targetId = viewingSessionId ?? currentSession?.id;
+    // Optimistic UI update so the question disappears immediately
+    setQuestions(prev => prev.filter(q => q.id !== id));
     try {
       const res = await fetch(`/api/questions?id=${id}&passkey=${passkey}`, { method: 'DELETE' });
-      if (res.ok) fetchAllData(passkey);
-    } catch { alert('Failed deleting question'); }
+      if (res.ok) {
+        fetchAllData(passkey, targetId);
+      } else {
+        const d = await res.json();
+        alert(d.error || 'Failed deleting question');
+        fetchAllData(passkey, targetId);
+      }
+    } catch {
+      alert('Failed deleting question');
+      fetchAllData(passkey, targetId);
+    }
   };
 
   const handleImportQuestionsJSON = async () => {
@@ -482,9 +494,15 @@ export default function AdminPage() {
         body: JSON.stringify({ passkey, action: 'bulk_import', questions: qList, sessionId: targetId }),
       });
       if (res.ok) {
-        alert(`Imported ${qList.length} questions!`);
-        setShowImportJsonModal(false); setImportJsonText(''); fetchAllData(passkey);
-      } else alert('Import failed');
+        const data = await res.json();
+        alert(`Imported ${data.count ?? qList.length} questions successfully with test cases!`);
+        setShowImportJsonModal(false);
+        setImportJsonText('');
+        fetchAllData(passkey, targetId);
+      } else {
+        const d = await res.json();
+        alert(d.error || 'Import failed');
+      }
     } catch (err: any) { alert(`JSON error: ${err.message}`); }
   };
 
