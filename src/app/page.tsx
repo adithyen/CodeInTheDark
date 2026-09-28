@@ -105,7 +105,7 @@ export default function HomePage() {
               href="/register"
               className="group inline-flex items-center gap-3 rounded-lg bg-gradient-to-r from-[#d4af37] via-[#f3d38c] to-[#a68a56] px-8 py-3 sm:px-9 sm:py-3.5 font-cinzel text-xs sm:text-sm font-bold tracking-widest text-[#050504] shadow-[0_0_25px_rgba(212,175,55,0.4)] transition-all hover:brightness-110 active:scale-95 bouncy-btn"
             >
-              <span>BOARD CONTEST VESSEL</span>
+              <span>ENTER CONTEST REGISTRATION</span>
               <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
             </Link>
           </div>

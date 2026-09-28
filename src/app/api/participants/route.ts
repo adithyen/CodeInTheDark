@@ -67,26 +67,26 @@ export async function POST(req: NextRequest) {
     // 3. Validate Phase & Late Join rule
     if (session.phase === 'setup') {
       return NextResponse.json({
-        error: 'Registration is not open yet. Please wait for the organizer to initiate the voyage muster.',
+        error: 'Registration is not open yet. Please wait for the organizer to open registration.',
       }, { status: 403 });
     }
 
     if (session.phase === 'active' || session.phase === 'paused') {
       if (!session.allow_late_join && !isAlreadyRegistered) {
         return NextResponse.json({
-          error: 'Registration window has closed and late joining is disabled for this voyage.',
+          error: 'Registration window has closed and late registration is disabled for this contest.',
         }, { status: 403 });
       }
     } else if (session.phase === 'ended' || session.phase === 'reveal') {
       return NextResponse.json({
-        error: 'This contest voyage has already concluded.',
+        error: 'This contest has already concluded.',
       }, { status: 403 });
     }
 
     // 4. Enforce Max Participants Capacity
     if (!isAlreadyRegistered && existingParticipants.length >= maxCapacity) {
       return NextResponse.json({
-        error: `Voyage roster is full. Maximum capacity of ${maxCapacity} navigators has been reached.`,
+        error: `Contest registration is full. Maximum capacity of ${maxCapacity} participants has been reached.`,
       }, { status: 403 });
     }
 

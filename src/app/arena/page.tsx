@@ -727,7 +727,7 @@ export default function ArenaPage() {
         localStorage.setItem(`cid_submitted_${participant.id}`, 'true');
         setLobbyMessage(autoSubmit
           ? 'Contest duration expired — all question responses have been auto-submitted and locked for evaluation.'
-          : 'All answers sealed and submitted. Output remains sealed until Admiralty Stage Reveal.');
+          : 'All answers submitted. Results and standings will be presented during the official leaderboard reveal.');
         setShowLobby(true);
       } else {
         const errData = await res.json().catch(() => ({}));
@@ -821,90 +821,92 @@ export default function ArenaPage() {
     const grandTests = lobbyResults.reduce((s, l) => s + l.totalTestCases, 0);
 
     return (
-      <div className="relative flex flex-1 flex-col overflow-hidden bg-[#050504] items-center justify-center p-4 sm:p-8">
+      <div className="relative flex flex-1 flex-col overflow-y-auto bg-[#050504] items-center justify-start py-8 px-4 sm:px-8">
         <div className="pointer-events-none absolute inset-0">
-          <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[700px] h-[450px] bg-[#d4af37]/5 rounded-full blur-[140px]" />
+          <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[900px] h-[500px] bg-[#d4af37]/5 rounded-full blur-[160px]" />
         </div>
 
-        <div className="relative z-10 w-full max-w-3xl space-y-6">
+        <div className="relative z-10 w-full max-w-5xl space-y-7">
           {/* Header */}
-          <div className="text-center space-y-3">
-            <div className="inline-flex items-center gap-2 rounded-full border border-[#d4af37]/40 bg-[#1c160e]/90 px-4 py-1.5 font-cinzel text-xs font-bold tracking-widest text-[#f3d38c] shadow-[0_0_20px_rgba(212,175,55,0.2)]">
-              <Lock className="h-3.5 w-3.5 text-[#d4af37]" /> ALL RESPONSES SEALED &middot; LOCKED
+          <div className="text-center space-y-3.5">
+            <div className="inline-flex items-center gap-2 rounded-full border border-[#d4af37]/40 bg-[#1c160e]/95 px-5 py-2 font-cinzel text-xs sm:text-sm font-bold tracking-widest text-[#f3d38c] shadow-[0_0_24px_rgba(212,175,55,0.25)]">
+              <CheckCircle2 className="h-4 w-4 text-emerald-400" /> CONTEST SUBMISSION CONFIRMED &middot; RESPONSES SAVED
             </div>
-            <h1 className="font-cinzel text-3xl sm:text-4xl font-extrabold text-[#ebe4d5] tracking-tight">
-              Navigator&apos;s <span className="text-[#d4af37]">Lounge</span>
+            <h1 className="font-cinzel text-4xl sm:text-5xl font-black text-[#ebe4d5] tracking-tight">
+              Contest <span className="text-[#d4af37]">Submissions</span>
             </h1>
-            <p className="font-nautical-mono text-sm text-[#a68a56] max-w-lg mx-auto">
-              {lobbyMessage}
+            <p className="font-nautical-mono text-sm sm:text-base text-[#a68a56] max-w-2xl mx-auto leading-relaxed">
+              {lobbyMessage === 'Awaiting contest conclusion...'
+                ? 'All your code solutions have been evaluated and locked. Standings and rankings will be officially revealed on the leaderboard once the contest concludes.'
+                : lobbyMessage}
             </p>
           </div>
 
           {/* Live countdown until contest officially ends */}
           {contest?.endTime && !isContestOver && (
-            <div className="rounded-2xl border border-[#a68a56]/25 bg-[#090704]/80 p-5 text-center shadow-lg">
-              <p className="font-cinzel text-xs text-[#a68a56] uppercase tracking-wider mb-2">Contest Concludes In</p>
+            <div className="rounded-2xl border border-[#a68a56]/30 bg-[#090704]/90 p-6 text-center shadow-xl">
+              <p className="font-cinzel text-xs sm:text-sm text-[#a68a56] uppercase tracking-wider mb-2 font-semibold">Contest Concludes In</p>
               <CountdownTimer endTime={contest.endTime} isPaused={contest.isPaused} onExpire={handleTimerExpired} />
             </div>
           )}
 
           {/* Results Summary Card */}
           {lobbyResults.length > 0 && (
-            <div className="rounded-2xl border border-[#a68a56]/30 bg-[#090704]/90 overflow-hidden shadow-2xl backdrop-blur-md">
-              <div className="flex items-center justify-between border-b border-[#a68a56]/20 bg-[#140f0a] px-6 py-3.5">
-                <span className="font-cinzel text-xs font-bold uppercase tracking-wider text-[#d4af37]">
-                  Sealed Evaluation Record
+            <div className="rounded-2xl border border-[#a68a56]/35 bg-[#090704]/95 overflow-hidden shadow-2xl backdrop-blur-md">
+              <div className="flex items-center justify-between border-b border-[#a68a56]/25 bg-[#140f0a] px-6 py-4">
+                <span className="font-cinzel text-sm font-bold uppercase tracking-wider text-[#d4af37]">
+                  Your Submission Summary
                 </span>
-                <span className="font-nautical-mono text-xs text-[#a68a56]">
+                <span className="font-nautical-mono text-sm text-[#f3d38c] font-semibold">
                   {lobbyResults.length} / {questions.length} questions submitted
                 </span>
               </div>
 
-              <div className="divide-y divide-[#a68a56]/15 max-h-[45vh] overflow-y-auto">
+              <div className="divide-y divide-[#a68a56]/15 max-h-[50vh] overflow-y-auto">
                 {lobbyResults.map((r, idx) => {
                   const pct = r.totalTestCases > 0 ? r.testCasesPassed / r.totalTestCases : 0;
                   const bar = pct === 1 ? 'bg-emerald-500' : pct > 0.5 ? 'bg-[#d4af37]' : 'bg-red-500/70';
                   const elapsed = r.elapsedMs > 0 ? `${Math.floor(r.elapsedMs / 60000)}m ${Math.floor((r.elapsedMs % 60000) / 1000)}s` : '—';
 
                   return (
-                    <div key={r.questionId} className="px-6 py-4 space-y-2 hover:bg-[#1c160e]/30 transition-all">
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <span className="font-nautical-mono text-xs font-bold text-[#a68a56]">Q{idx + 1}.</span>
-                            <span className="font-cinzel text-sm font-bold text-[#ebe4d5]">{r.questionTitle}</span>
+                    <div key={r.questionId} className="px-6 sm:px-8 py-5 space-y-3 hover:bg-[#1c160e]/40 transition-all">
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2.5 flex-wrap">
+                            <span className="font-nautical-mono text-sm font-bold text-[#d4af37]">Q{idx + 1}.</span>
+                            <span className="font-cinzel text-base sm:text-lg font-bold text-[#ebe4d5]">{r.questionTitle}</span>
                             {r.isAutoSubmit && (
-                              <span className="rounded bg-amber-500/20 px-1.5 py-0.5 font-nautical-mono text-[10px] text-amber-300 border border-amber-500/30">
+                              <span className="rounded bg-amber-500/20 px-2 py-0.5 font-nautical-mono text-xs text-amber-300 border border-amber-500/30">
                                 AUTO-SUBMIT
                               </span>
                             )}
                           </div>
-                          <div className="mt-1 flex flex-wrap gap-x-3 font-nautical-mono text-xs text-[#a68a56]">
-                            <span className="uppercase text-[#f3d38c]">{r.language}</span>
+                          <div className="flex flex-wrap gap-x-3.5 font-nautical-mono text-xs sm:text-sm text-[#a68a56]">
+                            <span className="uppercase text-[#f3d38c] font-semibold">{r.language}</span>
                             <span>·</span><span>{r.lines} lines</span>
                             <span>·</span><span>{r.chars} chars</span>
-                            <span>·</span><span>Time taken: {elapsed}</span>
+                            <span>·</span><span>Time taken: <strong className="text-[#ebe4d5]">{elapsed}</strong></span>
                           </div>
                         </div>
 
                         <div className="text-right shrink-0">
-                          <div className="font-nautical-mono text-xl font-extrabold text-[#d4af37]">
+                          <div className="font-nautical-mono text-2xl sm:text-3xl font-extrabold text-[#d4af37]">
                             {r.score + r.speedBonus}
-                            <span className="text-xs text-[#a68a56] ml-1">pts</span>
+                            <span className="text-sm text-[#a68a56] ml-1.5 font-semibold">pts</span>
                           </div>
                           {r.speedBonus > 0 && (
-                            <div className="text-[10px] text-[#f3d38c]">+{r.speedBonus} speed bonus</div>
+                            <div className="text-xs text-[#f3d38c] font-semibold font-nautical-mono mt-0.5">+{r.speedBonus} speed bonus</div>
                           )}
                         </div>
                       </div>
 
                       {/* Tests bar */}
-                      <div className="space-y-1">
-                        <div className="flex justify-between font-nautical-mono text-[11px] text-[#a68a56]">
-                          <span>{r.testCasesPassed}/{r.totalTestCases} test cases passed</span>
-                          <span>{Math.round(pct * 100)}%</span>
+                      <div className="space-y-1.5">
+                        <div className="flex justify-between font-nautical-mono text-xs sm:text-sm text-[#a68a56]">
+                          <span className="text-[#ebe4d5] font-medium">{r.testCasesPassed}/{r.totalTestCases} test cases passed</span>
+                          <span className="font-bold text-[#f3d38c]">{Math.round(pct * 100)}%</span>
                         </div>
-                        <div className="h-2 w-full rounded-full bg-[#1c160e] overflow-hidden">
+                        <div className="h-2.5 w-full rounded-full bg-[#1c160e] overflow-hidden">
                           <div className={`h-full rounded-full transition-all duration-700 ${bar}`} style={{ width: `${pct * 100}%` }} />
                         </div>
                       </div>
@@ -914,28 +916,28 @@ export default function ArenaPage() {
               </div>
 
               {/* Grand Total Footer */}
-              <div className="flex items-center justify-between border-t border-[#a68a56]/20 bg-[#140f0a] px-6 py-4">
-                <span className="font-cinzel text-xs text-[#a68a56]">
-                  Total Tests Passed: <strong className="text-[#ebe4d5]">{grandPassed}/{grandTests}</strong>
+              <div className="flex items-center justify-between border-t border-[#a68a56]/25 bg-[#140f0a] px-6 sm:px-8 py-5">
+                <span className="font-cinzel text-sm sm:text-base text-[#a68a56]">
+                  Total Test Cases Passed: <strong className="text-lg text-[#ebe4d5] font-nautical-mono ml-1">{grandPassed}/{grandTests}</strong>
                 </span>
-                <div className="flex items-center gap-2">
-                  <span className="font-cinzel text-xs text-[#a68a56] uppercase tracking-wider">Final Score:</span>
-                  <span className="font-nautical-mono text-2xl font-extrabold text-[#f3d38c]">{grandScore} pts</span>
+                <div className="flex items-center gap-2.5">
+                  <span className="font-cinzel text-xs sm:text-sm text-[#a68a56] uppercase tracking-wider font-semibold">Final Score:</span>
+                  <span className="font-nautical-mono text-3xl sm:text-4xl font-black text-[#f3d38c]">{grandScore} pts</span>
                 </div>
               </div>
             </div>
           )}
 
           {/* Reveal Waiting Notification */}
-          <div className="rounded-2xl border border-[#a68a56]/20 bg-[#090704]/70 p-5 text-center space-y-2 shadow-lg">
-            <div className="flex items-center justify-center gap-2">
-              <Loader2 className="h-4 w-4 animate-spin text-[#d4af37]" />
-              <span className="font-nautical-mono text-xs text-[#d4af37] font-semibold">
-                Awaiting Admiralty Stage Reveal Ceremony
+          <div className="rounded-2xl border border-[#a68a56]/30 bg-[#090704]/80 p-6 text-center space-y-2.5 shadow-xl">
+            <div className="flex items-center justify-center gap-2.5">
+              <Loader2 className="h-5 w-5 animate-spin text-[#d4af37]" />
+              <span className="font-cinzel text-sm sm:text-base text-[#d4af37] font-bold tracking-wide">
+                Waiting for Final Results Reveal
               </span>
             </div>
-            <p className="font-nautical-mono text-xs text-[#8c7456]">
-              All participants will be automatically transitioned to the Leaderboard when the stage reveal commences.
+            <p className="font-nautical-mono text-xs sm:text-sm text-[#a68a56] max-w-xl mx-auto">
+              You will be automatically redirected to the Leaderboard as soon as the final results are announced.
             </p>
           </div>
         </div>
@@ -962,7 +964,7 @@ export default function ArenaPage() {
     <div className="fixed inset-0 z-30 flex flex-col h-screen w-screen overflow-hidden bg-[#050504]">
       <AntiCheatShield
         participantName={participant.name}
-        rollNumber={participant.college || participant.rollNumber || 'NAVIGATOR'}
+        rollNumber={participant.college || participant.rollNumber || 'PARTICIPANT'}
         terminalId={participant.terminalId}
         strikes={strikes}
         isLockedOut={isLockedOut}
@@ -980,8 +982,8 @@ export default function ArenaPage() {
           <div className="flex flex-col items-center gap-4 rounded-2xl border border-red-500/50 bg-[#120707] p-8 text-center shadow-2xl">
             <Loader2 className="h-10 w-10 animate-spin text-red-400" />
             <h2 className="font-cinzel text-xl font-bold text-red-300">Contest Duration Expired</h2>
-            <p className="font-nautical-mono text-xs text-[#a68a56] max-w-sm">
-              Automatically collecting and submitting all your question responses to the Admiralty...
+            <p className="font-nautical-mono text-sm text-[#ebe4d5]/80 max-w-md">
+              Automatically collecting and submitting all your question responses to the evaluation server...
             </p>
           </div>
         </div>
@@ -1097,10 +1099,10 @@ export default function ArenaPage() {
         {!isDrawerCollapsed && (
           <div className="w-full lg:w-[495px] xl:w-[540px] shrink-0 flex flex-col min-h-0 border-b lg:border-b-0 lg:border-r border-[#a68a56]/20 bg-[#090806]/95 overflow-hidden">
             {/* Header with Title and Collapse Drawer button */}
-            <div className="shrink-0 flex items-center justify-between px-3.5 py-2 border-b border-[#a68a56]/20 bg-[#0c0906]">
+            <div className="shrink-0 flex items-center justify-between px-4 py-2.5 border-b border-[#a68a56]/20 bg-[#0c0906]">
               <div className="flex items-center gap-2">
-                <span className="font-cinzel text-xs font-bold tracking-wider text-[#d4af37]">QUESTIONS PALETTE</span>
-                <span className="font-nautical-mono text-[11px] text-[#8c7456]">({questions.length} Challenges)</span>
+                <span className="font-cinzel text-xs sm:text-sm font-bold tracking-wider text-[#d4af37]">PROBLEMS</span>
+                <span className="font-nautical-mono text-xs text-[#8c7456]">({questions.length} Questions)</span>
               </div>
               <button
                 onClick={() => setIsDrawerCollapsed(true)}
@@ -1159,9 +1161,9 @@ export default function ArenaPage() {
               </div>
 
               {/* Status Legend Bar */}
-              <div className="flex flex-wrap items-center justify-between gap-1 mt-2 pt-2 border-t border-[#a68a56]/15">
+              <div className="flex flex-wrap items-center justify-between gap-1.5 mt-2 pt-2 border-t border-[#a68a56]/15">
                 {Object.entries(statusConfig).map(([k, v]) => (
-                  <div key={k} className="flex items-center gap-1 font-nautical-mono text-[9px] text-[#8c7456]">
+                  <div key={k} className="flex items-center gap-1 font-nautical-mono text-[10px] text-[#8c7456]">
                     <span className={`h-1.5 w-1.5 rounded-full shrink-0 ${v.dotClass}`} />
                     <span>{v.label}</span>
                   </div>
@@ -1170,64 +1172,64 @@ export default function ArenaPage() {
             </div>
 
             {/* Problem Details Scroll Area */}
-            <div className="flex-1 min-h-0 overflow-y-auto p-5 space-y-5">
+            <div className="flex-1 min-h-0 overflow-y-auto p-5 space-y-6">
               <div>
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="rounded border border-[#d4af37]/30 bg-[#1c160e] px-2 py-0.5 font-cinzel text-[10px] font-semibold text-[#f3d38c]">
+                  <span className="rounded border border-[#d4af37]/40 bg-[#1c160e] px-2.5 py-0.5 font-cinzel text-xs font-bold text-[#f3d38c]">
                     {activeQuestion.difficulty}
                   </span>
-                  <span className="font-nautical-mono text-xs text-[#a68a56]">
+                  <span className="font-nautical-mono text-xs sm:text-sm font-semibold text-[#f3d38c]">
                     {activeQuestion.category} · {activeQuestion.points} pts
                   </span>
-                  <span className={`ml-auto rounded px-2 py-0.5 font-cinzel text-[10px] font-semibold border ${statusConfig[activeStatus].borderClass} ${statusConfig[activeStatus].textClass}`}>
+                  <span className={`ml-auto rounded px-2.5 py-0.5 font-cinzel text-xs font-semibold border ${statusConfig[activeStatus].borderClass} ${statusConfig[activeStatus].textClass}`}>
                     {statusConfig[activeStatus].label}
                   </span>
                 </div>
-                <h2 className="mt-2 font-cinzel text-xl font-bold tracking-tight text-[#ebe4d5]">
+                <h2 className="mt-2.5 font-cinzel text-xl sm:text-2xl font-bold tracking-tight text-[#ebe4d5]">
                   {activeQuestion.title}
                 </h2>
               </div>
 
               <div className="space-y-2">
-                <h3 className="font-cinzel text-xs font-semibold uppercase tracking-wider text-[#d4af37]">Scenario Charter</h3>
-                <div className="rounded-xl border border-[#a68a56]/20 bg-[#050504]/60 p-4 font-sans text-sm leading-relaxed text-[#ebe4d5]/90 whitespace-pre-line">
+                <h3 className="font-cinzel text-xs sm:text-sm font-bold uppercase tracking-wider text-[#d4af37]">Problem Description</h3>
+                <div className="rounded-xl border border-[#a68a56]/20 bg-[#050504]/70 p-4 font-sans text-sm sm:text-base leading-relaxed text-[#f0ece1] whitespace-pre-line">
                   {activeQuestion.scenario}
                 </div>
               </div>
 
-              <div className="grid gap-3">
-                <div className="rounded-xl border border-[#a68a56]/20 bg-[#050504]/40 p-3">
-                  <h4 className="font-cinzel text-xs font-semibold text-[#f3d38c]">Input Inscription</h4>
-                  <p className="mt-1 font-nautical-mono text-xs text-[#ebe4d5]/80 whitespace-pre-line">{activeQuestion.inputFormat}</p>
+              <div className="grid gap-3.5">
+                <div className="rounded-xl border border-[#a68a56]/25 bg-[#050504]/50 p-4">
+                  <h4 className="font-cinzel text-xs font-bold uppercase tracking-wider text-[#f3d38c]">Input Format</h4>
+                  <p className="mt-1.5 font-nautical-mono text-sm text-[#ebe4d5] whitespace-pre-line leading-relaxed">{activeQuestion.inputFormat}</p>
                 </div>
-                <div className="rounded-xl border border-[#a68a56]/20 bg-[#050504]/40 p-3">
-                  <h4 className="font-cinzel text-xs font-semibold text-[#f3d38c]">Output Vessel</h4>
-                  <p className="mt-1 font-nautical-mono text-xs text-[#ebe4d5]/80 whitespace-pre-line">{activeQuestion.outputFormat}</p>
+                <div className="rounded-xl border border-[#a68a56]/25 bg-[#050504]/50 p-4">
+                  <h4 className="font-cinzel text-xs font-bold uppercase tracking-wider text-[#f3d38c]">Output Format</h4>
+                  <p className="mt-1.5 font-nautical-mono text-sm text-[#ebe4d5] whitespace-pre-line leading-relaxed">{activeQuestion.outputFormat}</p>
                 </div>
-                <div className="rounded-xl border border-[#a68a56]/20 bg-[#050504]/40 p-3">
-                  <h4 className="font-cinzel text-xs font-semibold text-[#d4af37]">Constraints</h4>
-                  <p className="mt-1 font-nautical-mono text-xs text-[#ebe4d5]/80 whitespace-pre-line">{activeQuestion.constraints}</p>
+                <div className="rounded-xl border border-[#a68a56]/25 bg-[#050504]/50 p-4">
+                  <h4 className="font-cinzel text-xs font-bold uppercase tracking-wider text-[#d4af37]">Constraints</h4>
+                  <p className="mt-1.5 font-nautical-mono text-sm text-[#f3d38c] font-medium whitespace-pre-line leading-relaxed">{activeQuestion.constraints}</p>
                 </div>
               </div>
 
-              {/* Public Trials */}
-              <div className="space-y-3">
+              {/* Sample Test Cases */}
+              <div className="space-y-3.5">
                 <div className="flex items-center justify-between">
-                  <h3 className="font-cinzel text-xs font-semibold uppercase tracking-wider text-[#d4af37]">Public Trials</h3>
-                  <span className="font-nautical-mono text-[10px] text-[#a68a56]">Hidden test cases evaluated on submission</span>
+                  <h3 className="font-cinzel text-xs sm:text-sm font-bold uppercase tracking-wider text-[#d4af37]">Sample Test Cases</h3>
+                  <span className="font-nautical-mono text-xs text-[#a68a56]">Hidden test cases evaluated on submission</span>
                 </div>
                 {activeQuestion.testCases.filter(tc => !tc.isHidden).map((tc, idx) => (
-                  <div key={tc.id} className="rounded-xl border border-[#a68a56]/25 bg-[#0e0b07] p-3 font-nautical-mono text-xs space-y-2 select-none">
-                    <div className="text-[11px] font-cinzel font-bold text-[#f3d38c]">Trial {idx + 1}</div>
+                  <div key={tc.id} className="rounded-xl border border-[#a68a56]/30 bg-[#0e0b07] p-4 font-nautical-mono text-sm space-y-2.5 select-none">
+                    <div className="text-xs font-cinzel font-bold text-[#f3d38c]">Sample Case {idx + 1}</div>
                     <div>
-                      <span className="text-[#a68a56]">Input:</span>
-                      <pre className="mt-0.5 rounded border border-[#a68a56]/15 bg-[#050504] p-2 text-[#f3d38c] overflow-x-auto">{tc.input}</pre>
+                      <span className="text-[#a68a56] text-xs">Input:</span>
+                      <pre className="mt-1 rounded border border-[#a68a56]/20 bg-[#050504] p-2.5 text-sm text-[#f3d38c] overflow-x-auto leading-relaxed">{tc.input}</pre>
                     </div>
                     <div>
-                      <span className="text-[#a68a56]">Expected Output:</span>
-                      <pre className="mt-0.5 rounded border border-[#a68a56]/15 bg-[#050504] p-2 text-[#d4af37] overflow-x-auto">{tc.expectedOutput}</pre>
+                      <span className="text-[#a68a56] text-xs">Expected Output:</span>
+                      <pre className="mt-1 rounded border border-[#a68a56]/20 bg-[#050504] p-2.5 text-sm text-[#d4af37] overflow-x-auto leading-relaxed">{tc.expectedOutput}</pre>
                     </div>
-                    {tc.explanation && <div className="text-[11px] text-[#a68a56] italic">Note: {tc.explanation}</div>}
+                    {tc.explanation && <div className="text-xs text-[#a68a56] italic">Note: {tc.explanation}</div>}
                   </div>
                 ))}
               </div>
@@ -1250,7 +1252,7 @@ export default function ArenaPage() {
               )}
 
               <div className="flex items-center gap-2">
-                <label className="font-cinzel text-xs text-[#a68a56]">Cipher:</label>
+                <label className="font-cinzel text-xs font-bold text-[#a68a56]">Language:</label>
                 <select
                   value={currentLanguage}
                   onChange={e => handleLanguageChange(e.target.value as Language)}
@@ -1398,21 +1400,21 @@ export default function ArenaPage() {
       {/* ── Submission Preview & Verification Modal ──────────────────────────── */}
       {showPreviewModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4 backdrop-blur-md">
-          <div className="w-full max-w-2xl max-h-[92vh] flex flex-col rounded-2xl border border-[#d4af37]/50 bg-[#0c0906] shadow-[0_0_60px_rgba(0,0,0,0.95)] overflow-hidden">
+          <div className="w-full max-w-4xl max-h-[92vh] flex flex-col rounded-2xl border border-[#d4af37]/50 bg-[#0c0906] shadow-[0_0_60px_rgba(0,0,0,0.95)] overflow-hidden">
             {/* Header */}
-            <div className="flex items-center justify-between border-b border-[#a68a56]/20 bg-[#140f0a] px-6 py-4">
+            <div className="flex items-center justify-between border-b border-[#a68a56]/20 bg-[#140f0a] px-6 sm:px-8 py-5">
               <div>
-                <h2 className="font-cinzel text-lg font-extrabold text-[#f3d38c] tracking-wide flex items-center gap-2">
-                  <Lock className="h-4 w-4 text-[#d4af37]" />
-                  Contest Submission &amp; Sealing Preview
+                <h2 className="font-cinzel text-lg sm:text-xl font-extrabold text-[#f3d38c] tracking-wide flex items-center gap-2.5">
+                  <Lock className="h-5 w-5 text-[#d4af37]" />
+                  Contest Submission Preview
                 </h2>
-                <p className="mt-0.5 font-nautical-mono text-xs text-[#a68a56]">
-                  Visual verification of all question responses received by the server before final locking
+                <p className="mt-1 font-nautical-mono text-xs sm:text-sm text-[#a68a56]">
+                  Verify your code solutions and metrics before final contest submission
                 </p>
               </div>
               <button
                 onClick={() => setShowPreviewModal(false)}
-                className="text-[#a68a56] hover:text-[#ebe4d5] p-1 rounded-lg hover:bg-white/5 transition-all"
+                className="text-[#a68a56] hover:text-[#ebe4d5] p-1.5 rounded-lg hover:bg-white/5 transition-all"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -1420,96 +1422,96 @@ export default function ArenaPage() {
 
             {/* 5-Status Metrics Grid */}
             <div className="grid grid-cols-5 gap-px border-b border-[#a68a56]/20 bg-[#a68a56]/10 text-center">
-              <div className="bg-[#090806] py-3 px-1">
-                <span className="font-nautical-mono text-xl font-extrabold text-emerald-400">{summaryAnswered}</span>
-                <p className="font-cinzel text-[10px] uppercase text-[#a68a56]">Answered</p>
+              <div className="bg-[#090806] py-3.5 px-1">
+                <span className="font-nautical-mono text-2xl font-extrabold text-emerald-400">{summaryAnswered}</span>
+                <p className="font-cinzel text-xs uppercase text-[#a68a56] font-semibold mt-0.5">Answered</p>
               </div>
-              <div className="bg-[#090806] py-3 px-1">
-                <span className="font-nautical-mono text-xl font-extrabold text-teal-300">
+              <div className="bg-[#090806] py-3.5 px-1">
+                <span className="font-nautical-mono text-2xl font-extrabold text-teal-300">
                   {previewData.filter(d => d.status === 'answered_marked').length}
                 </span>
-                <p className="font-cinzel text-[10px] uppercase text-[#a68a56]">Ans + Review</p>
+                <p className="font-cinzel text-xs uppercase text-[#a68a56] font-semibold mt-0.5">Ans + Review</p>
               </div>
-              <div className="bg-[#090806] py-3 px-1">
-                <span className="font-nautical-mono text-xl font-extrabold text-amber-400">
+              <div className="bg-[#090806] py-3.5 px-1">
+                <span className="font-nautical-mono text-2xl font-extrabold text-amber-400">
                   {previewData.filter(d => d.status === 'marked_review').length}
                 </span>
-                <p className="font-cinzel text-[10px] uppercase text-[#a68a56]">Review Only</p>
+                <p className="font-cinzel text-xs uppercase text-[#a68a56] font-semibold mt-0.5">Review Only</p>
               </div>
-              <div className="bg-[#090806] py-3 px-1">
-                <span className="font-nautical-mono text-xl font-extrabold text-orange-400">{summaryUnanswered}</span>
-                <p className="font-cinzel text-[10px] uppercase text-[#a68a56]">Unanswered</p>
+              <div className="bg-[#090806] py-3.5 px-1">
+                <span className="font-nautical-mono text-2xl font-extrabold text-orange-400">{summaryUnanswered}</span>
+                <p className="font-cinzel text-xs uppercase text-[#a68a56] font-semibold mt-0.5">Unanswered</p>
               </div>
-              <div className="bg-[#090806] py-3 px-1">
-                <span className="font-nautical-mono text-xl font-extrabold text-[#6b5535]">{summaryNotVisited}</span>
-                <p className="font-cinzel text-[10px] uppercase text-[#a68a56]">Not Visited</p>
+              <div className="bg-[#090806] py-3.5 px-1">
+                <span className="font-nautical-mono text-2xl font-extrabold text-[#8c7456]">{summaryNotVisited}</span>
+                <p className="font-cinzel text-xs uppercase text-[#a68a56] font-semibold mt-0.5">Not Visited</p>
               </div>
             </div>
 
             {/* Visual Confirmation Banner */}
-            <div className="flex items-center justify-between border-b border-[#a68a56]/20 bg-[#1c160e]/50 px-6 py-2.5 font-nautical-mono text-xs">
+            <div className="flex items-center justify-between border-b border-[#a68a56]/20 bg-[#1c160e]/50 px-6 sm:px-8 py-3 font-nautical-mono text-xs sm:text-sm">
               <span className="text-[#ebe4d5]">
                 Verified: <strong className="text-[#f3d38c]">{totalVerifiedLines} lines of code</strong> ({totalVerifiedChars} chars) across {summaryAnswered} questions
               </span>
-              <span className="text-emerald-400 flex items-center gap-1 text-[11px]">
-                <Check className="h-3.5 w-3.5" /> Ready for evaluation
+              <span className="text-emerald-400 flex items-center gap-1.5 font-semibold text-xs sm:text-sm">
+                <Check className="h-4 w-4" /> Ready for evaluation
               </span>
             </div>
 
             {/* Question Breakdown List */}
-            <div className="flex-1 overflow-y-auto divide-y divide-[#a68a56]/15 px-6 py-2 max-h-[42vh]">
+            <div className="flex-1 overflow-y-auto divide-y divide-[#a68a56]/15 px-6 sm:px-8 py-2 max-h-[46vh]">
               {previewData.map(({ q, status, lang, lines, chars, hasMeaningfulCode, code }, idx) => {
                 const cfg = statusConfig[status];
                 const isExpanded = expandedPreviewQId === q.id;
 
                 return (
-                  <div key={q.id} className="py-3 space-y-2">
+                  <div key={q.id} className="py-3.5 space-y-2.5">
                     <div className="flex items-center justify-between gap-3">
-                      <div className="flex items-center gap-2.5 min-w-0">
-                        <span className="font-cinzel text-xs font-bold text-[#a68a56] w-6 shrink-0">Q{idx + 1}</span>
+                      <div className="flex items-center gap-3 min-w-0">
+                        <span className="font-cinzel text-sm font-bold text-[#d4af37] w-7 shrink-0">Q{idx + 1}</span>
                         <span className={`h-2.5 w-2.5 rounded-full flex-shrink-0 ${cfg.dotClass}`} />
                         <div className="min-w-0">
-                          <div className="font-cinzel text-xs font-bold text-[#ebe4d5] truncate">{q.title}</div>
-                          <div className="font-nautical-mono text-[10px] text-[#a68a56]">
+                          <div className="font-cinzel text-sm sm:text-base font-bold text-[#ebe4d5] truncate">{q.title}</div>
+                          <div className="font-nautical-mono text-xs text-[#a68a56] mt-0.5">
                             <span className={cfg.textClass}>{cfg.label}</span> · {lang.toUpperCase()} · {q.points} pts
                           </div>
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-3 shrink-0">
+                      <div className="flex items-center gap-4 shrink-0">
                         {hasMeaningfulCode ? (
                           <div className="text-right">
-                            <span className="font-nautical-mono text-xs font-bold text-[#f3d38c]">{lines} lines</span>
-                            <span className="text-[10px] text-[#8c7456] block">{chars} chars</span>
+                            <span className="font-nautical-mono text-sm font-bold text-[#f3d38c]">{lines} lines</span>
+                            <span className="text-xs text-[#8c7456] block">{chars} chars</span>
                           </div>
                         ) : (
-                          <span className="font-nautical-mono text-[11px] text-[#6b5535]">No code written</span>
+                          <span className="font-nautical-mono text-xs text-[#8c7456] italic">No code written</span>
                         )}
 
                         <button
                           onClick={() => setExpandedPreviewQId(isExpanded ? null : q.id)}
-                          className="p-1 rounded text-[#a68a56] hover:text-[#f3d38c] hover:bg-white/5 transition-all text-xs flex items-center gap-1 font-nautical-mono"
+                          className="px-2.5 py-1 rounded-lg text-[#a68a56] hover:text-[#f3d38c] hover:bg-white/5 transition-all text-xs flex items-center gap-1 font-nautical-mono border border-[#a68a56]/20"
                           title="Inspect submitted code"
                         >
-                          <span>{isExpanded ? 'Hide' : 'Inspect'}</span>
-                          {isExpanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                          <span>{isExpanded ? 'Hide Code' : 'Inspect Code'}</span>
+                          {isExpanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
                         </button>
                       </div>
                     </div>
 
                     {/* Expandable Code Inspector */}
                     {isExpanded && (
-                      <div className="rounded-xl border border-[#a68a56]/20 bg-[#050504] p-3 text-xs font-nautical-mono overflow-hidden">
-                        <div className="flex items-center justify-between text-[10px] text-[#8c7456] pb-1.5 border-b border-[#a68a56]/15 mb-2">
+                      <div className="rounded-xl border border-[#a68a56]/25 bg-[#050504] p-4 text-xs font-nautical-mono overflow-hidden">
+                        <div className="flex items-center justify-between text-xs text-[#8c7456] pb-2 border-b border-[#a68a56]/15 mb-2.5">
                           <span>Exact code buffer passed to test runner ({lang})</span>
                           <span>{lines} lines</span>
                         </div>
                         {code.trim().length > 0 ? (
-                          <pre className="text-[#ebe4d5]/90 max-h-40 overflow-y-auto overflow-x-auto text-[11px] leading-relaxed">
+                          <pre className="text-[#ebe4d5]/90 max-h-48 overflow-y-auto overflow-x-auto text-xs leading-relaxed">
                             {code}
                           </pre>
                         ) : (
-                          <div className="text-orange-400 italic text-[11px]">
+                          <div className="text-orange-400 italic text-xs">
                             Empty buffer. This question will score 0 points.
                           </div>
                         )}
@@ -1522,9 +1524,9 @@ export default function ArenaPage() {
 
             {/* Incomplete Warning */}
             {hasIncompleteWarnings && (
-              <div className="flex items-center gap-2 border-t border-orange-500/30 bg-orange-500/10 px-6 py-2.5">
+              <div className="flex items-center gap-2.5 border-t border-orange-500/30 bg-orange-500/10 px-6 sm:px-8 py-3">
                 <FileWarning className="h-4 w-4 text-orange-400 flex-shrink-0" />
-                <p className="font-nautical-mono text-xs text-orange-200">
+                <p className="font-nautical-mono text-xs sm:text-sm text-orange-200">
                   {summaryNotVisited > 0 && `${summaryNotVisited} unvisited question(s). `}
                   {summaryUnanswered > 0 && `${summaryUnanswered} unanswered question(s). `}
                   Unanswered questions receive 0 points.
@@ -1533,9 +1535,9 @@ export default function ArenaPage() {
             )}
 
             {/* Permanent Submission Warning & Actions */}
-            <div className="flex flex-col sm:flex-row items-center justify-between border-t border-[#a68a56]/20 bg-[#140f0a] px-6 py-4 gap-3">
-              <div className="font-nautical-mono text-xs text-[#a68a56]">
-                <Clock className="inline h-3 w-3 mr-1 text-red-400" />
+            <div className="flex flex-col sm:flex-row items-center justify-between border-t border-[#a68a56]/20 bg-[#140f0a] px-6 sm:px-8 py-4 gap-3">
+              <div className="font-nautical-mono text-xs sm:text-sm text-[#a68a56]">
+                <Clock className="inline h-3.5 w-3.5 mr-1 text-red-400" />
                 <span>
                   Permanent Submission: <strong className="text-red-300">Responses cannot be modified</strong> after confirmation.
                 </span>
@@ -1545,7 +1547,7 @@ export default function ArenaPage() {
                 <button
                   onClick={() => setShowPreviewModal(false)}
                   disabled={submitting}
-                  className="rounded-xl border border-[#a68a56]/30 px-4 py-2 font-cinzel text-xs text-[#ebe4d5] hover:bg-[#1c160e] disabled:opacity-50 transition-all bouncy-btn"
+                  className="rounded-xl border border-[#a68a56]/30 px-5 py-2.5 font-cinzel text-xs sm:text-sm text-[#ebe4d5] hover:bg-[#1c160e] disabled:opacity-50 transition-all bouncy-btn"
                 >
                   Back to Editor
                 </button>
@@ -1553,10 +1555,10 @@ export default function ArenaPage() {
                 <button
                   onClick={() => executeGlobalSubmit(false)}
                   disabled={submitting}
-                  className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#d4af37] via-[#f3d38c] to-[#a68a56] px-5 py-2 font-cinzel text-xs font-bold text-[#050504] shadow-[0_0_20px_rgba(212,175,55,0.3)] hover:brightness-110 active:scale-95 disabled:opacity-60 bouncy-btn"
+                  className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#d4af37] via-[#f3d38c] to-[#a68a56] px-6 py-2.5 font-cinzel text-xs sm:text-sm font-bold text-[#050504] shadow-[0_0_20px_rgba(212,175,55,0.3)] hover:brightness-110 active:scale-95 disabled:opacity-60 bouncy-btn"
                 >
-                  {submitting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Lock className="h-3.5 w-3.5" />}
-                  Confirm &amp; Final Submit All
+                  {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Lock className="h-4 w-4" />}
+                  Lock In &amp; Submit All Questions
                 </button>
               </div>
             </div>
@@ -1567,26 +1569,26 @@ export default function ArenaPage() {
       {/* ── Re-Save Confirmation Modal ────────────────────────────────────────── */}
       {showResaveModal && pendingResaveInfo && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4 backdrop-blur-md">
-          <div className="w-full max-w-md rounded-2xl border border-amber-500/60 bg-[#120c07] p-6 shadow-[0_0_50px_rgba(245,158,11,0.25)] space-y-4">
+          <div className="w-full max-w-lg rounded-2xl border border-amber-500/60 bg-[#120c07] p-6 sm:p-7 shadow-[0_0_50px_rgba(245,158,11,0.25)] space-y-4">
             <div className="flex items-center gap-3 text-amber-400">
               <AlertTriangle className="h-6 w-6 shrink-0" />
-              <h3 className="font-cinzel text-lg font-bold text-[#f3d38c]">Update Sealed Question?</h3>
+              <h3 className="font-cinzel text-lg sm:text-xl font-bold text-[#f3d38c]">Update Saved Solution?</h3>
             </div>
-            <p className="font-sans text-xs text-[#ebe4d5]/90 leading-relaxed">
-              You previously sealed <strong className="text-[#f3d38c]">{pendingResaveInfo.qTitle}</strong> with a duration of <strong className="text-emerald-400 font-nautical-mono">{fmtDuration(pendingResaveInfo.oldDurationMs)}</strong>.
+            <p className="font-sans text-xs sm:text-sm text-[#ebe4d5]/90 leading-relaxed">
+              You previously saved <strong className="text-[#f3d38c]">{pendingResaveInfo.qTitle}</strong> with a recorded time of <strong className="text-emerald-400 font-nautical-mono">{fmtDuration(pendingResaveInfo.oldDurationMs)}</strong>.
             </p>
-            <div className="rounded-xl border border-amber-500/30 bg-[#1c140a] p-3 text-xs font-nautical-mono text-[#f3d38c] space-y-2">
-              <div className="flex justify-between items-center pb-1.5 border-b border-amber-500/20">
-                <span className="text-[#a68a56]">Original Sealed Time:</span>
+            <div className="rounded-xl border border-amber-500/30 bg-[#1c140a] p-4 text-xs sm:text-sm font-nautical-mono text-[#f3d38c] space-y-2">
+              <div className="flex justify-between items-center pb-2 border-b border-amber-500/20">
+                <span className="text-[#a68a56]">Previous Saved Time:</span>
                 <span className="text-emerald-400 font-bold">{fmtDuration(pendingResaveInfo.oldDurationMs)}</span>
               </div>
               <div className="flex justify-between items-center text-amber-300 font-bold">
-                <span>New Evaluated Time (Contest Elapsed):</span>
-                <span className="text-[#f3d38c] text-sm">{fmtDuration(pendingResaveInfo.newDurationMs)}</span>
+                <span>New Recorded Time (Contest Elapsed):</span>
+                <span className="text-[#f3d38c] text-sm sm:text-base">{fmtDuration(pendingResaveInfo.newDurationMs)}</span>
               </div>
             </div>
-            <p className="font-nautical-mono text-[11px] text-[#a68a56] leading-relaxed">
-              Because you modified your solution, saving now will update your official recorded duration to the total elapsed contest time (<strong className="text-amber-300">{fmtDuration(pendingResaveInfo.newDurationMs)}</strong>), which will be used for scoring and tie-breaking.
+            <p className="font-nautical-mono text-xs text-[#a68a56] leading-relaxed">
+              Modifying and saving your solution will update your official recorded duration to the total elapsed contest time (<strong className="text-amber-300">{fmtDuration(pendingResaveInfo.newDurationMs)}</strong>), which is used for scoring and tie-breaking.
             </p>
             <div className="flex items-center justify-end gap-3 pt-2">
               <button
@@ -1594,16 +1596,16 @@ export default function ArenaPage() {
                   setShowResaveModal(false);
                   setPendingResaveInfo(null);
                 }}
-                className="rounded-xl border border-[#a68a56]/30 px-4 py-2 font-cinzel text-xs text-[#ebe4d5] hover:bg-white/5 transition-all bouncy-btn"
+                className="rounded-xl border border-[#a68a56]/30 px-5 py-2.5 font-cinzel text-xs text-[#ebe4d5] hover:bg-white/5 transition-all bouncy-btn"
               >
                 Cancel
               </button>
               <button
                 onClick={confirmResave}
-                className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-[#d4af37] px-4 py-2 font-cinzel text-xs font-bold text-[#050504] shadow-[0_0_15px_rgba(212,175,55,0.3)] hover:brightness-110 active:scale-95 transition-all bouncy-btn"
+                className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-[#d4af37] px-5 py-2.5 font-cinzel text-xs sm:text-sm font-bold text-[#050504] shadow-[0_0_15px_rgba(212,175,55,0.3)] hover:brightness-110 active:scale-95 transition-all bouncy-btn"
               >
                 <Check className="h-4 w-4" />
-                Update &amp; Re-Seal
+                Update &amp; Save Solution
               </button>
             </div>
           </div>

@@ -73,7 +73,7 @@ export default function Navbar() {
               : 'bg-[#6b5535]'
             }`} />
             <span className="text-[11px] tracking-wider text-[#a68a56]">
-              {isActiveContest ? 'VOYAGE ACTIVE'
+              {isActiveContest ? 'CONTEST LIVE'
                 : contestPhase === 'registration' ? 'REGISTRATION OPEN'
                 : contestPhase === 'reveal' ? 'STAGE REVEAL'
                 : 'STANDBY'}

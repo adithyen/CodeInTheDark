@@ -76,7 +76,7 @@ export default function CountdownTimer({
           ? 'border-amber-500/60 bg-amber-950/30 text-amber-300 shadow-[0_0_15px_rgba(245,158,11,0.2)]'
           : 'border-[#d4af37]/40 bg-[#1c160e]/85 text-[#f3d38c] shadow-[0_0_15px_rgba(212,175,55,0.15)]'
       } ${className}`}
-      title="Synchronized Voyage Chronometer"
+      title="Contest Countdown Timer"
     >
       {!endTime ? (
         <Clock className="h-4 w-4 text-[#6b5535]" />

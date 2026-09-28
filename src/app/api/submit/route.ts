@@ -344,7 +344,7 @@ export async function POST(req: NextRequest) {
       submittedAt: now,
       message: isAutoSubmit
         ? 'Contest duration expired — all question responses have been auto-submitted and locked for evaluation.'
-        : 'Global submission received and locked. All responses are sealed until the Admiralty stage reveal.',
+        : 'Contest submitted successfully! Your solutions have been saved and locked for final scoring.',
       results,
       totalScore: grandTotalScore,
       totalPassed: grandTotalPassed,

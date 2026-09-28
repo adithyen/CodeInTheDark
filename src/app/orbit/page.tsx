@@ -641,14 +641,14 @@ export default function AdminPage() {
               <Lock className="h-5 w-5" />
             </div>
             <div>
-              <h2 className="font-cinzel text-lg font-bold text-[#f3d38c]">ADMIRALTY COMMAND</h2>
-              <p className="font-nautical-mono text-xs text-[#a68a56]">11:11 Chapter 2 Sanctuary Bridge</p>
+              <h2 className="font-cinzel text-lg font-bold text-[#f3d38c]">CONTEST COMMAND CENTER</h2>
+              <p className="font-nautical-mono text-xs text-[#a68a56]">11:11 Chapter 2 Admin Portal</p>
             </div>
           </div>
           {authError && <div className="mt-4 rounded-lg border border-red-500/40 bg-red-950/20 p-2.5 font-nautical-mono text-xs text-red-300">{authError}</div>}
           <form onSubmit={handleLogin} className="mt-6 space-y-4">
             <div>
-              <label className="block font-cinzel text-xs text-[#a68a56] mb-1">Master Admiralty Key</label>
+              <label className="block font-cinzel text-xs text-[#a68a56] mb-1">Master Admin Passkey</label>
               <input
                 type="password"
                 value={passkey}
@@ -662,7 +662,7 @@ export default function AdminPage() {
               type="submit"
               className="w-full rounded-xl bg-gradient-to-r from-[#d4af37] via-[#f3d38c] to-[#a68a56] py-2.5 font-cinzel text-sm font-bold tracking-wider text-[#050504] hover:brightness-110 shadow-[0_0_20px_rgba(212,175,55,0.25)] bouncy-btn"
             >
-              Authenticate Command Bridge
+              Sign In to Command Center
             </button>
           </form>
         </div>
@@ -686,7 +686,7 @@ export default function AdminPage() {
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#d4af37]/10 border border-[#d4af37]/30">
               <ShieldCheck className="h-4 w-4 text-[#d4af37]" />
             </div>
-            <span className="font-cinzel text-sm font-bold tracking-wider text-[#ebe4d5] hidden sm:inline">ADMIRALTY COMMAND BRIDGE</span>
+            <span className="font-cinzel text-sm font-bold tracking-wider text-[#ebe4d5] hidden sm:inline">CONTEST COMMAND CENTER</span>
           </div>
 
           {/* Session Selector */}
@@ -696,7 +696,7 @@ export default function AdminPage() {
               className="flex w-full items-center justify-between gap-2 rounded-xl border border-[#a68a56]/30 bg-[#050504] px-3 py-2 font-nautical-mono text-xs text-[#ebe4d5] hover:border-[#d4af37] transition-all bouncy-btn"
             >
               <div className="flex items-center gap-2 truncate">
-                <span className="truncate">{viewingSession?.label ?? 'No Voyage Session'}</span>
+                <span className="truncate">{viewingSession?.label ?? 'No Contest Session'}</span>
                 {viewingSession && <PhaseBadge phase={viewingSession.phase} />}
               </div>
               <ChevronDown className={`h-3.5 w-3.5 text-[#a68a56] shrink-0 transition-transform ${selectorOpen ? 'rotate-180' : ''}`} />
@@ -728,7 +728,7 @@ export default function AdminPage() {
                       className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 font-cinzel text-xs text-[#f3d38c] hover:bg-[#1c160e]"
                     >
                       <PlusCircle className="h-3.5 w-3.5 text-[#d4af37]" />
-                      Initiate New Voyage Session
+                      Create New Contest Session
                     </button>
                   </div>
                 </div>
@@ -766,7 +766,7 @@ export default function AdminPage() {
               title="Disengage Passkey & Logout"
             >
               <LogOut className="h-3.5 w-3.5" />
-              <span className="hidden md:inline">Disengage</span>
+              <span className="hidden md:inline">Sign Out</span>
             </button>
           </div>
         </div>
@@ -774,12 +774,12 @@ export default function AdminPage() {
         {/* Tabs */}
         <div className="mx-auto flex w-full max-w-7xl overflow-x-auto border-t border-[#a68a56]/15 px-4 sm:px-6">
           {(([
-            { id: 'setup',        icon: Settings,      label: 'Trial Charter Setup',      badge: '' },
-            { id: 'registration', icon: Radio,          label: 'Voyage Muster',            badge: '' },
-            { id: 'live',         icon: Zap,            label: 'Command Deck',             badge: isLive ? '●' : '' },
-            { id: 'participants', icon: Users,          label: `Navigators (${participants.length})`, badge: '' },
-            { id: 'submissions',  icon: Code2,          label: `Scrolls (${submissions.length})`,    badge: '' },
-            { id: 'history',      icon: History,        label: 'Voyage Annals',            badge: '' },
+            { id: 'setup',        icon: Settings,      label: 'Contest Setup',            badge: '' },
+            { id: 'registration', icon: Radio,          label: 'Registration Lobby',       badge: '' },
+            { id: 'live',         icon: Zap,            label: 'Live Monitor',             badge: isLive ? '●' : '' },
+            { id: 'participants', icon: Users,          label: `Participants (${participants.length})`, badge: '' },
+            { id: 'submissions',  icon: Code2,          label: `Submissions (${submissions.length})`,    badge: '' },
+            { id: 'history',      icon: History,        label: 'Past Contests',            badge: '' },
           ] as Array<{ id: typeof activeTab; icon: React.ComponentType<{className?: string}>; label: string; badge: string }>)).map(({ id, icon: Icon, label, badge }) => (
             <button
               key={id}
@@ -811,7 +811,7 @@ export default function AdminPage() {
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-[#a68a56]/15 pb-4">
                 <div>
                   <h3 className="font-cinzel text-sm font-bold text-[#f3d38c] flex items-center gap-2">
-                    <Settings className="h-4 w-4 text-[#d4af37]" /> Voyage Session Configuration
+                    <Settings className="h-4 w-4 text-[#d4af37]" /> Contest Session Configuration
                     {viewingSession && <PhaseBadge phase={viewingSession.phase} />}
                     {viewingSession?.disable_strikes && (
                       <span className="px-2 py-0.5 rounded-full border border-emerald-500/40 bg-emerald-950/60 text-emerald-300 font-nautical-mono text-[10px] font-semibold inline-flex items-center gap-1 shadow-[0_0_8px_rgba(16,185,129,0.25)]">
@@ -835,15 +835,15 @@ export default function AdminPage() {
                     <button
                       onClick={() => openResetModal(viewingSession)}
                       className="inline-flex items-center gap-1.5 rounded-lg border border-amber-500/40 bg-amber-950/25 px-3 py-1.5 font-cinzel text-xs text-amber-300 hover:bg-amber-900/35 hover:border-amber-400 transition-all bouncy-btn"
-                      title="Reset this voyage back to setup stage (preserves questions & duration, clears submissions & participants)"
+                      title="Reset this contest back to setup stage (preserves questions & duration, clears submissions & participants)"
                     >
                       <RotateCcw className="h-3.5 w-3.5 text-amber-400" />
-                      <span>Reset Voyage</span>
+                      <span>Reset Contest</span>
                     </button>
                     <button
                       onClick={() => openRenameModal(viewingSession)}
                       className="inline-flex items-center gap-1.5 rounded-lg border border-[#a68a56]/30 bg-[#1c160e]/60 px-3 py-1.5 font-cinzel text-xs text-[#f3d38c] hover:border-[#d4af37] transition-all bouncy-btn"
-                      title="Rename this voyage session"
+                      title="Rename this contest session"
                     >
                       <Edit3 className="h-3.5 w-3.5 text-[#d4af37]" />
                       <span>Rename</span>
@@ -851,17 +851,17 @@ export default function AdminPage() {
                     <button
                       onClick={() => openDeleteModal(viewingSession)}
                       className="inline-flex items-center gap-1.5 rounded-lg border border-red-500/40 bg-red-950/20 px-3 py-1.5 font-cinzel text-xs text-red-400 hover:bg-red-900/30 hover:border-red-500 transition-all bouncy-btn"
-                      title="Delete this voyage session and all associated data"
+                      title="Delete this contest session and all associated data"
                     >
                       <Trash2 className="h-3.5 w-3.5 text-red-400" />
-                      <span>Purge Voyage</span>
+                      <span>Delete Contest</span>
                     </button>
                   </div>
                 )}
               </div>
               <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 <div>
-                  <label className="block font-cinzel text-xs text-[#a68a56] mb-1">Challenge Duration (min)</label>
+                  <label className="block font-cinzel text-xs text-[#a68a56] mb-1">Contest Duration (min)</label>
                   <div className="flex gap-2">
                     <input type="number" id="input-challenge-duration" value={challengeDurationMin} onChange={e => setChallengeDurationMin(+e.target.value)} min={1} max={180}
                       className="w-full rounded-lg border border-[#a68a56]/30 bg-[#050504] px-3 py-1.5 font-nautical-mono text-xs text-[#ebe4d5] focus:border-[#d4af37] focus:outline-none" />
@@ -870,7 +870,7 @@ export default function AdminPage() {
                   </div>
                 </div>
                 <div>
-                  <label className="block font-cinzel text-xs text-[#a68a56] mb-1">Max Navigators (Capacity)</label>
+                  <label className="block font-cinzel text-xs text-[#a68a56] mb-1">Max Participants (Capacity)</label>
                   <div className="flex gap-2">
                     <input type="number" id="input-max-navigators" value={maxParticipants} onChange={e => setMaxParticipants(+e.target.value)} min={1}
                       className="w-full rounded-lg border border-[#a68a56]/30 bg-[#050504] px-3 py-1.5 font-nautical-mono text-xs text-[#ebe4d5] focus:border-[#d4af37] focus:outline-none" />
@@ -1000,8 +1000,8 @@ export default function AdminPage() {
             <div className="rounded-2xl border border-[#a68a56]/25 bg-[#090704] p-6 shadow-xl">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
-                  <h3 className="font-cinzel text-sm font-bold text-[#f3d38c] flex items-center gap-2"><Layers className="h-4 w-4 text-[#d4af37]" /> Trial Presets</h3>
-                  <p className="mt-1 font-nautical-mono text-xs text-[#a68a56]">1-click load preconfigured trial scrolls or import custom parchment JSON</p>
+                  <h3 className="font-cinzel text-sm font-bold text-[#f3d38c] flex items-center gap-2"><Layers className="h-4 w-4 text-[#d4af37]" /> Contest Presets</h3>
+                  <p className="mt-1 font-nautical-mono text-xs text-[#a68a56]">1-click load preconfigured problem sets or import questions JSON</p>
                 </div>
                 <div className="flex gap-2">
                   <button onClick={exportQuestionsJSON} className="flex items-center gap-1.5 rounded-xl border border-[#a68a56]/30 bg-[#1c160e]/50 px-3 py-2 font-cinzel text-xs text-[#ebe4d5] hover:border-[#d4af37] bouncy-btn">
@@ -1017,7 +1017,7 @@ export default function AdminPage() {
                   <div key={preset.id} className="rounded-xl border border-[#a68a56]/20 bg-[#050504]/70 p-4 hover:border-[#d4af37] transition-all group">
                     <div className="flex items-center justify-between">
                       <span className="font-cinzel text-xs font-bold text-[#ebe4d5] group-hover:text-[#f3d38c] transition-colors">{preset.name.split(':')[0]}</span>
-                      <span className="rounded border border-[#a68a56]/20 bg-[#1c160e] px-2 py-0.5 font-nautical-mono text-[10px] text-[#a68a56]">{preset.durationMinutes}m · {preset.questions.length} Scrolls</span>
+                      <span className="rounded border border-[#a68a56]/20 bg-[#1c160e] px-2 py-0.5 font-nautical-mono text-[10px] text-[#a68a56]">{preset.durationMinutes}m · {preset.questions.length} Questions</span>
                     </div>
                     <p className="mt-1 text-[11px] text-[#ebe4d5]/70 line-clamp-2">{preset.description}</p>
                     <button onClick={() => handleLoadPreset(preset)} className="mt-3 w-full rounded-lg border border-[#d4af37]/30 bg-[#1c160e] py-1.5 font-cinzel text-xs font-semibold text-[#f3d38c] hover:bg-[#d4af37] hover:text-[#050504] transition-all bouncy-btn">
@@ -1030,12 +1030,12 @@ export default function AdminPage() {
 
             {/* LeetCode importer */}
             <div className="rounded-2xl border border-[#a68a56]/25 bg-gradient-to-r from-[#1c160e] to-[#090704] p-6 shadow-xl">
-              <h3 className="font-cinzel text-sm font-bold text-[#f3d38c] flex items-center gap-2"><ExternalLink className="h-4 w-4 text-[#d4af37]" /> Remote Scroll Ingestion (LeetCode)</h3>
+              <h3 className="font-cinzel text-sm font-bold text-[#f3d38c] flex items-center gap-2"><ExternalLink className="h-4 w-4 text-[#d4af37]" /> Import Problem from LeetCode</h3>
               <div className="mt-3 flex gap-2">
                 <input type="text" value={leetcodeSlug} onChange={e => setLeetcodeSlug(e.target.value)} placeholder="e.g. two-sum" onKeyDown={e => e.key === 'Enter' && handleImportLeetCode()}
                   className="flex-1 max-w-xs rounded-xl border border-[#a68a56]/30 bg-[#050504] px-3 py-2 font-nautical-mono text-xs text-[#ebe4d5] focus:border-[#d4af37] focus:outline-none" />
                 <button onClick={handleImportLeetCode} disabled={importLoading} className="rounded-xl bg-gradient-to-r from-[#d4af37] to-[#f3d38c] px-4 py-2 font-cinzel text-xs font-bold text-[#050504] hover:brightness-110 disabled:opacity-50 bouncy-btn">
-                  {importLoading ? 'Ingesting...' : 'Fetch'}
+                  {importLoading ? 'Importing...' : 'Fetch Problem'}
                 </button>
               </div>
             </div>
@@ -1044,18 +1044,18 @@ export default function AdminPage() {
             <div>
               <div className="flex items-center justify-between mb-4">
                 <h3 className="font-cinzel text-lg font-bold text-[#ebe4d5]">
-                  Scrolls for: <span className="text-[#f3d38c]">{viewingSession?.label}</span>
+                  Questions for: <span className="text-[#f3d38c]">{viewingSession?.label}</span>
                   <span className="ml-2 font-nautical-mono text-sm font-normal text-[#a68a56]">({questions.length} problems)</span>
                 </h3>
                 <button onClick={() => { setEditingQuestion({ title: '', category: 'Algorithms', difficulty: 'Medium', points: 400, scenario: '', inputFormat: '', outputFormat: '', constraints: '', starterTemplates: { c: '', python: '', java: '' }, testCases: [{ id: 'tc-1', input: '', expectedOutput: '', isHidden: false }] }); setShowQuestionModal(true); }}
                   className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-[#d4af37] via-[#f3d38c] to-[#a68a56] px-4 py-2 font-cinzel text-xs font-bold text-[#050504] hover:brightness-110 bouncy-btn shadow-[0_0_15px_rgba(212,175,55,0.2)]">
-                  <Plus className="h-4 w-4" /> Inscribe New Scroll
+                  <Plus className="h-4 w-4" /> Add New Question
                 </button>
               </div>
 
               {questions.length === 0 ? (
                 <div className="rounded-2xl border border-dashed border-[#a68a56]/30 bg-[#090704]/50 p-12 text-center text-[#a68a56] font-cinzel text-sm">
-                  No scrolls found. Load a preset or inscribe a new question above.
+                  No questions found. Load a preset or add a new question above.
                 </div>
               ) : (
                 <div className="grid gap-4 md:grid-cols-2">
@@ -1078,7 +1078,7 @@ export default function AdminPage() {
                       </div>
                       <p className="line-clamp-2 text-xs text-[#ebe4d5]/70">{q.scenario}</p>
                       <div className="border-t border-[#a68a56]/15 pt-2 flex justify-between font-nautical-mono text-xs text-[#a68a56]">
-                        <span>{q.testCases.length} trials ({q.testCases.filter(t => t.isHidden).length} hidden)</span>
+                        <span>{q.testCases.length} test cases ({q.testCases.filter(t => t.isHidden).length} hidden)</span>
                         <span className="text-[#f3d38c]">C · Python · Java</span>
                       </div>
                     </div>
@@ -1095,21 +1095,21 @@ export default function AdminPage() {
         {activeTab === 'registration' && (
           <div className="space-y-6">
             <div className="rounded-2xl border border-[#a68a56]/25 bg-[#090704] p-6 shadow-xl">
-              <h3 className="font-cinzel text-sm font-bold text-[#f3d38c] flex items-center gap-2">
-                <Radio className="h-4 w-4 text-[#d4af37]" /> Voyage Muster Window Control
+              <h3 className="font-cinzel text-base font-bold text-[#f3d38c] flex items-center gap-2">
+                <Radio className="h-5 w-5 text-[#d4af37]" /> Registration Window Control
               </h3>
 
               {phase === 'setup' && (
                 <div className="mt-6 space-y-4">
                   <div className="grid gap-4 sm:grid-cols-2">
                     <div>
-                      <label className="block font-cinzel text-xs text-[#a68a56] mb-1">Muster Duration (minutes)</label>
+                      <label className="block font-cinzel text-xs font-semibold text-[#f3d38c] mb-1">Registration Duration (minutes)</label>
                       <input type="number" value={regDurationMin} onChange={e => setRegDurationMin(+e.target.value)} min={1} max={30}
-                        className="w-full rounded-xl border border-[#a68a56]/30 bg-[#050504] px-3 py-2 font-nautical-mono text-sm text-[#ebe4d5] focus:border-[#d4af37] focus:outline-none" />
+                        className="w-full rounded-xl border border-[#a68a56]/30 bg-[#050504] px-4 py-2.5 font-nautical-mono text-sm text-[#ebe4d5] focus:border-[#d4af37] focus:outline-none" />
                     </div>
                     <div className="flex flex-col justify-end">
                       <div className="flex items-center justify-between mb-1">
-                        <span className="font-cinzel text-xs text-[#a68a56]">Auto-Start Voyage Upon Muster Close</span>
+                        <span className="font-cinzel text-xs font-semibold text-[#f3d38c]">Auto-Start Contest Upon Registration Close</span>
                         <span className={`font-nautical-mono text-[9px] font-bold px-1.5 py-0.5 rounded border uppercase tracking-wider ${
                           autoStartReg
                             ? 'bg-emerald-950/60 text-emerald-400 border-emerald-500/40 shadow-[0_0_8px_rgba(16,185,129,0.25)]'
@@ -1118,7 +1118,7 @@ export default function AdminPage() {
                           {autoStartReg ? '● ENABLED' : '○ MANUAL'}
                         </span>
                       </div>
-                      <div className="flex items-center gap-2.5 h-[34px]">
+                      <div className="flex items-center gap-2.5 h-[38px]">
                         <button
                           type="button"
                           role="switch"
@@ -1129,7 +1129,7 @@ export default function AdminPage() {
                               ? 'bg-gradient-to-r from-[#d4af37] to-[#f3d38c] shadow-[0_0_10px_rgba(212,175,55,0.35)]'
                               : 'bg-[#1a140d] border border-[#a68a56]/40 hover:border-[#a68a56]'
                           }`}
-                          title={autoStartReg ? 'Auto-start enabled' : 'Manual launch required'}
+                          title={autoStartReg ? 'Auto-start enabled' : 'Manual start required'}
                         >
                           <span
                             className={`pointer-events-none inline-block h-5 w-5 rounded-full shadow-md transition-transform duration-200 ease-in-out ${
@@ -1139,15 +1139,15 @@ export default function AdminPage() {
                             }`}
                           />
                         </button>
-                        <span className="font-nautical-mono text-[11px] text-[#ebe4d5]/70">
-                          {autoStartReg ? 'Launches when countdown hits 0' : 'Awaits manual launch'}
+                        <span className="font-nautical-mono text-xs text-[#ebe4d5]/70">
+                          {autoStartReg ? 'Starts automatically when timer hits 00:00' : 'Awaits manual start command'}
                         </span>
                       </div>
                     </div>
                   </div>
                   <button onClick={() => contestAction('openRegistration', { durationMinutes: regDurationMin, autoStart: autoStartReg, sessionId: viewingSession?.id })}
                     className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#d4af37] via-[#f3d38c] to-[#a68a56] px-6 py-3 font-cinzel text-sm font-bold text-[#050504] hover:brightness-110 active:scale-95 shadow-[0_0_20px_rgba(212,175,55,0.25)] bouncy-btn">
-                    <Zap className="h-4 w-4 fill-[#050504]" /> Open Muster Portal Now
+                    <Zap className="h-4 w-4 fill-[#050504]" /> Open Registration Portal Now
                   </button>
                 </div>
               )}
@@ -1155,31 +1155,31 @@ export default function AdminPage() {
               {phase === 'registration' && (
                 <div className="mt-6 space-y-6">
                   {/* Live countdown */}
-                  <div className="flex items-center justify-between rounded-2xl border border-[#d4af37]/40 bg-[#1c160e] p-5 shadow-lg">
+                  <div className="flex items-center justify-between rounded-2xl border border-[#d4af37]/40 bg-[#1c160e] p-6 shadow-lg">
                     <div>
-                      <div className="font-cinzel text-xs text-[#a68a56] mb-1">Muster Window Closes In</div>
-                      <div className="font-nautical-mono text-4xl font-black tabular-nums text-[#d4af37]">{regCountdown}</div>
+                      <div className="font-cinzel text-xs text-[#a68a56] mb-1">Registration Closes In</div>
+                      <div className="font-nautical-mono text-4xl sm:text-5xl font-black tabular-nums text-[#d4af37]">{regCountdown}</div>
                     </div>
                     <div className="text-right">
-                      <div className="font-cinzel text-xs text-[#a68a56] mb-1">Enrolled Navigators</div>
-                      <div className="font-nautical-mono text-3xl font-bold text-[#ebe4d5]">{participants.length}</div>
-                      <div className="font-nautical-mono text-xs text-[#a68a56]">/ {viewingSession?.max_participants ?? 200}</div>
+                      <div className="font-cinzel text-xs text-[#a68a56] mb-1">Registered Participants</div>
+                      <div className="font-nautical-mono text-3xl sm:text-4xl font-bold text-[#ebe4d5]">{participants.length}</div>
+                      <div className="font-nautical-mono text-xs text-[#a68a56]">/ {viewingSession?.max_participants ?? 200} capacity</div>
                     </div>
                   </div>
 
                   {/* Auto start live toggle button */}
-                  <div className="flex items-center justify-between rounded-xl border border-[#a68a56]/20 bg-[#050504] p-3">
-                    <div className="flex items-center gap-2 font-nautical-mono text-xs">
+                  <div className="flex items-center justify-between rounded-xl border border-[#a68a56]/20 bg-[#050504] p-3.5">
+                    <div className="flex items-center gap-2.5 font-nautical-mono text-xs sm:text-sm">
                       <CheckCircle2 className={`h-4 w-4 ${viewingSession?.auto_start_on_reg_close ? 'text-[#d4af37]' : 'text-[#6b5535]'}`} />
                       <span className={viewingSession?.auto_start_on_reg_close ? 'text-[#f3d38c] font-semibold' : 'text-[#a68a56]'}>
-                        Auto-Start Voyage on Timeout:
+                        Auto-Start Contest on Timeout:
                       </span>
-                      <span className={`font-nautical-mono text-[9px] font-bold px-1.5 py-0.5 rounded border uppercase tracking-wider ${
+                      <span className={`font-nautical-mono text-[10px] font-bold px-2 py-0.5 rounded border uppercase tracking-wider ${
                         viewingSession?.auto_start_on_reg_close
                           ? 'bg-emerald-950/60 text-emerald-400 border-emerald-500/40 shadow-[0_0_8px_rgba(16,185,129,0.25)]'
                           : 'bg-[#18130c] text-[#a68a56] border-[#a68a56]/30'
                       }`}>
-                        {viewingSession?.auto_start_on_reg_close ? '● ENABLED (Immediate Launch)' : '○ DISABLED (Manual Command)'}
+                        {viewingSession?.auto_start_on_reg_close ? '● ENABLED (Immediate Start)' : '○ DISABLED (Manual Command)'}
                       </span>
                     </div>
                     <button
@@ -1218,14 +1218,14 @@ export default function AdminPage() {
                   </div>
 
                   {/* Extend buttons */}
-                  <div className="flex flex-wrap gap-2">
+                  <div className="flex flex-wrap gap-2.5">
                     <button onClick={() => contestAction('extendRegistration', { extraMinutes: 1 })} className="rounded-xl border border-[#a68a56]/30 bg-[#1c160e]/50 px-4 py-2 font-cinzel text-xs text-[#ebe4d5] hover:border-[#d4af37] bouncy-btn">+1 min</button>
                     <button onClick={() => contestAction('extendRegistration', { extraMinutes: 3 })} className="rounded-xl border border-[#a68a56]/30 bg-[#1c160e]/50 px-4 py-2 font-cinzel text-xs text-[#ebe4d5] hover:border-[#d4af37] bouncy-btn">+3 min</button>
                     <button onClick={() => contestAction('extendRegistration', { extraMinutes: 5 })} className="rounded-xl border border-[#a68a56]/30 bg-[#1c160e]/50 px-4 py-2 font-cinzel text-xs text-[#ebe4d5] hover:border-[#d4af37] bouncy-btn">+5 min</button>
-                    <button onClick={() => { if (confirm('Close registration now?')) contestAction('closeRegistration', { sessionId: viewingSession?.id }); }} className="rounded-xl border border-red-500/40 bg-red-950/30 px-4 py-2 font-cinzel text-xs text-red-300 hover:bg-red-900/40 bouncy-btn">Close Now</button>
-                    <button onClick={() => { if (confirm('Start challenge immediately?')) contestAction('startChallenge', { durationMinutes: challengeDurationMin, sessionId: viewingSession?.id }); }}
-                      className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#d4af37] via-[#f3d38c] to-[#a68a56] px-4 py-2 font-cinzel text-xs font-bold text-[#050504] hover:brightness-110 shadow-[0_0_15px_rgba(212,175,55,0.25)] bouncy-btn">
-                      <Play className="h-3.5 w-3.5 fill-[#050504]" /> Launch Voyage Now
+                    <button onClick={() => { if (confirm('Close registration now?')) contestAction('closeRegistration', { sessionId: viewingSession?.id }); }} className="rounded-xl border border-red-500/40 bg-red-950/30 px-4 py-2 font-cinzel text-xs font-semibold text-red-300 hover:bg-red-900/40 bouncy-btn">Close Now</button>
+                    <button onClick={() => { if (confirm('Start contest immediately?')) contestAction('startChallenge', { durationMinutes: challengeDurationMin, sessionId: viewingSession?.id }); }}
+                      className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#d4af37] via-[#f3d38c] to-[#a68a56] px-5 py-2 font-cinzel text-xs font-bold text-[#050504] hover:brightness-110 shadow-[0_0_15px_rgba(212,175,55,0.25)] bouncy-btn">
+                      <Play className="h-3.5 w-3.5 fill-[#050504]" /> Start Contest Now
                     </button>
                   </div>
                 </div>
@@ -1233,7 +1233,7 @@ export default function AdminPage() {
 
               {(phase === 'active' || phase === 'paused' || phase === 'ended' || phase === 'reveal') && (
                 <div className="mt-4 rounded-xl border border-[#a68a56]/20 bg-[#050504] p-4 font-cinzel text-sm text-[#a68a56] text-center">
-                  Muster window is closed. Voyage is in <span className="text-[#f3d38c] font-semibold">{PHASE_LABELS[phase]}</span> phase.
+                  Registration window is closed. Contest is currently in <span className="text-[#f3d38c] font-semibold">{PHASE_LABELS[phase]}</span> phase.
                 </div>
               )}
             </div>
@@ -1241,20 +1241,20 @@ export default function AdminPage() {
             {/* Live registered list */}
             {(phase === 'setup' || phase === 'registration') && participants.length > 0 && (
               <div className="rounded-2xl border border-[#a68a56]/25 bg-[#090704] overflow-hidden shadow-xl">
-                <div className="px-5 py-3 border-b border-[#a68a56]/20 bg-[#140f0a] font-cinzel text-xs text-[#d4af37] uppercase tracking-wider">
-                  Enrolled Navigators ({participants.length})
+                <div className="px-5 py-3.5 border-b border-[#a68a56]/20 bg-[#140f0a] font-cinzel text-xs font-bold text-[#d4af37] uppercase tracking-wider">
+                  Registered Participants ({participants.length})
                 </div>
                 <div className="divide-y divide-[#a68a56]/15">
                   {participants.map((p, i) => (
-                    <div key={p.id} className="flex items-center justify-between px-5 py-2.5 font-nautical-mono text-xs">
+                    <div key={p.id} className="flex items-center justify-between px-5 py-3 font-nautical-mono text-sm">
                       <div className="flex items-center gap-3">
                         <span className="text-[#a68a56] w-6">{i + 1}.</span>
                         <div>
                           <div className="font-semibold text-[#ebe4d5]">{p.name}</div>
-                          <div className="text-[#a68a56]">{p.rollNumber} · {p.terminalId}</div>
+                          <div className="text-xs text-[#a68a56]">{p.college || 'Participant'} · Seat: {p.terminalId}</div>
                         </div>
                       </div>
-                      <span className="text-[#a68a56]">{new Date(p.registeredAt).toLocaleTimeString()}</span>
+                      <span className="text-xs text-[#a68a56]">{new Date(p.registeredAt).toLocaleTimeString()}</span>
                     </div>
                   ))}
                 </div>
@@ -1275,19 +1275,19 @@ export default function AdminPage() {
                   <Layers className="h-7 w-7 text-[#d4af37]" />
                 </div>
                 <div>
-                  <h3 className="font-cinzel text-base font-bold text-[#f3d38c]">Voyage in Preparation</h3>
-                  <p className="font-nautical-mono text-xs text-[#a68a56] mt-1 max-w-md mx-auto">
-                    This voyage charter is currently in preparation. The challenge clock is halted and no trial is underway.
+                  <h3 className="font-cinzel text-lg font-bold text-[#f3d38c]">Contest in Preparation</h3>
+                  <p className="font-nautical-mono text-sm text-[#ebe4d5]/70 mt-1 max-w-lg mx-auto">
+                    This contest session is currently in preparation. The timer is stopped and problems are not yet visible to participants.
                   </p>
                 </div>
                 <div className="flex flex-wrap justify-center gap-3 pt-2">
                   <button onClick={() => setActiveTab('registration')}
-                    className="flex items-center gap-2 rounded-xl border border-[#d4af37]/40 bg-[#1c160e] px-4 py-2.5 font-cinzel text-xs font-semibold text-[#f3d38c] hover:border-[#d4af37] bouncy-btn">
-                    <Radio className="h-4 w-4" /> Open Crew Muster (Registration)
+                    className="flex items-center gap-2 rounded-xl border border-[#d4af37]/40 bg-[#1c160e] px-5 py-2.5 font-cinzel text-xs font-semibold text-[#f3d38c] hover:border-[#d4af37] bouncy-btn">
+                    <Radio className="h-4 w-4" /> Open Registration Portal
                   </button>
                   <button onClick={() => contestAction('startChallenge', { durationMinutes: challengeDurationMin, sessionId: viewingSession?.id })}
-                    className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#d4af37] via-[#f3d38c] to-[#a68a56] px-5 py-2.5 font-cinzel text-xs font-bold text-[#050504] hover:brightness-110 shadow-[0_0_15px_rgba(212,175,55,0.25)] bouncy-btn">
-                    <Play className="h-4 w-4 fill-[#050504]" /> Launch Voyage Directly
+                    className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#d4af37] via-[#f3d38c] to-[#a68a56] px-6 py-2.5 font-cinzel text-xs font-bold text-[#050504] hover:brightness-110 shadow-[0_0_15px_rgba(212,175,55,0.25)] bouncy-btn">
+                    <Play className="h-4 w-4 fill-[#050504]" /> Start Contest Directly
                   </button>
                 </div>
               </div>
@@ -1298,29 +1298,29 @@ export default function AdminPage() {
               <div className="rounded-2xl border border-[#d4af37]/30 bg-[#090704] p-8 shadow-xl space-y-5">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-[#a68a56]/20 pb-4">
                   <div>
-                    <span className="inline-block rounded border border-amber-500/40 bg-amber-950/30 px-2 py-0.5 font-nautical-mono text-[10px] font-bold text-amber-300 uppercase tracking-wider">
-                      ● CREW MUSTER UNDERWAY
+                    <span className="inline-block rounded border border-amber-500/40 bg-amber-950/30 px-2.5 py-0.5 font-nautical-mono text-[11px] font-bold text-amber-300 uppercase tracking-wider">
+                      ● REGISTRATION IN PROGRESS
                     </span>
-                    <h3 className="mt-1 font-cinzel text-lg font-bold text-[#f3d38c]">Registration Muster Portal Open</h3>
-                    <p className="font-nautical-mono text-xs text-[#a68a56]">Candidates are actively boarding and claiming terminal seats.</p>
+                    <h3 className="mt-1 font-cinzel text-xl font-bold text-[#f3d38c]">Registration Portal Open</h3>
+                    <p className="font-nautical-mono text-sm text-[#a68a56]">Participants are actively registering and claiming lab terminal seats.</p>
                   </div>
                   <div className="text-right">
-                    <span className="font-cinzel text-xs text-[#a68a56] block">Muster Closes In</span>
-                    <span className="font-nautical-mono text-3xl font-black text-[#d4af37] tabular-nums">{regCountdown}</span>
+                    <span className="font-cinzel text-xs text-[#a68a56] block">Registration Closes In</span>
+                    <span className="font-nautical-mono text-3xl sm:text-4xl font-black text-[#d4af37] tabular-nums">{regCountdown}</span>
                   </div>
                 </div>
                 <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
-                  <div className="font-nautical-mono text-xs text-[#ebe4d5]">
-                    Enrolled: <strong className="text-[#f3d38c]">{participants.length}</strong> / {viewingSession?.max_participants ?? 200} Navigators
+                  <div className="font-nautical-mono text-sm text-[#ebe4d5]">
+                    Registered: <strong className="text-[#f3d38c] text-base">{participants.length}</strong> / {viewingSession?.max_participants ?? 200} Participants
                   </div>
                   <div className="flex gap-2">
                     <button onClick={() => setActiveTab('registration')}
                       className="rounded-xl border border-[#a68a56]/30 bg-[#1c160e]/50 px-4 py-2 font-cinzel text-xs text-[#ebe4d5] hover:border-[#d4af37] bouncy-btn">
-                      Manage Muster
+                      Manage Registration
                     </button>
-                    <button onClick={() => { if (confirm('Start challenge immediately?')) contestAction('startChallenge', { durationMinutes: challengeDurationMin, sessionId: viewingSession?.id }); }}
-                      className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#d4af37] via-[#f3d38c] to-[#a68a56] px-4 py-2 font-cinzel text-xs font-bold text-[#050504] hover:brightness-110 bouncy-btn">
-                      <Play className="h-3.5 w-3.5 fill-[#050504]" /> Launch Voyage Immediately
+                    <button onClick={() => { if (confirm('Start contest immediately?')) contestAction('startChallenge', { durationMinutes: challengeDurationMin, sessionId: viewingSession?.id }); }}
+                      className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#d4af37] via-[#f3d38c] to-[#a68a56] px-5 py-2 font-cinzel text-xs font-bold text-[#050504] hover:brightness-110 bouncy-btn">
+                      <Play className="h-3.5 w-3.5 fill-[#050504]" /> Start Contest Immediately
                     </button>
                   </div>
                 </div>
@@ -1334,13 +1334,13 @@ export default function AdminPage() {
                   <div>
                     <PhaseBadge phase={phase} />
                     {viewingSession?.challenge_starts_at && (
-                      <p className="mt-1 font-nautical-mono text-xs text-[#a68a56]">
-                        Commenced: {new Date(viewingSession.challenge_starts_at).toLocaleTimeString()} ·
-                        Concludes: {viewingSession.challenge_ends_at ? new Date(viewingSession.challenge_ends_at).toLocaleTimeString() : 'TBD'}
+                      <p className="mt-1 font-nautical-mono text-sm text-[#a68a56]">
+                        Started: {new Date(viewingSession.challenge_starts_at).toLocaleTimeString()} ·
+                        Ends: {viewingSession.challenge_ends_at ? new Date(viewingSession.challenge_ends_at).toLocaleTimeString() : 'TBD'}
                       </p>
                     )}
                   </div>
-                  <div className="font-nautical-mono text-5xl font-black tabular-nums text-[#d4af37]">
+                  <div className="font-nautical-mono text-5xl sm:text-6xl font-black tabular-nums text-[#d4af37]">
                     {challengeCountdown || '00:00'}
                   </div>
                 </div>
@@ -1351,7 +1351,7 @@ export default function AdminPage() {
                   const elapsed = Date.now() - viewingSession.challenge_starts_at;
                   const pct = Math.min(100, Math.max(0, (elapsed / total) * 100));
                   return (
-                    <div className="mt-4 h-2 rounded-full bg-[#1c160e] overflow-hidden border border-[#a68a56]/20">
+                    <div className="mt-4 h-2.5 rounded-full bg-[#1c160e] overflow-hidden border border-[#a68a56]/20">
                       <div className="h-full rounded-full bg-gradient-to-r from-[#d4af37] to-[#f3d38c] transition-all duration-1000" style={{ width: `${pct}%` }} />
                     </div>
                   );
@@ -1360,26 +1360,26 @@ export default function AdminPage() {
                 <div className="mt-5 flex flex-wrap gap-3">
                   {phase === 'active' && (
                     <button onClick={() => contestAction('pause', { sessionId: viewingSession?.id })} className="flex items-center gap-2 rounded-xl border border-[#d4af37]/40 bg-[#1c160e] px-4 py-2.5 font-cinzel text-xs font-semibold text-[#f3d38c] hover:border-[#d4af37] bouncy-btn">
-                      <Pause className="h-4 w-4" /> Pause Voyage
+                      <Pause className="h-4 w-4" /> Pause Contest
                     </button>
                   )}
                   {phase === 'paused' && (
                     <button onClick={() => contestAction('resume', { sessionId: viewingSession?.id })} className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#d4af37] via-[#f3d38c] to-[#a68a56] px-4 py-2.5 font-cinzel text-xs font-bold text-[#050504] hover:brightness-110 bouncy-btn">
-                      <Play className="h-4 w-4 fill-[#050504]" /> Resume Voyage
+                      <Play className="h-4 w-4 fill-[#050504]" /> Resume Contest
                     </button>
                   )}
                   <button onClick={() => contestAction('extend', { extraMinutes: 1, sessionId: viewingSession?.id })} className="rounded-xl border border-[#a68a56]/30 bg-[#1c160e]/50 px-3 py-2 font-cinzel text-xs text-[#ebe4d5] hover:border-[#d4af37] bouncy-btn">+1 min</button>
                   <button onClick={() => contestAction('extend', { extraMinutes: 5, sessionId: viewingSession?.id })} className="rounded-xl border border-[#a68a56]/30 bg-[#1c160e]/50 px-3 py-2 font-cinzel text-xs text-[#ebe4d5] hover:border-[#d4af37] bouncy-btn">+5 min</button>
                   <button onClick={() => contestAction('extend', { extraMinutes: 10, sessionId: viewingSession?.id })} className="rounded-xl border border-[#a68a56]/30 bg-[#1c160e]/50 px-3 py-2 font-cinzel text-xs text-[#ebe4d5] hover:border-[#d4af37] bouncy-btn">+10 min</button>
-                  <button onClick={() => { if (confirm('End the challenge now? Auto-submit will still work for participants.')) contestAction('endChallenge', { sessionId: viewingSession?.id }); }}
+                  <button onClick={() => { if (confirm('End the contest now? All participants will be auto-submitted.')) contestAction('endChallenge', { sessionId: viewingSession?.id }); }}
                     className="flex items-center gap-2 rounded-xl border border-red-500/40 bg-red-950/30 px-4 py-2.5 font-cinzel text-xs font-semibold text-red-300 hover:bg-red-900/40 bouncy-btn">
-                    <StopCircle className="h-4 w-4" /> End Voyage Now
+                    <StopCircle className="h-4 w-4" /> End Contest Now
                   </button>
                 </div>
 
-                <div className="mt-4 rounded-xl border border-[#d4af37]/30 bg-[#1c160e]/80 p-3 font-nautical-mono text-xs text-[#f3d38c] flex items-center gap-2">
+                <div className="mt-4 rounded-xl border border-[#d4af37]/30 bg-[#1c160e]/80 p-3.5 font-nautical-mono text-xs sm:text-sm text-[#f3d38c] flex items-center gap-2.5">
                   <Timer className="h-4 w-4 shrink-0 text-[#d4af37]" />
-                  Auto-submit fires in <strong className="text-[#d4af37] tabular-nums">{challengeCountdown}</strong> — all parchment scrolls lock automatically at 00:00
+                  Auto-submit fires in <strong className="text-[#d4af37] tabular-nums">{challengeCountdown}</strong> — all active solutions lock automatically at 00:00
                 </div>
               </div>
             )}
@@ -1395,16 +1395,16 @@ export default function AdminPage() {
                     <div>
                       <div className="flex items-center gap-2">
                         <PhaseBadge phase={phase} />
-                        <h3 className="font-cinzel text-lg font-bold text-[#f3d38c]">Voyage Concluded</h3>
+                        <h3 className="font-cinzel text-lg font-bold text-[#f3d38c]">Contest Concluded</h3>
                       </div>
-                      <p className="mt-0.5 font-nautical-mono text-xs text-[#a68a56]">
-                        This contest voyage has concluded. All code submissions are frozen and locked in the archives.
+                      <p className="mt-0.5 font-nautical-mono text-sm text-[#a68a56]">
+                        This contest session has concluded. All code submissions are frozen and locked in the archives.
                       </p>
                     </div>
                   </div>
                   {viewingSession?.challenge_starts_at && (
                     <div className="rounded-xl border border-[#a68a56]/20 bg-[#050504] px-4 py-2 text-right">
-                      <span className="font-cinzel text-[10px] text-[#a68a56] block">Trial Window (Archive)</span>
+                      <span className="font-cinzel text-[10px] text-[#a68a56] block">Contest Window (Archive)</span>
                       <span className="font-nautical-mono text-xs text-[#ebe4d5]">
                         {new Date(viewingSession.challenge_starts_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         {viewingSession.challenge_ends_at && ` – ${new Date(viewingSession.challenge_ends_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`}
@@ -1420,8 +1420,8 @@ export default function AdminPage() {
                   <div className="flex flex-wrap gap-2">
                     <button onClick={() => viewingSession && openResetModal(viewingSession)}
                       className="inline-flex items-center gap-1.5 rounded-xl border border-amber-500/50 bg-amber-950/40 px-4 py-2 font-cinzel text-xs font-bold text-amber-300 hover:bg-amber-900/50 hover:border-amber-400 shadow-[0_0_12px_rgba(245,158,11,0.25)] bouncy-btn"
-                      title="Reset this voyage back to setup stage (preserves questions & duration, clears submissions & participants so contest can be re-run)">
-                      <RotateCcw className="h-3.5 w-3.5 text-amber-400" /> Reset Voyage to Setup
+                      title="Reset this contest back to setup stage (preserves questions & duration, clears submissions & participants so contest can be re-run)">
+                      <RotateCcw className="h-3.5 w-3.5 text-amber-400" /> Reset Contest to Setup
                     </button>
                     <a href="/leaderboard" target="_blank" rel="noreferrer"
                       className="inline-flex items-center gap-1.5 rounded-xl border border-[#d4af37]/40 bg-[#1c160e] px-4 py-2 font-cinzel text-xs font-semibold text-[#f3d38c] hover:border-[#d4af37] bouncy-btn">
@@ -1444,14 +1444,14 @@ export default function AdminPage() {
                 {/* KPIs */}
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                   {[
-                    { label: 'Enrolled Navigators', value: participants.length, color: 'text-[#ebe4d5]' },
-                    { label: 'Scrolls Submitted', value: submissions.length, color: 'text-[#f3d38c]' },
+                    { label: 'Registered Participants', value: participants.length, color: 'text-[#ebe4d5]' },
+                    { label: 'Submissions Received', value: submissions.length, color: 'text-[#f3d38c]' },
                     { label: 'Auto-Submissions', value: submissions.filter(s => s.isAutoSubmit).length, color: 'text-[#d4af37]' },
-                    { label: 'Sanctuary Locks', value: participants.filter(p => p.isLockedOut).length, color: 'text-red-400' },
+                    { label: 'Disqualified / Locked', value: participants.filter(p => p.isLockedOut).length, color: 'text-red-400' },
                   ].map(k => (
                     <div key={k.label} className="rounded-xl border border-[#a68a56]/20 bg-[#090704] p-4 shadow-lg">
-                      <div className="font-cinzel text-[11px] text-[#a68a56]">{k.label}</div>
-                      <div className={`font-nautical-mono text-2xl font-bold mt-1 ${k.color}`}>{k.value}</div>
+                      <div className="font-cinzel text-xs font-semibold text-[#a68a56]">{k.label}</div>
+                      <div className={`font-nautical-mono text-2xl sm:text-3xl font-bold mt-1.5 ${k.color}`}>{k.value}</div>
                     </div>
                   ))}
                 </div>
@@ -1460,10 +1460,10 @@ export default function AdminPage() {
                 <div className="rounded-2xl border border-[#a68a56]/25 bg-[#090704] p-5 flex flex-wrap gap-3 items-center justify-between shadow-xl">
                   <div className="flex gap-3">
                     <button onClick={exportCSV} className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#d4af37] via-[#f3d38c] to-[#a68a56] px-4 py-2.5 font-cinzel text-xs font-bold text-[#050504] hover:brightness-110 shadow-[0_0_15px_rgba(212,175,55,0.25)] bouncy-btn">
-                      <FileSpreadsheet className="h-4 w-4" /> Export CSV Ledger
+                      <FileSpreadsheet className="h-4 w-4" /> Export CSV Results
                     </button>
                     <button onClick={exportAuditJSON} className="flex items-center gap-2 rounded-xl border border-[#a68a56]/30 bg-[#1c160e]/50 px-4 py-2.5 font-cinzel text-xs text-[#ebe4d5] hover:border-[#d4af37] bouncy-btn">
-                      <Download className="h-4 w-4 text-[#d4af37]" /> Audit Archive JSON
+                      <Download className="h-4 w-4 text-[#d4af37]" /> Export Submissions JSON
                     </button>
                   </div>
                   <button onClick={() => contestAction('toggleReveal')}
@@ -1481,68 +1481,68 @@ export default function AdminPage() {
         {activeTab === 'participants' && (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <div className="font-nautical-mono text-xs text-[#a68a56]">{participants.length} navigators registered · Voyage: <span className="text-[#f3d38c] font-cinzel">{viewingSession?.label}</span></div>
-              <button onClick={exportCSV} className="flex items-center gap-1.5 rounded-xl border border-[#a68a56]/30 bg-[#1c160e]/50 px-3 py-1.5 font-cinzel text-xs text-[#ebe4d5] hover:border-[#d4af37] bouncy-btn">
-                <Download className="h-3.5 w-3.5 text-[#d4af37]" /> Export Ledger CSV
+              <div className="font-nautical-mono text-sm text-[#ebe4d5]">{participants.length} participants registered · Session: <span className="text-[#f3d38c] font-cinzel font-bold">{viewingSession?.label}</span></div>
+              <button onClick={exportCSV} className="flex items-center gap-1.5 rounded-xl border border-[#a68a56]/30 bg-[#1c160e]/50 px-4 py-2 font-cinzel text-xs font-semibold text-[#ebe4d5] hover:border-[#d4af37] bouncy-btn">
+                <Download className="h-4 w-4 text-[#d4af37]" /> Export Participants CSV
               </button>
             </div>
             <div className="overflow-hidden rounded-2xl border border-[#a68a56]/25 bg-[#090704] shadow-xl">
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="border-b border-[#a68a56]/20 bg-[#140f0a] font-cinzel text-[11px] text-[#d4af37] uppercase tracking-wider">
-                    <th className="py-3 px-4">Navigator &amp; College</th>
-                    <th className="py-3 px-4 hidden sm:table-cell">Phone (Confidential)</th>
-                    <th className="py-3 px-4 hidden sm:table-cell">Seat Number</th>
-                    <th className="py-3 px-4 hidden md:table-cell">Cipher</th>
-                    <th className="py-3 px-4">Penalties</th>
-                    <th className="py-3 px-4">Status</th>
-                    <th className="py-3 px-4 hidden lg:table-cell">Last Inscription</th>
-                    <th className="py-3 px-4 text-right">Admiralty Actions</th>
+                  <tr className="border-b border-[#a68a56]/20 bg-[#140f0a] font-cinzel text-xs text-[#d4af37] uppercase tracking-wider">
+                    <th className="py-3.5 px-4">Participant &amp; College</th>
+                    <th className="py-3.5 px-4 hidden sm:table-cell">Phone (Confidential)</th>
+                    <th className="py-3.5 px-4 hidden sm:table-cell">Seat Number</th>
+                    <th className="py-3.5 px-4 hidden md:table-cell">Language</th>
+                    <th className="py-3.5 px-4">Strikes</th>
+                    <th className="py-3.5 px-4">Status</th>
+                    <th className="py-3.5 px-4 hidden lg:table-cell">Last Activity</th>
+                    <th className="py-3.5 px-4 text-right">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[#a68a56]/15 font-nautical-mono text-xs">
+                <tbody className="divide-y divide-[#a68a56]/15 font-nautical-mono text-xs sm:text-sm">
                   {participants.length === 0 ? (
-                    <tr><td colSpan={8} className="py-8 text-center text-[#a68a56]">No navigators mustered yet.</td></tr>
+                    <tr><td colSpan={8} className="py-10 text-center text-[#a68a56] font-cinzel text-sm">No participants registered yet.</td></tr>
                   ) : participants.map((p) => (
                     <tr key={p.id} className="hover:bg-[#1c160e]/30">
-                      <td className="py-3 px-4">
-                        <div className="font-bold text-[#ebe4d5] font-cinzel">{p.name}</div>
-                        <div className="text-[11px] text-[#f3d38c] truncate max-w-xs">{p.college || '—'}</div>
+                      <td className="py-3.5 px-4">
+                        <div className="font-bold text-[#ebe4d5] font-cinzel text-sm sm:text-base">{p.name}</div>
+                        <div className="text-xs text-[#f3d38c] truncate max-w-xs">{p.college || '—'}</div>
                       </td>
-                      <td className="py-3 px-4 hidden sm:table-cell font-mono text-[#ebe4d5]">
+                      <td className="py-3.5 px-4 hidden sm:table-cell font-mono text-[#ebe4d5]">
                         {p.phone ? <span className="text-[#f3d38c] font-semibold">{p.phone}</span> : <span className="text-[#a68a56]">—</span>}
                       </td>
-                      <td className="py-3 px-4 hidden sm:table-cell text-[#d4af37]">{p.terminalId}</td>
-                      <td className="py-3 px-4 hidden md:table-cell uppercase text-[#a68a56]">{p.activeLanguage || '—'}</td>
-                      <td className="py-3 px-4">
+                      <td className="py-3.5 px-4 hidden sm:table-cell text-[#d4af37] font-semibold">{p.terminalId}</td>
+                      <td className="py-3.5 px-4 hidden md:table-cell uppercase text-[#a68a56]">{p.activeLanguage || '—'}</td>
+                      <td className="py-3.5 px-4">
                         {viewingSession?.disable_strikes ? (
                           <span className="font-bold text-emerald-400 text-xs inline-flex items-center gap-1" title="Anti-cheat strikes are disabled for this session (Testing Mode)">
-                            <ShieldCheck className="h-3 w-3 text-emerald-400" /> ∞ (Testing)
+                            <ShieldCheck className="h-3.5 w-3.5 text-emerald-400" /> ∞ (Testing)
                           </span>
                         ) : (
                           <span className={`font-bold ${p.strikes >= 3 ? 'text-red-400' : p.strikes > 0 ? 'text-[#d4af37]' : 'text-[#a68a56]'}`}>{p.strikes}/3</span>
                         )}
                       </td>
-                      <td className="py-3 px-4">
-                        <span className={`rounded border px-2 py-0.5 text-[10px] font-cinzel ${p.isLockedOut ? 'border-red-500/40 bg-red-950/60 text-red-300' : 'border-[#d4af37]/40 bg-[#1c160e] text-[#f3d38c]'}`}>
-                          {p.isLockedOut ? 'Sealed' : 'Active'}
+                      <td className="py-3.5 px-4">
+                        <span className={`rounded border px-2.5 py-1 text-xs font-cinzel font-semibold ${p.isLockedOut ? 'border-red-500/40 bg-red-950/60 text-red-300' : 'border-[#d4af37]/40 bg-[#1c160e] text-[#f3d38c]'}`}>
+                          {p.isLockedOut ? 'Locked Out' : 'Active'}
                         </span>
                       </td>
-                      <td className="py-3 px-4 hidden lg:table-cell text-[#a68a56]">{new Date(p.lastActiveAt).toLocaleTimeString()}</td>
-                      <td className="py-3 px-4 text-right">
-                        <div className="flex items-center justify-end gap-1">
+                      <td className="py-3.5 px-4 hidden lg:table-cell text-[#a68a56]">{new Date(p.lastActiveAt).toLocaleTimeString()}</td>
+                      <td className="py-3.5 px-4 text-right">
+                        <div className="flex items-center justify-end gap-1.5">
                           {p.strikes > 0 && (
-                            <button onClick={() => participantAction(p.id, 'reset_strikes')} className="flex items-center gap-1 rounded border border-[#d4af37]/30 bg-[#1c160e] px-1.5 py-1 text-[11px] text-[#f3d38c] hover:border-[#d4af37] bouncy-btn" title="Pardon — reset penalties">
+                            <button onClick={() => participantAction(p.id, 'reset_strikes')} className="flex items-center gap-1 rounded-lg border border-[#d4af37]/30 bg-[#1c160e] px-2 py-1 text-xs text-[#f3d38c] hover:border-[#d4af37] bouncy-btn" title="Pardon — reset strikes">
                               <Undo2 className="h-3 w-3" /> Pardon
                             </button>
                           )}
-                          <button onClick={() => participantAction(p.id, 'add_strike')} className="flex items-center gap-1 rounded border border-[#a68a56]/30 bg-[#1c160e]/50 px-1.5 py-1 text-[11px] text-[#f3d38c] hover:border-[#d4af37] bouncy-btn">
+                          <button onClick={() => participantAction(p.id, 'add_strike')} className="flex items-center gap-1 rounded-lg border border-[#a68a56]/30 bg-[#1c160e]/50 px-2 py-1 text-xs text-[#f3d38c] hover:border-[#d4af37] bouncy-btn">
                             <ShieldAlert className="h-3 w-3 text-[#d4af37]" /> +Strike
                           </button>
-                          <button onClick={() => participantAction(p.id, 'toggle_lockout')} className={`flex items-center gap-1 rounded border px-1.5 py-1 text-[11px] font-cinzel bouncy-btn ${p.isLockedOut ? 'border-[#d4af37]/40 bg-[#1c160e] text-[#f3d38c]' : 'border-red-500/30 bg-red-950/40 text-red-300'}`}>
-                            <Lock className="h-3 w-3" /> {p.isLockedOut ? 'Unseal' : 'Seal'}
+                          <button onClick={() => participantAction(p.id, 'toggle_lockout')} className={`flex items-center gap-1 rounded-lg border px-2 py-1 text-xs font-cinzel bouncy-btn ${p.isLockedOut ? 'border-[#d4af37]/40 bg-[#1c160e] text-[#f3d38c]' : 'border-red-500/30 bg-red-950/40 text-red-300'}`}>
+                            <Lock className="h-3 w-3" /> {p.isLockedOut ? 'Unlock' : 'Lock'}
                           </button>
-                          <button onClick={() => { if (confirm(`Remove ${p.name}?`)) participantAction(p.id, 'delete'); }} className="rounded border border-[#a68a56]/20 bg-[#050504] p-1 text-[#a68a56] hover:text-red-400 bouncy-btn">
+                          <button onClick={() => { if (confirm(`Remove participant ${p.name}?`)) participantAction(p.id, 'delete'); }} className="rounded-lg border border-[#a68a56]/20 bg-[#050504] p-1.5 text-[#a68a56] hover:text-red-400 bouncy-btn" title="Remove participant">
                             <Trash2 className="h-3.5 w-3.5" />
                           </button>
                         </div>
@@ -1554,16 +1554,16 @@ export default function AdminPage() {
             </div>
             {violations.length > 0 && (
               <div className="rounded-2xl border border-red-500/30 bg-[#0f0906] p-5 shadow-xl">
-                <h4 className="font-cinzel text-sm font-bold text-red-400 mb-3 flex items-center gap-2"><AlertTriangle className="h-4 w-4" /> Aegis Infringement Log ({violations.length})</h4>
+                <h4 className="font-cinzel text-sm font-bold text-red-400 mb-3 flex items-center gap-2"><AlertTriangle className="h-4 w-4" /> Anti-Cheat Violation Log ({violations.length})</h4>
                 <div className="space-y-2 max-h-48 overflow-y-auto">
                   {violations.slice(0, 20).map(v => (
-                    <div key={v.id} className="flex items-center justify-between rounded-lg border border-red-500/20 bg-red-950/20 px-3 py-2 font-nautical-mono text-xs">
+                    <div key={v.id} className="flex items-center justify-between rounded-lg border border-red-500/20 bg-red-950/20 px-3 py-2 font-nautical-mono text-xs sm:text-sm">
                       <div>
                         <span className="font-bold text-red-300">{v.participantName}</span>
                         <span className="text-[#ebe4d5]/70 ml-2">{v.type}</span>
                         {v.details && <span className="text-[#a68a56] ml-2">— {v.details}</span>}
                       </div>
-                      <div className="text-[#a68a56]">{new Date(v.timestamp).toLocaleTimeString()} · Penalty {v.strikeCount}</div>
+                      <div className="text-[#a68a56] text-xs">{new Date(v.timestamp).toLocaleTimeString()} · Strike {v.strikeCount}</div>
                     </div>
                   ))}
                 </div>
@@ -1575,59 +1575,56 @@ export default function AdminPage() {
         {/* ═══════════════════════════════════════════════════════════════════
             TAB 5: SUBMISSIONS
         ═══════════════════════════════════════════════════════════════════ */}
-        {/* ═══════════════════════════════════════════════════════════════════
-            TAB 5: SUBMISSIONS
-        ═══════════════════════════════════════════════════════════════════ */}
         {activeTab === 'submissions' && (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <div className="font-nautical-mono text-xs text-[#a68a56]">{submissions.length} scrolls received · <span className="text-[#d4af37] font-semibold">{submissions.filter(s => s.isAutoSubmit).length} auto-sealed</span></div>
-              <button onClick={exportAuditJSON} className="flex items-center gap-1.5 rounded-xl border border-[#a68a56]/30 bg-[#1c160e]/50 px-3 py-1.5 font-cinzel text-xs text-[#ebe4d5] hover:border-[#d4af37] bouncy-btn">
-                <Download className="h-3.5 w-3.5 text-[#d4af37]" /> Audit Archive JSON
+              <div className="font-nautical-mono text-sm text-[#ebe4d5]">{submissions.length} submissions received · <span className="text-[#d4af37] font-semibold">{submissions.filter(s => s.isAutoSubmit).length} auto-submitted</span></div>
+              <button onClick={exportAuditJSON} className="flex items-center gap-1.5 rounded-xl border border-[#a68a56]/30 bg-[#1c160e]/50 px-4 py-2 font-cinzel text-xs font-semibold text-[#ebe4d5] hover:border-[#d4af37] bouncy-btn">
+                <Download className="h-4 w-4 text-[#d4af37]" /> Export Submissions JSON
               </button>
             </div>
             <div className="overflow-hidden rounded-2xl border border-[#a68a56]/25 bg-[#090704] shadow-xl">
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="border-b border-[#a68a56]/20 bg-[#140f0a] font-cinzel text-[11px] text-[#d4af37] uppercase tracking-wider">
-                    <th className="py-3 px-4">Navigator</th>
-                    <th className="py-3 px-4 hidden sm:table-cell">Scroll</th>
-                    <th className="py-3 px-4">Cipher</th>
-                    <th className="py-3 px-4">Bounty</th>
-                    <th className="py-3 px-4 hidden md:table-cell">Trials</th>
-                    <th className="py-3 px-4 hidden lg:table-cell">First Sealed</th>
-                    <th className="py-3 px-4 hidden xl:table-cell">Last Seal</th>
-                    <th className="py-3 px-4 text-right">Admiralty Action</th>
+                  <tr className="border-b border-[#a68a56]/20 bg-[#140f0a] font-cinzel text-xs text-[#d4af37] uppercase tracking-wider">
+                    <th className="py-3.5 px-4">Participant</th>
+                    <th className="py-3.5 px-4 hidden sm:table-cell">Problem</th>
+                    <th className="py-3.5 px-4">Language</th>
+                    <th className="py-3.5 px-4">Score</th>
+                    <th className="py-3.5 px-4 hidden md:table-cell">Test Cases</th>
+                    <th className="py-3.5 px-4 hidden lg:table-cell">First Submitted</th>
+                    <th className="py-3.5 px-4 hidden xl:table-cell">Last Submitted</th>
+                    <th className="py-3.5 px-4 text-right">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[#a68a56]/15 font-nautical-mono text-xs">
+                <tbody className="divide-y divide-[#a68a56]/15 font-nautical-mono text-xs sm:text-sm">
                   {submissions.length === 0 ? (
-                    <tr><td colSpan={8} className="py-8 text-center text-[#a68a56]">No scrolls submitted yet.</td></tr>
+                    <tr><td colSpan={8} className="py-10 text-center text-[#a68a56] font-cinzel text-sm">No submissions received yet.</td></tr>
                   ) : submissions.map(s => (
                     <tr key={s.id} className="hover:bg-[#1c160e]/30">
-                      <td className="py-3 px-4">
-                        <div className="font-bold text-[#ebe4d5] font-cinzel">{s.participantName}</div>
-                        <div className="text-[11px] text-[#a68a56]">{s.participantRoll}</div>
+                      <td className="py-3.5 px-4">
+                        <div className="font-bold text-[#ebe4d5] font-cinzel text-sm sm:text-base">{s.participantName}</div>
+                        <div className="text-xs text-[#a68a56]">{s.participantRoll}</div>
                       </td>
-                      <td className="py-3 px-4 hidden sm:table-cell">
-                        <div className="text-[#ebe4d5]">{s.questionTitle}</div>
+                      <td className="py-3.5 px-4 hidden sm:table-cell">
+                        <div className="text-[#ebe4d5] font-medium">{s.questionTitle}</div>
                         {s.isAutoSubmit && <span className="rounded bg-[#1c160e] border border-[#d4af37]/40 px-1.5 py-0.5 text-[10px] text-[#f3d38c] font-cinzel">AUTO</span>}
                       </td>
-                      <td className="py-3 px-4 uppercase text-[#a68a56]">{s.language}</td>
-                      <td className="py-3 px-4">
+                      <td className="py-3.5 px-4 uppercase text-[#a68a56] font-semibold">{s.language}</td>
+                      <td className="py-3.5 px-4">
                         <div className="flex items-center gap-1.5 flex-wrap">
-                          <span className={`font-bold ${s.score > 0 ? 'text-[#d4af37]' : 'text-[#a68a56]'}`}>{s.score}</span>
+                          <span className={`font-bold text-base ${s.score > 0 ? 'text-[#d4af37]' : 'text-[#a68a56]'}`}>{s.score}</span>
                           {(s as any).speedBonus > 0 && (
-                            <span className="text-[#f3d38c] text-[10px] bg-[#f3d38c]/10 border border-[#f3d38c]/30 rounded px-1 py-0.2" title={`Base: ${Math.max(0, s.score - (s as any).speedBonus)} + Speed: ${(s as any).speedBonus}`}>
+                            <span className="text-[#f3d38c] text-[11px] font-semibold bg-[#f3d38c]/10 border border-[#f3d38c]/30 rounded px-1.5 py-0.5" title={`Base: ${Math.max(0, s.score - (s as any).speedBonus)} + Speed: ${(s as any).speedBonus}`}>
                               (+{(s as any).speedBonus} spd)
                             </span>
                           )}
                         </div>
                       </td>
-                      <td className="py-3 px-4 hidden md:table-cell text-[#ebe4d5]/80">{s.testCasesPassed}/{s.totalTestCases}</td>
+                      <td className="py-3.5 px-4 hidden md:table-cell text-[#ebe4d5]/80 font-medium">{s.testCasesPassed}/{s.totalTestCases}</td>
 
-                      {/* First Sealed */}
-                      <td className="py-3 px-4 hidden lg:table-cell">
+                      {/* First Submitted */}
+                      <td className="py-3.5 px-4 hidden lg:table-cell">
                         {(() => {
                           const firstTs = (s as any).firstSubmittedAt ?? s.submittedAt;
                           const firstDur = (s as any).firstExecTimeMs || s.execTimeMs;
@@ -1640,14 +1637,14 @@ export default function AdminPage() {
                                   {fmtDuration(firstDur)}
                                 </span>
                               </div>
-                              <div className="text-[10px] text-[#a68a56]">{new Date(firstTs).toLocaleDateString()}</div>
+                              <div className="text-xs text-[#a68a56]">{new Date(firstTs).toLocaleDateString()}</div>
                             </div>
                           );
                         })()}
                       </td>
 
-                      {/* Last Seal */}
-                      <td className="py-3 px-4 hidden xl:table-cell">
+                      {/* Last Submitted */}
+                      <td className="py-3.5 px-4 hidden xl:table-cell">
                         {(() => {
                           const firstTs = (s as any).firstSubmittedAt ?? s.submittedAt;
                           const lastTs = s.submittedAt ?? (s as any).firstSubmittedAt;
@@ -1664,7 +1661,7 @@ export default function AdminPage() {
                                   {fmtDuration(lastDur)}
                                 </span>
                               </div>
-                              <div className="text-[10px] text-[#8c7456] flex items-center gap-1">
+                              <div className="text-xs text-[#8c7456] flex items-center gap-1">
                                 <span>{new Date(lastTs).toLocaleDateString()}</span>
                                 {isUpdated && <span className="text-amber-400 font-bold">(Updated)</span>}
                               </div>
@@ -1672,14 +1669,14 @@ export default function AdminPage() {
                           );
                         })()}
                       </td>
-                      <td className="py-3 px-4 text-right">
+                      <td className="py-3.5 px-4 text-right">
                         <div className="flex items-center justify-end gap-1.5">
-                          <button onClick={() => setInspectedSubmission(s)} className="flex items-center gap-1 rounded border border-[#a68a56]/30 bg-[#1c160e]/50 px-2 py-1 text-[11px] text-[#ebe4d5] hover:border-[#d4af37] bouncy-btn">
-                            <Eye className="h-3 w-3 text-[#d4af37]" /> Inspect
+                          <button onClick={() => setInspectedSubmission(s)} className="flex items-center gap-1 rounded-lg border border-[#a68a56]/30 bg-[#1c160e]/50 px-2.5 py-1 text-xs text-[#ebe4d5] hover:border-[#d4af37] bouncy-btn">
+                            <Eye className="h-3.5 w-3.5 text-[#d4af37]" /> Inspect
                           </button>
-                          <button onClick={() => handleRejudge(s.id)} disabled={rejudging === s.id} className="flex items-center gap-1 rounded border border-[#d4af37]/40 bg-[#1c160e] px-2 py-1 text-[11px] text-[#f3d38c] hover:border-[#d4af37] disabled:opacity-50 bouncy-btn">
-                            {rejudging === s.id ? <Loader2 className="h-3 w-3 animate-spin text-[#d4af37]" /> : <RefreshCw className="h-3 w-3 text-[#d4af37]" />}
-                            Re-adjudicate
+                          <button onClick={() => handleRejudge(s.id)} disabled={rejudging === s.id} className="flex items-center gap-1 rounded-lg border border-[#d4af37]/40 bg-[#1c160e] px-2.5 py-1 text-xs text-[#f3d38c] hover:border-[#d4af37] disabled:opacity-50 bouncy-btn">
+                            {rejudging === s.id ? <Loader2 className="h-3.5 w-3.5 animate-spin text-[#d4af37]" /> : <RefreshCw className="h-3.5 w-3.5 text-[#d4af37]" />}
+                            Re-evaluate
                           </button>
                         </div>
                       </td>
@@ -1693,12 +1690,14 @@ export default function AdminPage() {
 
         {/* ═══════════════════════════════════════════════════════════════════
             TAB 6: HISTORY
+        {/* ═══════════════════════════════════════════════════════════════════
+            TAB 6: HISTORY
         ═══════════════════════════════════════════════════════════════════ */}
         {activeTab === 'history' && (
           <div className="space-y-4">
-            <h2 className="font-cinzel text-lg font-bold text-[#ebe4d5]">Voyage Annals & Historic Sessions</h2>
+            <h2 className="font-cinzel text-lg font-bold text-[#ebe4d5]">Past Contests &amp; Historic Sessions</h2>
             {sessions.length === 0 ? (
-              <div className="rounded-2xl border border-dashed border-[#a68a56]/30 p-12 text-center text-[#a68a56] font-cinzel text-sm">No recorded voyages yet.</div>
+              <div className="rounded-2xl border border-dashed border-[#a68a56]/30 p-12 text-center text-[#a68a56] font-cinzel text-sm">No recorded contests yet.</div>
             ) : (
               <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                 {sessions.map(s => {
@@ -1725,7 +1724,7 @@ export default function AdminPage() {
                             <div className="font-nautical-mono text-sm font-bold text-[#f3d38c]">{Math.round((s.challenge_duration_ms ?? 3000000) / 60000)} min</div>
                           </div>
                           <div className="rounded-lg bg-[#050504] border border-[#a68a56]/15 p-2 text-center">
-                            <div className="font-cinzel text-[10px] text-[#a68a56]">Commenced</div>
+                            <div className="font-cinzel text-[10px] text-[#a68a56]">Started</div>
                             <div className="font-nautical-mono text-sm font-bold text-[#ebe4d5]">{new Date(s.challenge_starts_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
                           </div>
                         </div>
@@ -1736,13 +1735,13 @@ export default function AdminPage() {
                           onClick={() => { setViewingSessionId(s.id); setActiveTab('submissions'); }}
                           className="rounded-lg border border-[#a68a56]/30 bg-[#1c160e]/50 py-1.5 font-cinzel text-xs text-[#ebe4d5] hover:border-[#d4af37] text-center bouncy-btn"
                         >
-                          View Scrolls
+                          View Submissions
                         </button>
                         <button
                           onClick={() => { setViewingSessionId(s.id); setActiveTab('participants'); }}
                           className="rounded-lg border border-[#a68a56]/30 bg-[#1c160e]/50 py-1.5 font-cinzel text-xs text-[#ebe4d5] hover:border-[#d4af37] text-center bouncy-btn"
                         >
-                          Navigators
+                          Participants
                         </button>
                       </div>
 
@@ -1768,7 +1767,7 @@ export default function AdminPage() {
 
             {/* New session CTA */}
             <button onClick={() => setShowNewSessionModal(true)} className="flex items-center gap-2 rounded-xl border border-dashed border-[#d4af37]/40 bg-[#1c160e]/40 px-5 py-3 font-cinzel text-sm text-[#f3d38c] hover:border-[#d4af37] transition-all bouncy-btn">
-              <PlusCircle className="h-5 w-5 text-[#d4af37]" /> Inscribe New Voyage Session
+              <PlusCircle className="h-5 w-5 text-[#d4af37]" /> Create New Contest Session
             </button>
           </div>
         )}
@@ -1783,31 +1782,31 @@ export default function AdminPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4 backdrop-blur-md">
           <div className="w-full max-w-lg rounded-2xl border border-[#d4af37]/40 bg-[#0c0906] p-6 shadow-2xl space-y-4">
             <div className="flex items-center justify-between border-b border-[#a68a56]/20 pb-3">
-              <h3 className="font-cinzel text-lg font-bold text-[#f3d38c]">Initiate Voyage Session</h3>
+              <h3 className="font-cinzel text-lg font-bold text-[#f3d38c]">Create Contest Session</h3>
               <button onClick={() => setShowNewSessionModal(false)} className="text-[#a68a56] hover:text-[#ebe4d5]"><X className="h-5 w-5" /></button>
             </div>
 
             <div className="space-y-3">
               <div>
-                <label className="block font-cinzel text-xs text-[#a68a56] mb-1">Session Inscription *</label>
-                <input type="text" value={newSessionLabel} onChange={e => setNewSessionLabel(e.target.value)} placeholder="e.g. Trial Run 2, Chapter 2 Final"
-                  className="w-full rounded-xl border border-[#a68a56]/30 bg-[#050504] px-3 py-2 font-nautical-mono text-sm text-[#ebe4d5] focus:border-[#d4af37] focus:outline-none" />
+                <label className="block font-cinzel text-xs font-semibold text-[#f3d38c] mb-1">Session Name *</label>
+                <input type="text" value={newSessionLabel} onChange={e => setNewSessionLabel(e.target.value)} placeholder="e.g. Round 1, Finals"
+                  className="w-full rounded-xl border border-[#a68a56]/30 bg-[#050504] px-3.5 py-2 font-nautical-mono text-sm text-[#ebe4d5] focus:border-[#d4af37] focus:outline-none" />
               </div>
               <div>
-                <label className="block font-cinzel text-xs text-[#a68a56] mb-1">Scheduled Date & Time (optional)</label>
+                <label className="block font-cinzel text-xs font-semibold text-[#f3d38c] mb-1">Scheduled Date & Time (optional)</label>
                 <input type="datetime-local" value={newSessionScheduled} onChange={e => setNewSessionScheduled(e.target.value)}
-                  className="w-full rounded-xl border border-[#a68a56]/30 bg-[#050504] px-3 py-2 font-nautical-mono text-sm text-[#ebe4d5] focus:border-[#d4af37] focus:outline-none" />
+                  className="w-full rounded-xl border border-[#a68a56]/30 bg-[#050504] px-3.5 py-2 font-nautical-mono text-sm text-[#ebe4d5] focus:border-[#d4af37] focus:outline-none" />
               </div>
               <div>
-                <label className="block font-cinzel text-xs text-[#a68a56] mb-1">Admiralty Log Notes (optional)</label>
-                <textarea value={newSessionNotes} onChange={e => setNewSessionNotes(e.target.value)} placeholder="e.g. Trial run with 20 navigators" rows={2}
-                  className="w-full rounded-xl border border-[#a68a56]/30 bg-[#050504] px-3 py-2 font-nautical-mono text-sm text-[#ebe4d5] focus:border-[#d4af37] focus:outline-none resize-none" />
+                <label className="block font-cinzel text-xs font-semibold text-[#f3d38c] mb-1">Admin Notes (optional)</label>
+                <textarea value={newSessionNotes} onChange={e => setNewSessionNotes(e.target.value)} placeholder="e.g. Main contest with 20 participants" rows={2}
+                  className="w-full rounded-xl border border-[#a68a56]/30 bg-[#050504] px-3.5 py-2 font-nautical-mono text-sm text-[#ebe4d5] focus:border-[#d4af37] focus:outline-none resize-none" />
               </div>
               <div>
-                <label className="block font-cinzel text-xs text-[#a68a56] mb-1">Copy Scrolls From Session</label>
+                <label className="block font-cinzel text-xs font-semibold text-[#f3d38c] mb-1">Copy Problems From Session</label>
                 <select value={newSessionCopyFrom ?? ''} onChange={e => setNewSessionCopyFrom(e.target.value || null)}
-                  className="w-full rounded-xl border border-[#a68a56]/30 bg-[#050504] px-3 py-2 font-nautical-mono text-sm text-[#ebe4d5] focus:border-[#d4af37] focus:outline-none">
-                  <option value="">— Start with blank parchment —</option>
+                  className="w-full rounded-xl border border-[#a68a56]/30 bg-[#050504] px-3.5 py-2 font-nautical-mono text-sm text-[#ebe4d5] focus:border-[#d4af37] focus:outline-none">
+                  <option value="">— Start with no problems —</option>
                   {sessions.map(s => <option key={s.id} value={s.id}>{s.label} ({s.phase})</option>)}
                 </select>
               </div>
@@ -1818,7 +1817,7 @@ export default function AdminPage() {
               <button onClick={handleCreateSession} disabled={newSessionCreating}
                 className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#d4af37] via-[#f3d38c] to-[#a68a56] px-5 py-2 font-cinzel text-xs font-bold text-[#050504] hover:brightness-110 disabled:opacity-50 bouncy-btn shadow-[0_0_15px_rgba(212,175,55,0.25)]">
                 {newSessionCreating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <PlusCircle className="h-3.5 w-3.5" />}
-                Seal Session
+                Create Session
               </button>
             </div>
           </div>
@@ -1831,32 +1830,32 @@ export default function AdminPage() {
           <div className="w-full max-w-lg rounded-2xl border border-[#d4af37]/40 bg-[#0c0906] p-6 shadow-2xl space-y-4">
             <div className="flex items-center justify-between border-b border-[#a68a56]/20 pb-3">
               <h3 className="font-cinzel text-lg font-bold text-[#f3d38c] flex items-center gap-2">
-                <Edit3 className="h-5 w-5 text-[#d4af37]" /> Rename Voyage Session
+                <Edit3 className="h-5 w-5 text-[#d4af37]" /> Rename Contest Session
               </h3>
               <button onClick={() => setShowRenameSessionModal(false)} className="text-[#a68a56] hover:text-[#ebe4d5]"><X className="h-5 w-5" /></button>
             </div>
 
             <div className="space-y-3">
               <div>
-                <label className="block font-cinzel text-xs text-[#a68a56] mb-1">Session Inscription / Name *</label>
+                <label className="block font-cinzel text-xs font-semibold text-[#f3d38c] mb-1">Session Name *</label>
                 <input
                   type="text"
                   value={renameLabel}
                   onChange={e => setRenameLabel(e.target.value)}
-                  placeholder="e.g. Trial Run 2, Chapter 2 Grand Finals"
-                  className="w-full rounded-xl border border-[#a68a56]/30 bg-[#050504] px-3 py-2 font-nautical-mono text-sm text-[#ebe4d5] focus:border-[#d4af37] focus:outline-none"
+                  placeholder="e.g. Round 2, Finals"
+                  className="w-full rounded-xl border border-[#a68a56]/30 bg-[#050504] px-3.5 py-2 font-nautical-mono text-sm text-[#ebe4d5] focus:border-[#d4af37] focus:outline-none"
                   autoFocus
                 />
               </div>
 
               <div>
-                <label className="block font-cinzel text-xs text-[#a68a56] mb-1">Nautical Notes (optional)</label>
+                <label className="block font-cinzel text-xs font-semibold text-[#f3d38c] mb-1">Notes (optional)</label>
                 <input
                   type="text"
                   value={renameNotes}
                   onChange={e => setRenameNotes(e.target.value)}
-                  placeholder="e.g. Morning wave, 50-minute blitz"
-                  className="w-full rounded-xl border border-[#a68a56]/30 bg-[#050504] px-3 py-2 font-nautical-mono text-xs text-[#ebe4d5] focus:border-[#d4af37] focus:outline-none"
+                  placeholder="e.g. Morning session, 50-minute test"
+                  className="w-full rounded-xl border border-[#a68a56]/30 bg-[#050504] px-3.5 py-2 font-nautical-mono text-xs text-[#ebe4d5] focus:border-[#d4af37] focus:outline-none"
                 />
               </div>
             </div>
@@ -1887,7 +1886,7 @@ export default function AdminPage() {
           <div className="w-full max-w-lg rounded-2xl border border-red-500/50 bg-[#0c0606] p-6 shadow-2xl space-y-4">
             <div className="flex items-center justify-between border-red-500/20 border-b pb-3">
               <h3 className="font-cinzel text-lg font-bold text-red-400 flex items-center gap-2">
-                <AlertTriangle className="h-5 w-5 text-red-500" /> Purge Voyage Session
+                <AlertTriangle className="h-5 w-5 text-red-500" /> Delete Contest Session
               </h3>
               <button onClick={() => setShowDeleteSessionModal(false)} className="text-[#a68a56] hover:text-[#ebe4d5]"><X className="h-5 w-5" /></button>
             </div>
@@ -1900,13 +1899,13 @@ export default function AdminPage() {
                 {sessionToDelete.label}
               </p>
               <p className="font-nautical-mono text-[11px] text-red-300/90 leading-relaxed pt-1">
-                ⚠️ This action is <strong>PERMANENT and IRREVERSIBLE</strong>. It will completely delete all related information from everywhere:
+                ⚠️ This action is <strong>PERMANENT and IRREVERSIBLE</strong>. It will completely delete all related information:
               </p>
               <ul className="font-nautical-mono text-[11px] text-red-200/80 list-disc list-inside space-y-0.5 pl-1">
-                <li>All Questions & Test Cases associated with this session</li>
-                <li>All Submissions & Code evaluated for this session</li>
-                <li>All Registered Navigators / Participants</li>
-                <li>All Anti-Cheat Violations & Strikes</li>
+                <li>All Problems &amp; Test Cases associated with this session</li>
+                <li>All Submissions &amp; Code evaluated for this session</li>
+                <li>All Registered Participants</li>
+                <li>All Anti-Cheat Violations &amp; Strikes</li>
               </ul>
             </div>
 
@@ -1919,7 +1918,7 @@ export default function AdminPage() {
                 value={deleteConfirmText}
                 onChange={e => setDeleteConfirmText(e.target.value)}
                 placeholder="DELETE"
-                className="w-full rounded-xl border border-red-500/40 bg-[#050504] px-3 py-2 font-nautical-mono text-sm text-[#ebe4d5] focus:border-red-500 focus:outline-none"
+                className="w-full rounded-xl border border-red-500/40 bg-[#050504] px-3.5 py-2 font-nautical-mono text-sm text-[#ebe4d5] focus:border-red-500 focus:outline-none"
                 autoFocus
               />
             </div>
@@ -1944,13 +1943,13 @@ export default function AdminPage() {
         </div>
       )}
 
-      {/* Reset Voyage Modal (Strict Safeguard) */}
+      {/* Reset Contest Modal (Strict Safeguard) */}
       {showResetSessionModal && sessionToReset && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4 backdrop-blur-md">
           <div className="w-full max-w-lg rounded-2xl border border-amber-500/50 bg-[#0c0a06] p-6 shadow-2xl space-y-4">
             <div className="flex items-center justify-between border-amber-500/20 border-b pb-3">
               <h3 className="font-cinzel text-lg font-bold text-amber-400 flex items-center gap-2">
-                <RotateCcw className="h-5 w-5 text-amber-500" /> Reset Voyage Session
+                <RotateCcw className="h-5 w-5 text-amber-500" /> Reset Contest Session
               </h3>
               <button onClick={() => setShowResetSessionModal(false)} className="text-[#a68a56] hover:text-[#ebe4d5]">
                 <X className="h-5 w-5" />
@@ -1959,7 +1958,7 @@ export default function AdminPage() {
 
             <div className="rounded-xl border border-amber-500/30 bg-amber-950/20 p-4 space-y-2">
               <p className="font-cinzel text-xs font-bold text-amber-300">
-                You are about to reset voyage session back to Setup stage:
+                You are about to reset contest session back to Setup stage:
               </p>
               <p className="font-cinzel text-sm font-black text-white bg-black/60 px-3 py-1.5 rounded-lg border border-amber-500/40">
                 {sessionToReset.label}
@@ -1968,29 +1967,29 @@ export default function AdminPage() {
                 <div className="text-emerald-400 font-bold">✓ Preserved (Kept 100% Intact):</div>
                 <ul className="list-disc list-inside pl-2 text-emerald-300/80 space-y-0.5">
                   <li>Contest name, duration, capacity &amp; late join settings</li>
-                  <li>All Scrolls (Questions), Test Cases, and starter templates</li>
+                  <li>All Problems, Test Cases, and starter templates</li>
                   <li>Anti-cheat toggle settings</li>
                 </ul>
                 <div className="text-red-400 font-bold pt-1">✗ Cleared &amp; Reset:</div>
                 <ul className="list-disc list-inside pl-2 text-red-300/80 space-y-0.5">
-                  <li>All Participant / Navigator registrations</li>
+                  <li>All Participant registrations</li>
                   <li>All Submissions, code snapshots, and scores</li>
                   <li>All Anti-Cheat strikes &amp; violations</li>
-                  <li>Phase returns to <strong>Setup Stage</strong> so the Muster Window can be reopened fresh</li>
+                  <li>Phase returns to <strong>Setup Stage</strong> so the Registration Window can be reopened fresh</li>
                 </ul>
               </div>
             </div>
 
             <div className="space-y-1.5">
               <label className="block font-nautical-mono text-xs text-[#ebe4d5]">
-                To confirm resetting this voyage to setup, type <strong className="text-amber-400 font-bold tracking-widest">RESET</strong> below:
+                To confirm resetting this contest to setup, type <strong className="text-amber-400 font-bold tracking-widest">RESET</strong> below:
               </label>
               <input
                 type="text"
                 value={resetConfirmText}
                 onChange={e => setResetConfirmText(e.target.value)}
                 placeholder="RESET"
-                className="w-full rounded-xl border border-amber-500/40 bg-[#050504] px-3 py-2 font-nautical-mono text-sm text-[#ebe4d5] focus:border-amber-500 focus:outline-none"
+                className="w-full rounded-xl border border-amber-500/40 bg-[#050504] px-3.5 py-2 font-nautical-mono text-sm text-[#ebe4d5] focus:border-amber-500 focus:outline-none"
                 autoFocus
               />
             </div>
@@ -2008,7 +2007,7 @@ export default function AdminPage() {
                 className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-amber-600 to-amber-500 px-5 py-2 font-cinzel text-xs font-bold text-black hover:brightness-110 disabled:opacity-40 disabled:cursor-not-allowed bouncy-btn shadow-lg shadow-amber-950/60"
               >
                 {resetLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RotateCcw className="h-4 w-4" />}
-                Reset Voyage to Setup
+                Reset Contest to Setup
               </button>
             </div>
           </div>
@@ -2021,74 +2020,74 @@ export default function AdminPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4 backdrop-blur-md">
           <div className="w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-2xl border border-[#d4af37]/40 bg-[#0c0906] shadow-2xl">
             <div className="sticky top-0 z-10 flex items-center justify-between border-b border-[#a68a56]/20 bg-[#0c0906] px-6 py-4">
-              <h3 className="font-cinzel text-base font-bold text-[#f3d38c]">{editingQuestion.id ? 'Refine Trial Scroll' : 'Inscribe New Trial Scroll'}</h3>
+              <h3 className="font-cinzel text-base font-bold text-[#f3d38c]">{editingQuestion.id ? 'Edit Problem' : 'Add New Problem'}</h3>
               <button onClick={() => setShowQuestionModal(false)} className="text-[#a68a56] hover:text-[#ebe4d5]"><X className="h-5 w-5" /></button>
             </div>
 
             <div className="p-6 space-y-4">
               <div className="grid gap-4 sm:grid-cols-3">
                 <div className="sm:col-span-2">
-                  <label className="block font-cinzel text-xs text-[#a68a56] mb-1">Scroll Title *</label>
+                  <label className="block font-cinzel text-xs font-semibold text-[#f3d38c] mb-1">Problem Title *</label>
                   <input type="text" value={editingQuestion.title ?? ''} onChange={e => setEditingQuestion(q => ({ ...q, title: e.target.value }))}
-                    className="w-full rounded-xl border border-[#a68a56]/30 bg-[#050504] px-3 py-2 font-cinzel text-sm text-[#ebe4d5] focus:border-[#d4af37] focus:outline-none" />
+                    className="w-full rounded-xl border border-[#a68a56]/30 bg-[#050504] px-3.5 py-2 font-cinzel text-sm text-[#ebe4d5] focus:border-[#d4af37] focus:outline-none" />
                 </div>
                 <div>
-                  <label className="block font-cinzel text-xs text-[#a68a56] mb-1">Bounty Points</label>
+                  <label className="block font-cinzel text-xs font-semibold text-[#f3d38c] mb-1">Points</label>
                   <input type="number" value={editingQuestion.points ?? 400} onChange={e => setEditingQuestion(q => ({ ...q, points: +e.target.value }))}
-                    className="w-full rounded-xl border border-[#a68a56]/30 bg-[#050504] px-3 py-2 font-nautical-mono text-sm text-[#ebe4d5] focus:border-[#d4af37] focus:outline-none" />
+                    className="w-full rounded-xl border border-[#a68a56]/30 bg-[#050504] px-3.5 py-2 font-nautical-mono text-sm text-[#ebe4d5] focus:border-[#d4af37] focus:outline-none" />
                 </div>
               </div>
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
-                  <label className="block font-cinzel text-xs text-[#a68a56] mb-1">Category</label>
+                  <label className="block font-cinzel text-xs font-semibold text-[#f3d38c] mb-1">Category</label>
                   <input type="text" value={editingQuestion.category ?? ''} onChange={e => setEditingQuestion(q => ({ ...q, category: e.target.value }))}
-                    className="w-full rounded-xl border border-[#a68a56]/30 bg-[#050504] px-3 py-2 font-nautical-mono text-sm text-[#ebe4d5] focus:border-[#d4af37] focus:outline-none" />
+                    className="w-full rounded-xl border border-[#a68a56]/30 bg-[#050504] px-3.5 py-2 font-nautical-mono text-sm text-[#ebe4d5] focus:border-[#d4af37] focus:outline-none" />
                 </div>
                 <div>
-                  <label className="block font-cinzel text-xs text-[#a68a56] mb-1">Difficulty</label>
+                  <label className="block font-cinzel text-xs font-semibold text-[#f3d38c] mb-1">Difficulty</label>
                   <select value={editingQuestion.difficulty ?? 'Medium'} onChange={e => setEditingQuestion(q => ({ ...q, difficulty: e.target.value as any }))}
-                    className="w-full rounded-xl border border-[#a68a56]/30 bg-[#050504] px-3 py-2 font-cinzel text-sm text-[#ebe4d5] focus:border-[#d4af37] focus:outline-none">
+                    className="w-full rounded-xl border border-[#a68a56]/30 bg-[#050504] px-3.5 py-2 font-cinzel text-sm text-[#ebe4d5] focus:border-[#d4af37] focus:outline-none">
                     <option>Easy</option><option>Medium</option><option>Hard</option>
                   </select>
                 </div>
               </div>
 
               {[
-                { key: 'scenario', label: 'Scenario Charter' },
-                { key: 'inputFormat', label: 'Input Inscription' },
-                { key: 'outputFormat', label: 'Output Vessel' },
-                { key: 'constraints', label: 'Voyage Constraints' },
+                { key: 'scenario', label: 'Problem Description' },
+                { key: 'inputFormat', label: 'Input Format' },
+                { key: 'outputFormat', label: 'Output Format' },
+                { key: 'constraints', label: 'Constraints' },
               ].map(({ key, label }) => (
                 <div key={key}>
-                  <label className="block font-cinzel text-xs text-[#a68a56] mb-1">{label}</label>
+                  <label className="block font-cinzel text-xs font-semibold text-[#f3d38c] mb-1">{label}</label>
                   <textarea value={(editingQuestion as any)[key] ?? ''} onChange={e => setEditingQuestion(q => ({ ...q, [key]: e.target.value }))} rows={3}
-                    className="w-full rounded-xl border border-[#a68a56]/30 bg-[#050504] px-3 py-2 font-nautical-mono text-xs text-[#ebe4d5] focus:border-[#d4af37] focus:outline-none resize-y" />
+                    className="w-full rounded-xl border border-[#a68a56]/30 bg-[#050504] px-3.5 py-2 font-nautical-mono text-xs sm:text-sm text-[#ebe4d5] focus:border-[#d4af37] focus:outline-none resize-y" />
                 </div>
               ))}
 
               {/* Test Cases */}
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <label className="font-cinzel text-xs text-[#a68a56]">Public & Sealed Trials</label>
+                  <label className="font-cinzel text-xs font-semibold text-[#f3d38c]">Sample &amp; Hidden Test Cases</label>
                   <button onClick={() => setEditingQuestion(q => ({ ...q, testCases: [...(q.testCases ?? []), { id: `tc-${Date.now()}`, input: '', expectedOutput: '', isHidden: false }] }))}
-                    className="flex items-center gap-1 rounded-lg bg-[#1c160e] border border-[#a68a56]/30 px-2.5 py-1 font-cinzel text-[11px] text-[#f3d38c] hover:border-[#d4af37] bouncy-btn">
-                    <Plus className="h-3 w-3" /> Add Trial
+                    className="flex items-center gap-1 rounded-lg bg-[#1c160e] border border-[#a68a56]/30 px-2.5 py-1 font-cinzel text-xs text-[#f3d38c] hover:border-[#d4af37] bouncy-btn">
+                    <Plus className="h-3.5 w-3.5" /> Add Test Case
                   </button>
                 </div>
                 <div className="space-y-3">
                   {(editingQuestion.testCases ?? []).map((tc, i) => (
                     <div key={tc.id} className="rounded-xl border border-[#a68a56]/20 bg-[#050504] p-3 space-y-2">
                       <div className="flex items-center justify-between">
-                        <span className="font-cinzel text-[11px] text-[#d4af37]">Trial {i + 1}</span>
+                        <span className="font-cinzel text-xs font-bold text-[#d4af37]">Test Case {i + 1}</span>
                         <div className="flex items-center gap-3">
-                          <label className="flex items-center gap-1.5 font-cinzel text-[11px] text-[#a68a56] cursor-pointer">
+                          <label className="flex items-center gap-1.5 font-cinzel text-xs text-[#a68a56] cursor-pointer">
                             <input type="checkbox" checked={tc.isHidden} onChange={e => {
                               const tcs = [...(editingQuestion.testCases ?? [])];
                               tcs[i] = { ...tcs[i], isHidden: e.target.checked };
                               setEditingQuestion(q => ({ ...q, testCases: tcs }));
                             }} className="accent-[#d4af37]" />
-                            Sealed (Hidden)
+                            Hidden Test Case
                           </label>
                           <button onClick={() => setEditingQuestion(q => ({ ...q, testCases: (q.testCases ?? []).filter((_, idx) => idx !== i) }))} className="text-red-400 hover:text-red-300"><Trash2 className="h-3.5 w-3.5" /></button>
                         </div>
@@ -2119,7 +2118,7 @@ export default function AdminPage() {
               <div className="flex justify-end gap-3 border-t border-[#a68a56]/20 pt-4">
                 <button onClick={() => setShowQuestionModal(false)} className="rounded-xl border border-[#a68a56]/30 px-4 py-2 font-cinzel text-xs text-[#ebe4d5] hover:bg-[#1c160e]">Cancel</button>
                 <button onClick={handleSaveQuestion} className="rounded-xl bg-gradient-to-r from-[#d4af37] via-[#f3d38c] to-[#a68a56] px-5 py-2 font-cinzel text-xs font-bold text-[#050504] hover:brightness-110 shadow-[0_0_15px_rgba(212,175,55,0.25)] bouncy-btn">
-                  {editingQuestion.id ? 'Save Inscription' : 'Inscribe Scroll'}
+                  {editingQuestion.id ? 'Save Changes' : 'Create Problem'}
                 </button>
               </div>
             </div>
@@ -2132,14 +2131,14 @@ export default function AdminPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4 backdrop-blur-md">
           <div className="w-full max-w-xl rounded-2xl border border-[#d4af37]/40 bg-[#0c0906] p-6 shadow-2xl space-y-4">
             <div className="flex items-center justify-between border-b border-[#a68a56]/20 pb-3">
-              <h3 className="font-cinzel text-sm font-bold text-[#f3d38c]">Import Scrolls JSON Parchment</h3>
+              <h3 className="font-cinzel text-sm font-bold text-[#f3d38c]">Import Problems JSON</h3>
               <button onClick={() => setShowImportJsonModal(false)} className="text-[#a68a56] hover:text-[#ebe4d5]"><X className="h-5 w-5" /></button>
             </div>
             <textarea value={importJsonText} onChange={e => setImportJsonText(e.target.value)} placeholder='[{"title":"...", "testCases":[...]}]' rows={10}
               className="w-full rounded-xl border border-[#a68a56]/30 bg-[#050504] p-3 font-nautical-mono text-xs text-[#ebe4d5] focus:border-[#d4af37] focus:outline-none resize-y" />
             <div className="flex justify-end gap-3">
               <button onClick={() => setShowImportJsonModal(false)} className="rounded-xl border border-[#a68a56]/30 px-4 py-2 font-cinzel text-xs text-[#ebe4d5] hover:bg-[#1c160e]">Cancel</button>
-              <button onClick={handleImportQuestionsJSON} className="rounded-xl bg-gradient-to-r from-[#d4af37] via-[#f3d38c] to-[#a68a56] px-5 py-2 font-cinzel text-xs font-bold text-[#050504] hover:brightness-110 bouncy-btn">Import Scrolls</button>
+              <button onClick={handleImportQuestionsJSON} className="rounded-xl bg-gradient-to-r from-[#d4af37] via-[#f3d38c] to-[#a68a56] px-5 py-2 font-cinzel text-xs font-bold text-[#050504] hover:brightness-110 bouncy-btn">Import Problems</button>
             </div>
           </div>
         </div>
@@ -2151,15 +2150,15 @@ export default function AdminPage() {
           <div className="w-full max-w-4xl max-h-[90vh] flex flex-col rounded-2xl border border-[#d4af37]/40 bg-[#0c0906] shadow-2xl overflow-hidden">
             <div className="flex items-center justify-between border-b border-[#a68a56]/20 px-6 py-4">
               <div>
-                <div className="font-cinzel text-sm font-bold text-[#ebe4d5]">{inspectedSubmission.participantName} — {inspectedSubmission.questionTitle}</div>
-                <div className="font-nautical-mono text-xs text-[#a68a56] mt-0.5 flex flex-wrap gap-3">
+                <div className="font-cinzel text-base font-bold text-[#ebe4d5]">{inspectedSubmission.participantName} — {inspectedSubmission.questionTitle}</div>
+                <div className="font-nautical-mono text-xs sm:text-sm text-[#a68a56] mt-0.5 flex flex-wrap gap-3">
                   <span>{inspectedSubmission.language.toUpperCase()} · Total Score: <strong className="text-[#d4af37]">{inspectedSubmission.score}</strong>
                     {(inspectedSubmission as any).speedBonus > 0 && <span className="text-[#f3d38c] ml-1">(includes +{(inspectedSubmission as any).speedBonus} speed bonus)</span>}
                   </span>
                   <span>{inspectedSubmission.testCasesPassed}/{inspectedSubmission.totalTestCases} test cases passed</span>
-                  {inspectedSubmission.isAutoSubmit && <span className="rounded bg-[#1c160e] border border-[#d4af37]/40 px-1.5 py-0.5 text-[10px] text-[#f3d38c] font-cinzel">AUTO-SUBMITTED</span>}
+                  {inspectedSubmission.isAutoSubmit && <span className="rounded bg-[#1c160e] border border-[#d4af37]/40 px-1.5 py-0.5 text-[10px] text-[#f3d38c] font-cinzel font-semibold">AUTO-SUBMITTED</span>}
                 </div>
-                <div className="mt-1 font-nautical-mono text-[11px] text-[#a68a56] flex gap-4 flex-wrap">
+                <div className="mt-1 font-nautical-mono text-xs text-[#a68a56] flex gap-4 flex-wrap">
                   {(() => {
                     const firstTs = (inspectedSubmission as any).firstSubmittedAt ?? inspectedSubmission.submittedAt;
                     const lastTs = inspectedSubmission.submittedAt ?? (inspectedSubmission as any).firstSubmittedAt;
@@ -2170,13 +2169,13 @@ export default function AdminPage() {
                     return (
                       <>
                         <span>
-                          🕐 First sealed:{' '}
+                          🕐 First submitted:{' '}
                           <strong className="text-[#f3d38c]">
                             {new Date(firstTs).toLocaleString()} ({fmtDuration(firstDur)})
                           </strong>
                         </span>
                         <span>
-                          🔄 Last sealed:{' '}
+                          🔄 Last submitted:{' '}
                           <strong className={isUpdated ? 'text-amber-300' : 'text-[#f3d38c]'}>
                             {new Date(lastTs).toLocaleString()} ({fmtDuration(lastDur)}){isUpdated ? ' (Updated)' : ''}
                           </strong>
@@ -2190,7 +2189,7 @@ export default function AdminPage() {
             </div>
             <div className="flex-1 overflow-hidden">
               <Editor height="60vh" language={inspectedSubmission.language === 'c' ? 'c' : inspectedSubmission.language}
-                value={inspectedSubmission.code} options={{ readOnly: true, minimap: { enabled: false }, fontSize: 13, wordWrap: 'on' }} theme="vs-dark" />
+                value={inspectedSubmission.code} options={{ readOnly: true, minimap: { enabled: false }, fontSize: 14, wordWrap: 'on' }} theme="vs-dark" />
             </div>
           </div>
         </div>
