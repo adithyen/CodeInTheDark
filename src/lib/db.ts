@@ -391,12 +391,18 @@ export async function bulkImportQuestions(sessionId: string, questions: Partial<
   for (let i = 0; i < questions.length; i++) {
     const q = questions[i];
     const rawTcs = q.testCases || (q as any).test_cases || [];
-    const cleanTestCases = rawTcs.map((tc: any) => ({
-      input: tc.input ?? '',
-      expectedOutput: tc.expectedOutput ?? tc.expected_output ?? '',
-      isHidden: Boolean(tc.isHidden ?? tc.is_hidden),
-      explanation: tc.explanation || '',
-    }));
+    const cleanTestCases = rawTcs.map((tc: any, idx: number) => {
+      let isHidden = false;
+      if (tc.isHidden !== undefined) isHidden = Boolean(tc.isHidden);
+      else if (tc.is_hidden !== undefined) isHidden = Boolean(tc.is_hidden);
+      else isHidden = idx >= Math.max(1, rawTcs.length - 2); // Default last two as hidden
+      return {
+        input: tc.input ?? '',
+        expectedOutput: tc.expectedOutput ?? tc.expected_output ?? '',
+        isHidden,
+        explanation: tc.explanation || '',
+      };
+    });
     await upsertQuestion(sessionId, { ...q, id: undefined, testCases: cleanTestCases, order: i + 1 });
   }
 }

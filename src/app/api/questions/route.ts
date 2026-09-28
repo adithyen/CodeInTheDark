@@ -14,7 +14,7 @@ import { isAdmin } from '@/lib/adminAuth';
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const adminFlag = searchParams.get('admin') === 'true';
-  const passkey = searchParams.get('passkey') || '';
+  const passkey = req.headers.get('x-admin-passkey') || searchParams.get('passkey') || '';
   const sessionId = searchParams.get('sessionId');
 
   const authenticated = adminFlag && isAdmin(passkey);
@@ -36,7 +36,8 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { passkey, question, questions, action, sessionId: reqSessionId } = body;
+    const { question, questions, action, sessionId: reqSessionId } = body;
+    const passkey = body.passkey || req.headers.get('x-admin-passkey') || '';
 
     if (!isAdmin(passkey)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -75,7 +76,8 @@ export async function POST(req: NextRequest) {
 export async function PUT(req: NextRequest) {
   try {
     const body = await req.json();
-    const { passkey, question, sessionId: reqSessionId } = body;
+    const { question, sessionId: reqSessionId } = body;
+    const passkey = body.passkey || req.headers.get('x-admin-passkey') || '';
 
     if (!isAdmin(passkey)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -100,8 +102,14 @@ export async function PUT(req: NextRequest) {
 export async function DELETE(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
-    const id = searchParams.get('id');
-    const passkey = searchParams.get('passkey') || '';
+    let id = searchParams.get('id');
+    let passkey = req.headers.get('x-admin-passkey') || searchParams.get('passkey') || '';
+
+    try {
+      const body = await req.json();
+      if (body.id) id = body.id;
+      if (body.passkey) passkey = body.passkey;
+    } catch {}
 
     if (!isAdmin(passkey)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

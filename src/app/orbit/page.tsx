@@ -215,10 +215,18 @@ export default function AdminPage() {
       if (!targetId) return;
 
       const [qRes, pRes, sRes, vRes] = await Promise.all([
-        fetch(`/api/questions?admin=true&passkey=${key}&sessionId=${targetId}`),
-        fetch(`/api/participants?passkey=${key}&sessionId=${targetId}`),
-        fetch(`/api/admin/submissions?passkey=${key}&sessionId=${targetId}`),
-        fetch(`/api/violations?passkey=${key}&sessionId=${targetId}`),
+        fetch(`/api/questions?admin=true&passkey=${encodeURIComponent(key)}&sessionId=${encodeURIComponent(targetId)}`, {
+          headers: { 'x-admin-passkey': key },
+        }),
+        fetch(`/api/participants?passkey=${encodeURIComponent(key)}&sessionId=${encodeURIComponent(targetId)}`, {
+          headers: { 'x-admin-passkey': key },
+        }),
+        fetch(`/api/admin/submissions?passkey=${encodeURIComponent(key)}&sessionId=${encodeURIComponent(targetId)}`, {
+          headers: { 'x-admin-passkey': key },
+        }),
+        fetch(`/api/violations?passkey=${encodeURIComponent(key)}&sessionId=${encodeURIComponent(targetId)}`, {
+          headers: { 'x-admin-passkey': key },
+        }),
       ]);
 
       if (qRes.ok) setQuestions((await qRes.json()).questions ?? []);
@@ -282,7 +290,7 @@ export default function AdminPage() {
     try {
       const res = await fetch('/api/contest', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'x-admin-passkey': passkey },
         body: JSON.stringify({ action, passkey, sessionId, ...extra }),
       });
       if (res.ok) await fetchAllData(passkey, sessionId);
@@ -453,7 +461,7 @@ export default function AdminPage() {
     try {
       const res = await fetch('/api/questions', {
         method: editingQuestion.id ? 'PUT' : 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'x-admin-passkey': passkey },
         body: JSON.stringify({ passkey, question: editingQuestion, sessionId: targetId }),
       });
       if (res.ok) { setShowQuestionModal(false); fetchAllData(passkey); }
@@ -467,7 +475,11 @@ export default function AdminPage() {
     // Optimistic UI update so the question disappears immediately
     setQuestions(prev => prev.filter(q => q.id !== id));
     try {
-      const res = await fetch(`/api/questions?id=${id}&passkey=${passkey}`, { method: 'DELETE' });
+      const res = await fetch(`/api/questions?id=${encodeURIComponent(id)}&passkey=${encodeURIComponent(passkey)}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json', 'x-admin-passkey': passkey },
+        body: JSON.stringify({ id, passkey }),
+      });
       if (res.ok) {
         fetchAllData(passkey, targetId);
       } else {
@@ -490,7 +502,7 @@ export default function AdminPage() {
       if (!Array.isArray(qList) || qList.length === 0) return alert('Invalid format');
       const res = await fetch('/api/questions', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'x-admin-passkey': passkey },
         body: JSON.stringify({ passkey, action: 'bulk_import', questions: qList, sessionId: targetId }),
       });
       if (res.ok) {
@@ -511,7 +523,7 @@ export default function AdminPage() {
     if (!targetId) return alert('No session selected');
     if (!confirm(`Load "${preset.name}"? This replaces all current questions and sets challenge duration to ${preset.durationMinutes} min.`)) return;
     const res = await fetch('/api/questions', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      method: 'POST', headers: { 'Content-Type': 'application/json', 'x-admin-passkey': passkey },
       body: JSON.stringify({ passkey, action: 'bulk_import', questions: preset.questions, sessionId: targetId }),
     });
     if (res.ok) {
@@ -529,7 +541,7 @@ export default function AdminPage() {
     setImportLoading(true);
     try {
       const res = await fetch('/api/import-leetcode', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        method: 'POST', headers: { 'Content-Type': 'application/json', 'x-admin-passkey': passkey },
         body: JSON.stringify({ slug: leetcodeSlug.trim(), passkey }),
       });
       const data = await res.json();
@@ -554,7 +566,7 @@ export default function AdminPage() {
   const participantAction = async (participantId: string, action: string) => {
     try {
       const res = await fetch('/api/participants', {
-        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        method: 'PATCH', headers: { 'Content-Type': 'application/json', 'x-admin-passkey': passkey },
         body: JSON.stringify({ passkey, participantId, action }),
       });
       if (res.ok) fetchAllData(passkey);
@@ -571,7 +583,7 @@ export default function AdminPage() {
     setRejudging(submissionId);
     try {
       const res = await fetch('/api/admin/submissions', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        method: 'POST', headers: { 'Content-Type': 'application/json', 'x-admin-passkey': passkey },
         body: JSON.stringify({ passkey, submissionId, sessionId: targetId }),
       });
       const d = await res.json();

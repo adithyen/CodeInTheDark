@@ -12,7 +12,7 @@ import { isAdmin } from '@/lib/adminAuth';
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
-  const passkey = searchParams.get('passkey') || '';
+  const passkey = req.headers.get('x-admin-passkey') || searchParams.get('passkey') || '';
   const sessionId = searchParams.get('sessionId');
 
   if (!isAdmin(passkey)) {
@@ -34,7 +34,8 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { passkey, submissionId, sessionId: reqSessionId } = body;
+    const { submissionId, sessionId: reqSessionId } = body;
+    const passkey = body.passkey || req.headers.get('x-admin-passkey') || '';
 
     if (!isAdmin(passkey)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

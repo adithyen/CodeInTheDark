@@ -13,7 +13,7 @@ import { isAdmin } from '@/lib/adminAuth';
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
-  const passkey = searchParams.get('passkey') || '';
+  const passkey = req.headers.get('x-admin-passkey') || searchParams.get('passkey') || '';
   const sessionId = searchParams.get('sessionId');
 
   if (!isAdmin(passkey)) {
