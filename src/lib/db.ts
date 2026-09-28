@@ -283,20 +283,22 @@ export async function upsertQuestion(sessionId: string, q: Partial<Question> & {
   if (!data) return null;
 
   // Handle test cases if provided
-  if (q.testCases && q.testCases.length > 0) {
-    // Delete existing and re-insert
+  const rawTestCases = q.testCases || (q as any).test_cases;
+  if (rawTestCases && rawTestCases.length > 0) {
+    // Delete existing and re-insert with fresh UUIDs
     await supabase.from('test_cases').delete().eq('question_id', data.id);
-    const isUuid = (str?: string) => Boolean(str && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str));
-    const tcRows = q.testCases.map((tc, idx) => ({
-      ...(isUuid(tc.id) ? { id: tc.id } : {}),
+    const tcRows = rawTestCases.map((tc: any, idx: number) => ({
       question_id: data.id,
-      input: tc.input,
-      expected_output: tc.expectedOutput,
-      is_hidden: tc.isHidden,
+      input: tc.input ?? '',
+      expected_output: tc.expectedOutput ?? tc.expected_output ?? '',
+      is_hidden: Boolean(tc.isHidden ?? tc.is_hidden),
       explanation: tc.explanation || '',
       display_order: idx + 1,
     }));
-    await supabase.from('test_cases').insert(tcRows);
+    const { error: tcErr } = await supabase.from('test_cases').insert(tcRows);
+    if (tcErr) {
+      console.error('[upsertQuestion] Error inserting test cases for question', data.id, tcErr);
+    }
   }
 
   return (await getQuestionsForSession(sessionId, true)).find(x => x.id === data.id) || null;
@@ -311,7 +313,15 @@ export async function bulkImportQuestions(sessionId: string, questions: Partial<
   await supabase.from('questions').delete().eq('session_id', sessionId);
 
   for (let i = 0; i < questions.length; i++) {
-    await upsertQuestion(sessionId, { ...questions[i], order: i + 1 });
+    const q = questions[i];
+    const rawTcs = q.testCases || (q as any).test_cases || [];
+    const cleanTestCases = rawTcs.map((tc: any) => ({
+      input: tc.input ?? '',
+      expectedOutput: tc.expectedOutput ?? tc.expected_output ?? '',
+      isHidden: Boolean(tc.isHidden ?? tc.is_hidden),
+      explanation: tc.explanation || '',
+    }));
+    await upsertQuestion(sessionId, { ...q, id: undefined, testCases: cleanTestCases, order: i + 1 });
   }
 }
 
@@ -319,7 +329,13 @@ export async function copyQuestionsToSession(fromSessionId: string, toSessionId:
   const questions = await getQuestionsForSession(fromSessionId, true);
   for (let i = 0; i < questions.length; i++) {
     const q = questions[i];
-    await upsertQuestion(toSessionId, { ...q, id: undefined, order: i + 1 });
+    const cleanTestCases = (q.testCases || []).map(tc => ({
+      input: tc.input,
+      expectedOutput: tc.expectedOutput,
+      isHidden: tc.isHidden,
+      explanation: tc.explanation,
+    }));
+    await upsertQuestion(toSessionId, { ...q, id: undefined, testCases: cleanTestCases, order: i + 1 });
   }
 }
 

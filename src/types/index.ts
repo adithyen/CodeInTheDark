@@ -3,7 +3,7 @@ export type Language = 'c' | 'python' | 'java';
 export type ContestPhase = 'setup' | 'registration' | 'active' | 'paused' | 'ended' | 'reveal';
 
 export interface TestCase {
-  id: string;
+  id?: string;
   input: string;
   expectedOutput: string;
   isHidden: boolean;
@@ -70,7 +70,7 @@ export interface Submission {
   firstExecTimeMs?: number;
   statusMessage?: string;
   testCaseDetails?: {
-    testCaseId: string;
+    testCaseId?: string;
     passed: boolean;
     actualOutput?: string;
     expectedOutput?: string;
