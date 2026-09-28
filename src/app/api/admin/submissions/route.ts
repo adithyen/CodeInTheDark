@@ -6,7 +6,7 @@ import {
   upsertSubmission,
   getQuestionsForSession,
 } from '@/lib/db';
-import { executeCode } from '@/lib/executor';
+import { executeCode, executeCodeBatch } from '@/lib/executor';
 import { calculateQuestionScore } from '@/lib/scoring';
 import { isAdmin } from '@/lib/adminAuth';
 
@@ -58,33 +58,51 @@ export async function POST(req: NextRequest) {
 
     const testCases = question.testCases;
 
-    const testCaseDetails = await Promise.all(
-      testCases.map(async (tc) => {
-        try {
-          const res = await executeCode(sub.language, sub.code, tc.input);
-          const normalizedActual = (res.stdout || '').replace(/\r\n/g, '\n').trim();
-          const normalizedExpected = (tc.expectedOutput || '').replace(/\r\n/g, '\n').trim();
-          const passed = res.isSuccess && normalizedActual === normalizedExpected;
-          return {
-            testCaseId: tc.id,
-            passed,
-            actualOutput: tc.isHidden ? '[HIDDEN IN TEST RUNNER]' : normalizedActual,
-            expectedOutput: tc.isHidden ? '[HIDDEN]' : normalizedExpected,
-            isHidden: tc.isHidden,
-            error: res.stderr || undefined,
-          };
-        } catch (err: any) {
+    let testCaseDetails: any[] = [];
+    try {
+      const batchResult = await executeCodeBatch(
+        sub.language,
+        sub.code,
+        testCases.map((tc, idx) => ({ id: tc.id || String(idx), input: tc.input }))
+      );
+
+      testCaseDetails = testCases.map((tc, idx) => {
+        const tcKey = tc.id || String(idx);
+        const res = batchResult.results[tcKey];
+        if (!res) {
           return {
             testCaseId: tc.id,
             passed: false,
             actualOutput: '[EXECUTION ERROR]',
             expectedOutput: tc.isHidden ? '[HIDDEN]' : tc.expectedOutput,
             isHidden: tc.isHidden,
-            error: err.message,
+            error: 'No output returned from execution runner',
           };
         }
-      })
-    );
+
+        const normalizedActual = (res.stdout || '').replace(/\r\n/g, '\n').trim();
+        const normalizedExpected = (tc.expectedOutput || '').replace(/\r\n/g, '\n').trim();
+        const passed = res.isSuccess && normalizedActual === normalizedExpected;
+
+        return {
+          testCaseId: tc.id,
+          passed,
+          actualOutput: tc.isHidden ? '[HIDDEN IN TEST RUNNER]' : normalizedActual,
+          expectedOutput: tc.isHidden ? '[HIDDEN]' : normalizedExpected,
+          isHidden: tc.isHidden,
+          error: res.stderr || undefined,
+        };
+      });
+    } catch (err: any) {
+      testCaseDetails = testCases.map((tc) => ({
+        testCaseId: tc.id,
+        passed: false,
+        actualOutput: '[EXECUTION ERROR]',
+        expectedOutput: tc.isHidden ? '[HIDDEN]' : tc.expectedOutput,
+        isHidden: tc.isHidden,
+        error: err.message,
+      }));
+    }
 
     const passedCount = testCaseDetails.filter(t => t.passed).length;
     const totalCount = testCases.length;

@@ -9,7 +9,7 @@ import {
   getParticipantSubmissions,
   hasParticipantSubmitted,
 } from '@/lib/db';
-import { executeCode } from '@/lib/executor';
+import { executeCode, executeCodeBatch } from '@/lib/executor';
 import { calculateQuestionScore } from '@/lib/scoring';
 import { Language, Question } from '@/types';
 
@@ -183,33 +183,48 @@ export async function POST(req: NextRequest) {
     // Fetch session details for speed bonus calculation
     const targetSession = await getSessionById(targetSessionId);
 
-    // Evaluate each question response
-    const results: any[] = [];
-    let grandTotalScore = 0;
-    let grandTotalPassed = 0;
-    let grandTotalTests = 0;
+    // ── Method 2 & Method 1: Parallel Question Evaluation with Batch Test Runs ──
+    const evaluatedResults = await Promise.all(
+      itemsToSubmit.map(async (item) => {
+        const question = qMap.get(item.questionId);
+        if (!question) return null;
 
-    for (const item of itemsToSubmit) {
-      const question = qMap.get(item.questionId);
-      if (!question) continue;
+        const testCases = question.testCases || [];
+        let passedCount = 0;
+        let testCaseDetails: any[] = [];
 
-      const testCases = question.testCases || [];
-      let passedCount = 0;
-      let testCaseDetails: any[] = [];
+        // If participant submitted empty code or starter code with no implementation, skip execution
+        const trimmedCode = (item.code || '').trim();
+        const starterTemplate = (question.starterTemplates?.[item.language] || '').trim();
+        const hasMeaningfulCode = trimmedCode.length > 0 && trimmedCode !== starterTemplate;
 
-      // If participant submitted empty code or starter code with no implementation, skip execution
-      const trimmedCode = (item.code || '').trim();
-      const starterTemplate = (question.starterTemplates?.[item.language] || '').trim();
-      const hasMeaningfulCode = trimmedCode.length > 0 && trimmedCode !== starterTemplate;
+        if (hasMeaningfulCode && testCases.length > 0) {
+          try {
+            // Method 1: Batch execute all test cases in ONE single runner request (Compile Once, Run Many)
+            const batchResult = await executeCodeBatch(
+              item.language,
+              item.code,
+              testCases.map((tc, idx) => ({ id: tc.id || String(idx), input: tc.input }))
+            );
 
-      if (hasMeaningfulCode) {
-        testCaseDetails = await Promise.all(
-          testCases.map(async (tc) => {
-            try {
-              const res = await executeCode(item.language, item.code, tc.input);
+            testCaseDetails = testCases.map((tc, idx) => {
+              const tcKey = tc.id || String(idx);
+              const res = batchResult.results[tcKey];
+              if (!res) {
+                return {
+                  testCaseId: tc.id,
+                  passed: false,
+                  actualOutput: '[EXECUTION ERROR]',
+                  expectedOutput: tc.isHidden ? '[HIDDEN]' : tc.expectedOutput,
+                  isHidden: tc.isHidden,
+                  error: 'No output returned from execution runner',
+                };
+              }
+
               const normalizedActual = (res.stdout || '').replace(/\r\n/g, '\n').trim();
               const normalizedExpected = (tc.expectedOutput || '').replace(/\r\n/g, '\n').trim();
               const passed = res.isSuccess && normalizedActual === normalizedExpected;
+
               return {
                 testCaseId: tc.id,
                 passed,
@@ -218,96 +233,103 @@ export async function POST(req: NextRequest) {
                 isHidden: tc.isHidden,
                 error: res.stderr || undefined,
               };
-            } catch (err: any) {
-              return {
-                testCaseId: tc.id,
-                passed: false,
-                actualOutput: '[EXECUTION ERROR]',
-                expectedOutput: tc.isHidden ? '[HIDDEN]' : tc.expectedOutput,
-                isHidden: tc.isHidden,
-                error: err.message,
-              };
-            }
-          })
-        );
-        passedCount = testCaseDetails.filter((t) => t.passed).length;
-      } else {
-        // No meaningful code written
-        testCaseDetails = testCases.map((tc) => ({
-          testCaseId: tc.id,
-          passed: false,
-          actualOutput: '[NO CODE SUBMITTED]',
-          expectedOutput: tc.isHidden ? '[HIDDEN]' : tc.expectedOutput,
-          isHidden: tc.isHidden,
-        }));
-      }
+            });
+            passedCount = testCaseDetails.filter((t) => t.passed).length;
+          } catch (err: any) {
+            testCaseDetails = testCases.map((tc) => ({
+              testCaseId: tc.id,
+              passed: false,
+              actualOutput: '[EXECUTION ERROR]',
+              expectedOutput: tc.isHidden ? '[HIDDEN]' : tc.expectedOutput,
+              isHidden: tc.isHidden,
+              error: err.message,
+            }));
+          }
+        } else {
+          // No meaningful code written
+          testCaseDetails = testCases.map((tc) => ({
+            testCaseId: tc.id,
+            passed: false,
+            actualOutput: '[NO CODE SUBMITTED]',
+            expectedOutput: tc.isHidden ? '[HIDDEN]' : tc.expectedOutput,
+            isHidden: tc.isHidden,
+          }));
+        }
 
-      const totalCount = testCases.length;
+        const totalCount = testCases.length;
 
-      // Extract question elapsed durations & sealing timestamps
-      const questionElapsed = (item as any).elapsedMs || (now - (targetSession?.challenge_starts_at || now));
-      const firstDuration = (item as any).firstDurationMs || questionElapsed;
-      const firstSealedAt = (item as any).firstSealedAt || now;
-      const lastSealedAt = (item as any).lastSealedAt || now;
+        // Extract question elapsed durations & sealing timestamps
+        const questionElapsed = (item as any).elapsedMs || (now - (targetSession?.challenge_starts_at || now));
+        const firstDuration = (item as any).firstDurationMs || questionElapsed;
+        const firstSealedAt = (item as any).firstSealedAt || now;
+        const lastSealedAt = (item as any).lastSealedAt || now;
 
-      // Contest total duration (if configured on session)
-      const sessionDurationMs = (targetSession?.challenge_starts_at && targetSession?.challenge_ends_at)
-        ? (targetSession.challenge_ends_at - targetSession.challenge_starts_at)
-        : undefined;
+        // Contest total duration (if configured on session)
+        const sessionDurationMs = (targetSession?.challenge_starts_at && targetSession?.challenge_ends_at)
+          ? (targetSession.challenge_ends_at - targetSession.challenge_starts_at)
+          : undefined;
 
-      // Calculate score with dynamic speed vs accuracy metric (SAM)
-      const { baseScore, speedBonus, finalScore } = calculateQuestionScore({
-        points: question.points || 100,
-        testCasesPassed: passedCount,
-        totalTestCases: totalCount,
-        durationMs: firstDuration,
-        sessionDurationMs,
-        totalQuestions: questions.length,
-      });
+        // Calculate score with dynamic speed vs accuracy metric (SAM)
+        const { baseScore, speedBonus, finalScore } = calculateQuestionScore({
+          points: question.points || 100,
+          testCasesPassed: passedCount,
+          totalTestCases: totalCount,
+          durationMs: firstDuration,
+          sessionDurationMs,
+          totalQuestions: questions.length,
+        });
 
-      grandTotalScore += finalScore;
-      grandTotalPassed += passedCount;
-      grandTotalTests += totalCount;
+        await upsertSubmission({
+          sessionId: targetSessionId,
+          participantId,
+          participantName: participant.name,
+          participantRoll: participant.rollNumber,
+          questionId: item.questionId,
+          questionTitle: question.title,
+          language: item.language,
+          code: item.code || '',
+          submittedAt: lastSealedAt,
+          firstSubmittedAt: firstSealedAt,
+          isAutoSubmit,
+          evaluationStatus: 'completed',
+          testCasesPassed: passedCount,
+          totalTestCases: totalCount,
+          score: finalScore,
+          speedBonus,
+          testCaseDetails,
+          execTimeMs: questionElapsed,
+          firstExecTimeMs: firstDuration,
+        });
 
-      await upsertSubmission({
-        sessionId: targetSessionId,
-        participantId,
-        participantName: participant.name,
-        participantRoll: participant.rollNumber,
-        questionId: item.questionId,
-        questionTitle: question.title,
-        language: item.language,
-        code: item.code || '',
-        submittedAt: lastSealedAt,
-        firstSubmittedAt: firstSealedAt,
-        isAutoSubmit,
-        evaluationStatus: 'completed',
-        testCasesPassed: passedCount,
-        totalTestCases: totalCount,
-        score: finalScore,
-        speedBonus,
-        testCaseDetails,
-        execTimeMs: questionElapsed,
-        firstExecTimeMs: firstDuration,
-      });
+        return {
+          questionId: item.questionId,
+          questionTitle: question.title,
+          language: item.language,
+          submittedAt: lastSealedAt,
+          firstSubmittedAt: firstSealedAt,
+          elapsedMs: questionElapsed,
+          firstDurationMs: firstDuration,
+          testCasesPassed: passedCount,
+          totalTestCases: totalCount,
+          baseScore,
+          speedBonus,
+          totalScore: finalScore,
+          lines: (item.code || '').split('\n').length,
+          chars: (item.code || '').length,
+          isAutoSubmit,
+        };
+      })
+    );
 
-      results.push({
-        questionId: item.questionId,
-        questionTitle: question.title,
-        language: item.language,
-        submittedAt: lastSealedAt,
-        firstSubmittedAt: firstSealedAt,
-        elapsedMs: questionElapsed,
-        firstDurationMs: firstDuration,
-        testCasesPassed: passedCount,
-        totalTestCases: totalCount,
-        baseScore,
-        speedBonus,
-        totalScore: finalScore,
-        lines: (item.code || '').split('\n').length,
-        chars: (item.code || '').length,
-        isAutoSubmit,
-      });
+    const results = evaluatedResults.filter(Boolean) as any[];
+    let grandTotalScore = 0;
+    let grandTotalPassed = 0;
+    let grandTotalTests = 0;
+
+    for (const r of results) {
+      grandTotalScore += r.totalScore;
+      grandTotalPassed += r.testCasesPassed;
+      grandTotalTests += r.totalTestCases;
     }
 
     // Update participant's last active

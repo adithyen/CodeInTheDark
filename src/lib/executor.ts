@@ -215,3 +215,121 @@ export async function executeCode(
   }
 }
 
+export interface BatchTestCaseInput {
+  id: string;
+  input: string;
+}
+
+export interface BatchExecutionResult {
+  isCompiled: boolean;
+  compileError?: string;
+  results: Record<string, ExecutionResult>;
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// 4. BATCH EXECUTOR (Compile Once, Run Many Test Cases in 1 Request)
+// ─────────────────────────────────────────────────────────────────────
+export async function executeCodeBatch(
+  language: Language,
+  code: string,
+  tests: BatchTestCaseInput[]
+): Promise<BatchExecutionResult> {
+  if (tests.length === 0) {
+    return { isCompiled: true, results: {} };
+  }
+
+  const pistonUrl = process.env.PISTON_URL || process.env.NEXT_PUBLIC_PISTON_URL;
+
+  if (pistonUrl && pistonUrl.trim()) {
+    try {
+      const langMap: Record<Language, { lang: string; version: string; file: string }> = {
+        c: { lang: 'c', version: '*', file: 'main.c' },
+        python: { lang: 'python', version: '*', file: 'main.py' },
+        java: { lang: 'java', version: '*', file: 'Main.java' },
+      };
+
+      const target = langMap[language];
+      const url = `${pistonUrl.trim().replace(/\/+$/, '')}/api/v2/execute`;
+      const startTime = Date.now();
+
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'ngrok-skip-browser-warning': 'true',
+          'User-Agent': 'CodeInTheDark-11-11-Runner',
+        },
+        body: JSON.stringify({
+          language: target.lang,
+          version: target.version,
+          files: [{ name: target.file, content: code }],
+          tests: tests.map((t) => ({ id: t.id, stdin: t.input })),
+          run_timeout: 3500,
+          compile_timeout: 5000,
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const compile = data.compile || {};
+        const compileFailed = compile.code && compile.code !== 0;
+        const compileErr = (compile.output || compile.stderr || '').trim();
+
+        // If batch runs are returned from our runner:
+        if (Array.isArray(data.runs) && data.runs.length > 0) {
+          const resultsMap: Record<string, ExecutionResult> = {};
+          data.runs.forEach((r: any) => {
+            const stdout = (r.stdout || '').trim();
+            const stderr = (r.stderr || (compileFailed ? compileErr : '')).trim();
+            const isSuccess = !compileFailed && r.code === 0 && !stderr;
+            resultsMap[r.id] = {
+              stdout,
+              stderr: stderr || (compileFailed ? compileErr : ''),
+              compileOutput: compileErr || undefined,
+              statusId: compileFailed ? 6 : (isSuccess ? 3 : 11),
+              statusDescription: compileFailed ? 'Compilation Error' : (isSuccess ? 'Accepted' : 'Runtime Error'),
+              timeMs: Date.now() - startTime,
+              memoryKb: 0,
+              isSuccess,
+            };
+          });
+
+          return {
+            isCompiled: !compileFailed,
+            compileError: compileFailed ? compileErr : undefined,
+            results: resultsMap,
+          };
+        }
+      }
+    } catch (batchErr: any) {
+      console.warn('Batch runner error, falling back to concurrent single executions:', batchErr?.message || batchErr);
+    }
+  }
+
+  // Fallback: Concurrent individual executions across test cases
+  const fallbackResults = await Promise.all(
+    tests.map(async (tc) => {
+      const res = await executeCode(language, code, tc.input);
+      return { id: tc.id, res };
+    })
+  );
+
+  const resultsMap: Record<string, ExecutionResult> = {};
+  let compileFailed = false;
+  let compileErr = '';
+
+  fallbackResults.forEach(({ id, res }) => {
+    resultsMap[id] = res;
+    if (res.statusId === 6) {
+      compileFailed = true;
+      compileErr = res.stderr || res.compileOutput || 'Compilation error';
+    }
+  });
+
+  return {
+    isCompiled: !compileFailed,
+    compileError: compileFailed ? compileErr : undefined,
+    results: resultsMap,
+  };
+}
+
