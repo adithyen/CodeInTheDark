@@ -10,6 +10,7 @@ interface MonacoBlindEditorProps {
   onChange: (val: string) => void;
   disabled?: boolean;
   fontSize?: number;
+  allowCopyPaste?: boolean;
 }
 
 const MONACO_LANG_MAP: Record<Language, string> = {
@@ -24,8 +25,23 @@ export default function MonacoBlindEditor({
   onChange,
   disabled = false,
   fontSize = 15,
+  allowCopyPaste = false,
 }: MonacoBlindEditorProps) {
+  const allowCopyPasteRef = React.useRef(allowCopyPaste);
+  const editorRef = React.useRef<any>(null);
+
+  React.useEffect(() => {
+    allowCopyPasteRef.current = allowCopyPaste;
+    if (editorRef.current) {
+      editorRef.current.updateOptions({
+        contextmenu: Boolean(allowCopyPaste),
+      });
+    }
+  }, [allowCopyPaste]);
+
   const handleEditorDidMount: OnMount = (editor, monaco) => {
+    editorRef.current = editor;
+
     // Define Cyberpunk Dark theme
     monaco.editor.defineTheme('cyberpunk-dark', {
       base: 'vs-dark',
@@ -50,8 +66,10 @@ export default function MonacoBlindEditor({
 
     monaco.editor.setTheme('cyberpunk-dark');
 
-    // Block paste commands inside Monaco
+    // Block paste commands inside Monaco only if allowCopyPaste is false
     editor.onKeyDown((e) => {
+      if (allowCopyPasteRef.current) return;
+
       // Ctrl+V or Cmd+V
       if ((e.ctrlKey || e.metaKey) && e.keyCode === monaco.KeyCode.KeyV) {
         e.preventDefault();
@@ -59,6 +77,11 @@ export default function MonacoBlindEditor({
       }
       // Ctrl+C or Cmd+C
       if ((e.ctrlKey || e.metaKey) && e.keyCode === monaco.KeyCode.KeyC) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+      // Ctrl+X or Cmd+X
+      if ((e.ctrlKey || e.metaKey) && e.keyCode === monaco.KeyCode.KeyX) {
         e.preventDefault();
         e.stopPropagation();
       }
@@ -86,7 +109,7 @@ export default function MonacoBlindEditor({
           lineNumbers: 'on',
           scrollBeyondLastLine: false,
           automaticLayout: true,
-          contextmenu: false, // Right-click disabled
+          contextmenu: Boolean(allowCopyPaste),
           tabSize: 4,
           wordWrap: 'on',
           smoothScrolling: true,

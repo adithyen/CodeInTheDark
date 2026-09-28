@@ -103,11 +103,11 @@ export default function AntiCheatShield({
                 {disableStrikes ? (
                   <div>
                     <div className="flex items-center justify-center gap-2">
-                      <span>Strikes:</span>
-                      <strong className="text-emerald-400 text-sm">∞ (Testing Mode · Disabled)</strong>
+                      <span>Anti-Cheat:</span>
+                      <strong className="text-emerald-400 text-sm">Disabled (Testing Mode)</strong>
                     </div>
                     <p className="mt-1.5 text-emerald-300/90 font-medium text-[11px]">
-                      🛡️ Anti-cheat strikes are disabled by contest organizer. No penalties applied.
+                      🛡️ Anti-cheat is disabled for testing. Copy-paste allowed &amp; strikes bypassed (∞).
                     </p>
                   </div>
                 ) : (
@@ -147,7 +147,7 @@ export default function AntiCheatShield({
                   <p className="font-nautical-mono text-xs text-[#a68a56]">11:11 Chapter II · Integrity Gate</p>
                   {disableStrikes && (
                     <span className="mt-1 inline-flex items-center gap-1 rounded border border-emerald-500/40 bg-emerald-950/50 px-2 py-0.5 font-nautical-mono text-[10px] text-emerald-300">
-                      <Shield className="h-3 w-3 text-emerald-400" /> Strikes Disabled (Testing Mode)
+                      <Shield className="h-3 w-3 text-emerald-400" /> Anti-Cheat Disabled (Testing Mode · Copy-Paste Allowed)
                     </span>
                   )}
                 </div>
@@ -176,8 +176,8 @@ export default function AntiCheatShield({
                   <span>Presentation Fullscreen Mode required throughout contest</span>
                 </div>
                 <div className="flex items-center gap-2 text-[#ebe4d5]">
-                  <CheckCircle2 className="h-4 w-4 text-[#d4af37] shrink-0" />
-                  <span>Clipboard copy/paste &amp; devtools keystroke traps active</span>
+                  <CheckCircle2 className={`h-4 w-4 shrink-0 ${disableStrikes ? 'text-emerald-400' : 'text-[#d4af37]'}`} />
+                  <span>{disableStrikes ? 'Testing Mode: Copy-paste allowed & anti-cheat strikes bypassed (∞)' : 'Clipboard copy/paste & devtools keystroke traps active'}</span>
                 </div>
                 <div className="flex items-center gap-2 text-[#ebe4d5]">
                   <CheckCircle2 className="h-4 w-4 text-[#d4af37] shrink-0" />

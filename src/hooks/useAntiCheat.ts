@@ -54,6 +54,11 @@ export function useAntiCheat({
   const lastKeyTimeRef = useRef<number>(Date.now());
   const keyBurstCountRef = useRef<number>(0);
   const hudTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const disableStrikesRef = useRef<boolean>(Boolean(disableStrikes));
+
+  useEffect(() => {
+    disableStrikesRef.current = Boolean(disableStrikes);
+  }, [disableStrikes]);
 
   // Sync initial strikes when props update
   useEffect(() => {
@@ -321,8 +326,8 @@ export function useAntiCheat({
         return false;
       }
 
-      // E. Trap Clipboard Shortcuts (Ctrl+C, Ctrl+V, Ctrl+X)
-      if ((e.ctrlKey || e.metaKey) && ['c', 'C', 'v', 'V', 'x', 'X'].includes(e.key)) {
+      // E. Trap Clipboard Shortcuts (Ctrl+C, Ctrl+V, Ctrl+X) - Allowed when disableStrikes is true
+      if (!disableStrikesRef.current && (e.ctrlKey || e.metaKey) && ['c', 'C', 'v', 'V', 'x', 'X'].includes(e.key)) {
         e.preventDefault();
         e.stopPropagation();
         e.stopImmediatePropagation();
@@ -331,19 +336,21 @@ export function useAntiCheat({
         return false;
       }
 
-      // F. Keystroke velocity anomaly detection (detect macro burst insertion)
-      const now = Date.now();
-      const delta = now - lastKeyTimeRef.current;
-      lastKeyTimeRef.current = now;
+      // F. Keystroke velocity anomaly detection (detect macro burst insertion) - Bypassed in testing mode
+      if (!disableStrikesRef.current) {
+        const now = Date.now();
+        const delta = now - lastKeyTimeRef.current;
+        lastKeyTimeRef.current = now;
 
-      if (delta < 25) {
-        keyBurstCountRef.current++;
-        if (keyBurstCountRef.current > 40) {
-          logViolation('keystroke_anomaly', 'Unnatural high-speed keystroke insertion detected (macro/tool burst)');
+        if (delta < 25) {
+          keyBurstCountRef.current++;
+          if (keyBurstCountRef.current > 40) {
+            logViolation('keystroke_anomaly', 'Unnatural high-speed keystroke insertion detected (macro/tool burst)');
+            keyBurstCountRef.current = 0;
+          }
+        } else {
           keyBurstCountRef.current = 0;
         }
-      } else {
-        keyBurstCountRef.current = 0;
       }
     };
 
@@ -355,15 +362,17 @@ export function useAntiCheat({
       }
     };
 
-    // 5. Native Clipboard Event Traps
+    // 5. Native Clipboard Event Traps (Allowed when disableStrikes is true)
     const onClipboard = (e: ClipboardEvent) => {
+      if (disableStrikesRef.current) return;
       e.preventDefault();
       showHudWarning(`⚠️ Clipboard ${e.type} operation is prohibited.`);
       logViolation('clipboard_attempt', `Blocked ${e.type} operation`);
     };
 
-    // 6. Context Menu Trap
+    // 6. Context Menu Trap (Allowed when disableStrikes is true)
     const onContextMenu = (e: MouseEvent) => {
+      if (disableStrikesRef.current) return;
       e.preventDefault();
       showHudWarning('⚠️ Right-click context menu is disabled.');
     };
@@ -410,7 +419,7 @@ export function useAntiCheat({
       window.removeEventListener('resize', checkDevToolsDimensions);
       if (hudTimerRef.current) clearTimeout(hudTimerRef.current);
     };
-  }, [enabled, logViolation, showHudWarning]);
+  }, [enabled, disableStrikes, logViolation, showHudWarning]);
 
   // Countdown timer when warning modal is active
   useEffect(() => {

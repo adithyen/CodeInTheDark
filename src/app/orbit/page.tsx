@@ -908,7 +908,7 @@ export default function AdminPage() {
                           sessionId: viewingSession?.id,
                         });
                       }}
-                      className={`relative inline-flex h-6 w-12 shrink-0 cursor-pointer items-center rounded-full p-0.5 transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[#d4af37]/40 ${
+                      className={`relative inline-flex h-6 w-12 shrink-0 cursor-pointer items-center rounded-full p-0.5 transition-colors duration-200 ease-in-out focus:outline-none focus-visible:ring-2 focus-visible:ring-[#d4af37]/40 ${
                         viewingSession?.allow_late_join
                           ? 'bg-gradient-to-r from-[#d4af37] to-[#f3d38c] shadow-[0_0_10px_rgba(212,175,55,0.35)]'
                           : 'bg-[#1a140d] border border-[#a68a56]/40 hover:border-[#a68a56]'
@@ -929,23 +929,25 @@ export default function AdminPage() {
                   </div>
                 </div>
 
-                {/* Disable Strikes Toggle (Testing Mode) */}
+                {/* Disable Anti-Cheat Toggle (Testing Mode: No Lockout & Copy-Paste Allowed) */}
                 <div className="flex flex-col justify-end">
                   <div className="flex items-center justify-between mb-1">
-                    <span className="font-cinzel text-xs text-[#a68a56]">Anti-Cheat Strikes</span>
-                    <span className={`font-nautical-mono text-[9px] font-bold px-1.5 py-0.5 rounded border uppercase tracking-wider ${
-                      viewingSession?.disable_strikes
-                        ? 'bg-emerald-950/60 text-emerald-400 border-emerald-500/40 shadow-[0_0_8px_rgba(16,185,129,0.25)]'
-                        : 'bg-[#18130c] text-amber-400 border-amber-500/30'
-                    }`}>
-                      {viewingSession?.disable_strikes ? '● DISABLED (∞)' : '○ 3 STRIKES'}
+                    <span className="font-cinzel text-xs text-[#a68a56]">Disable Anti-Cheat</span>
+                    <span
+                      className={`font-nautical-mono text-[9px] font-bold px-1.5 py-0.5 rounded border uppercase tracking-wider transition-colors ${
+                        viewingSession?.disable_strikes
+                          ? 'bg-emerald-950/70 text-emerald-400 border-emerald-500/50 shadow-[0_0_8px_rgba(16,185,129,0.3)]'
+                          : 'bg-[#18130c] text-red-400 border-red-500/30'
+                      }`}
+                    >
+                      {viewingSession?.disable_strikes ? '● ON (TESTING)' : '○ OFF (STRICT)'}
                     </span>
                   </div>
                   <div className="flex items-center gap-2.5 h-[34px]">
                     <button
                       type="button"
                       role="switch"
-                      id="disable-strikes-toggle"
+                      id="disable-anticheat-toggle"
                       aria-checked={Boolean(viewingSession?.disable_strikes)}
                       onClick={() => {
                         const nextVal = !viewingSession?.disable_strikes;
@@ -960,12 +962,16 @@ export default function AdminPage() {
                           sessionId: viewingSession?.id,
                         });
                       }}
-                      className={`relative inline-flex h-6 w-12 shrink-0 cursor-pointer items-center rounded-full p-0.5 transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-emerald-500/40 ${
+                      className={`relative inline-flex h-6 w-12 shrink-0 cursor-pointer items-center rounded-full p-0.5 transition-all duration-200 ease-in-out focus:outline-none focus-visible:ring-2 focus-visible:ring-[#d4af37]/60 ${
                         viewingSession?.disable_strikes
-                          ? 'bg-gradient-to-r from-emerald-600 to-teal-400 shadow-[0_0_10px_rgba(16,185,129,0.35)]'
+                          ? 'bg-gradient-to-r from-emerald-500 to-teal-400 shadow-[0_0_12px_rgba(16,185,129,0.4)]'
                           : 'bg-[#1a140d] border border-[#a68a56]/40 hover:border-[#a68a56]'
                       }`}
-                      title={viewingSession?.disable_strikes ? 'Anti-cheat strikes are DISABLED (Testing Mode)' : 'Standard 3 strikes anti-cheat is ACTIVE'}
+                      title={
+                        viewingSession?.disable_strikes
+                          ? 'Disable Anti-Cheat is ON: Anti-cheat strikes bypassed (∞) & copy-paste allowed (Testing Mode)'
+                          : 'Disable Anti-Cheat is OFF: Strict competition mode (3 strikes lockout & copy-paste blocked)'
+                      }
                     >
                       <span
                         className={`pointer-events-none inline-block h-5 w-5 rounded-full shadow-md transition-transform duration-200 ease-in-out ${
@@ -975,9 +981,16 @@ export default function AdminPage() {
                         }`}
                       />
                     </button>
-                    <span className="font-nautical-mono text-[11px] text-[#ebe4d5]/70 truncate" title="When active, participants will not receive strikes (allowed strikes = ∞)">
-                      {viewingSession?.disable_strikes ? 'Testing Mode (No Lockout)' : 'Strict Anti-Cheat (3 Max)'}
-                    </span>
+                    <div className="flex flex-col min-w-0 leading-tight">
+                      <span className={`font-nautical-mono text-[11px] font-semibold truncate ${
+                        viewingSession?.disable_strikes ? 'text-emerald-400' : 'text-[#ebe4d5]/80'
+                      }`}>
+                        {viewingSession?.disable_strikes ? 'Disable Anti-Cheat: ON' : 'Disable Anti-Cheat: OFF'}
+                      </span>
+                      <span className="font-nautical-mono text-[9px] text-[#a68a56] truncate">
+                        {viewingSession?.disable_strikes ? 'Copy-paste allowed · ∞ strikes' : 'Strict 3 strikes · No copy-paste'}
+                      </span>
+                    </div>
                   </div>
                 </div>
               </div>

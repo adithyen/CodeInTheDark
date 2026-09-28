@@ -1017,9 +1017,9 @@ export default function ArenaPage() {
           </div>
 
           {contest?.disableStrikes ? (
-            <div className="flex items-center gap-1.5 rounded-lg border border-emerald-500/40 bg-emerald-950/40 px-2.5 py-1 font-nautical-mono text-xs text-emerald-300 shadow-[0_0_10px_rgba(16,185,129,0.2)]" title="Anti-cheat strikes are disabled by contest organizer (Testing Mode)">
+            <div className="flex items-center gap-1.5 rounded-lg border border-emerald-500/40 bg-emerald-950/40 px-2.5 py-1 font-nautical-mono text-xs text-emerald-300 shadow-[0_0_10px_rgba(16,185,129,0.2)]" title="Anti-Cheat Disabled: Copy-paste allowed & unlimited strikes (Testing Mode)">
               <ShieldCheck className="h-3.5 w-3.5 text-emerald-400" />
-              <span>Strikes: <strong className="text-emerald-200">∞ (Test Mode)</strong></span>
+              <span>Anti-Cheat: <strong className="text-emerald-200">Disabled (Testing)</strong></span>
             </div>
           ) : (
             <div className="flex items-center gap-1.5 rounded-lg border border-[#a68a56]/30 bg-[#1c160e]/70 px-2.5 py-1 font-nautical-mono text-xs text-[#a68a56]">
@@ -1328,6 +1328,7 @@ export default function ArenaPage() {
               onChange={handleCodeChange}
               disabled={!isFullscreen || isLockedOut || isSubmitted}
               fontSize={editorFontSize}
+              allowCopyPaste={Boolean(contest?.disableStrikes)}
             />
           </div>
 
