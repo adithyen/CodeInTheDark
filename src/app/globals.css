@@ -147,3 +147,14 @@ body {
 .animate-golden-breath {
   animation: golden-breath 4s ease-in-out infinite;
 }
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   ANTI-CHEAT PRINT & SCREEN CAPTURE SHIELDS
+   ───────────────────────────────────────────────────────────────────────────── */
+@media print {
+  html, body {
+    display: none !important;
+    visibility: hidden !important;
+  }
+}
+

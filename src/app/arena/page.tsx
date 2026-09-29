@@ -143,7 +143,7 @@ export default function ArenaPage() {
   };
 
   // ── Anti-Cheat Integration ──────────────────────────────────────────────────
-  const { isFullscreen, strikes, isLockedOut, warningModalOpen, warningMessage, hudWarning, requestFullscreen } =
+  const { isFullscreen, strikes, isLockedOut, warningModalOpen, warningMessage, hudWarning, isBlackoutActive, requestFullscreen } =
     useAntiCheat({
       participantId: participant?.id || '',
       participantName: participant?.name || 'Participant',
@@ -1070,6 +1070,7 @@ export default function ArenaPage() {
         warningModalOpen={warningModalOpen}
         warningMessage={warningMessage}
         hudWarning={hudWarning}
+        isBlackoutActive={isBlackoutActive}
         disableStrikes={Boolean(contest?.disableStrikes)}
         onRequestFullscreen={requestFullscreen}
       />

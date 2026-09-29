@@ -14,6 +14,7 @@ interface AntiCheatShieldProps {
   warningModalOpen: boolean;
   warningMessage: string;
   hudWarning: string | null;
+  isBlackoutActive?: boolean;
   disableStrikes?: boolean;
   onRequestFullscreen: () => void;
 }
@@ -28,11 +29,24 @@ export default function AntiCheatShield({
   warningModalOpen,
   warningMessage,
   hudWarning,
+  isBlackoutActive = false,
   disableStrikes = false,
   onRequestFullscreen,
 }: AntiCheatShieldProps) {
   return (
     <>
+      {/* 0. Instant Anti-Screen Capture / Snipping Tool Blackout Shield */}
+      {isBlackoutActive && !disableStrikes && (
+        <div className="fixed inset-0 z-[10000] bg-black flex items-center justify-center select-none pointer-events-none">
+          <div className="flex flex-col items-center gap-2 text-center p-4">
+            <ShieldAlert className="h-10 w-10 text-[#d4af37] animate-pulse" />
+            <span className="font-cinzel text-base font-bold tracking-widest text-[#f3d38c]">
+              SCREEN CAPTURE SANITIZED
+            </span>
+          </div>
+        </div>
+      )}
+
       {/* 1. Dynamic Floating Watermark Matrix */}
       <div
         className="pointer-events-none fixed inset-0 z-40 select-none overflow-hidden opacity-[0.05] mix-blend-screen"

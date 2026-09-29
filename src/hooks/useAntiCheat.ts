@@ -24,6 +24,28 @@ interface UseAntiCheatOptions {
   onStrikeUpdate?: (strikes: number, isLockedOut: boolean) => void;
 }
 
+// Multi-Tier Fullscreen & Geometry Detection Engine
+export function checkIsFullscreen(): boolean {
+  if (typeof window === 'undefined' || typeof document === 'undefined') return false;
+  // Tier 1: HTML5 Standard Fullscreen API
+  if (Boolean(document.fullscreenElement)) return true;
+  // Tier 2: WebKit / Blink / Gecko / MS Vendor Prefixes
+  if (Boolean((document as any).webkitFullscreenElement || (document as any).mozFullScreenElement || (document as any).msFullscreenElement)) return true;
+  // Tier 3: Display Mode Media Query
+  try {
+    if (window.matchMedia && window.matchMedia('(display-mode: fullscreen)').matches) return true;
+  } catch {}
+  // Tier 4: Screen Resolution Geometry Verification
+  if (typeof screen !== 'undefined' && screen.width > 0 && screen.height > 0) {
+    const heightDelta = screen.height - window.innerHeight;
+    const widthDelta = screen.width - window.innerWidth;
+    if (Math.abs(heightDelta) <= 25 && Math.abs(widthDelta) <= 25) {
+      return true;
+    }
+  }
+  return false;
+}
+
 export function useAntiCheat({
   participantId,
   participantName = 'Participant',
@@ -37,23 +59,20 @@ export function useAntiCheat({
   onViolation,
   onStrikeUpdate,
 }: UseAntiCheatOptions) {
-  const [isFullscreen, setIsFullscreen] = useState<boolean>(() => {
-    if (typeof document !== 'undefined') {
-      return !!document.fullscreenElement;
-    }
-    return false;
-  });
+  const [isFullscreen, setIsFullscreen] = useState<boolean>(() => checkIsFullscreen());
   const [strikes, setStrikes] = useState(disableStrikes ? 0 : initialStrikes);
   const [isLockedOut, setIsLockedOut] = useState(disableStrikes ? false : initialLockedOut);
   const [warningModalOpen, setWarningModalOpen] = useState(false);
   const [warningMessage, setWarningMessage] = useState('');
   const [countdown, setCountdown] = useState(10);
   const [hudWarning, setHudWarning] = useState<string | null>(null);
+  const [isBlackoutActive, setIsBlackoutActive] = useState<boolean>(false);
 
   const audioCtxRef = useRef<AudioContext | null>(null);
   const lastKeyTimeRef = useRef<number>(Date.now());
   const keyBurstCountRef = useRef<number>(0);
   const hudTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const blackoutTimerRef = useRef<NodeJS.Timeout | null>(null);
   const disableStrikesRef = useRef<boolean>(Boolean(disableStrikes));
   const isSuspendedRef = useRef<boolean>(false);
   const lastViolationTimeRef = useRef<number>(0);
@@ -206,11 +225,26 @@ export function useAntiCheat({
     [enabled, disableStrikes, isLockedOut, maxStrikes, participantId, participantName, rollNumber, terminalId, triggerAlarmSound, onViolation, onStrikeUpdate]
   );
 
-  // Request Fullscreen & Engage Chrome Keyboard Lock API
+  // Flash instantaneous blackout veil (e.g. on PrintScreen or blur)
+  const triggerBlackout = useCallback((durationMs = 900) => {
+    setIsBlackoutActive(true);
+    if (blackoutTimerRef.current) clearTimeout(blackoutTimerRef.current);
+    blackoutTimerRef.current = setTimeout(() => {
+      setIsBlackoutActive(false);
+    }, durationMs);
+  }, []);
+
+  // Request Fullscreen & Engage Chrome Keyboard Lock API with vendor-prefixed fallbacks
   const requestFullscreen = useCallback(async () => {
     try {
-      if (!document.fullscreenElement) {
-        await document.documentElement.requestFullscreen();
+      if (!checkIsFullscreen()) {
+        const elem = (typeof document !== 'undefined' ? document.documentElement : null) as any;
+        if (elem) {
+          if (elem.requestFullscreen) await elem.requestFullscreen();
+          else if (elem.webkitRequestFullscreen) await elem.webkitRequestFullscreen();
+          else if (elem.mozRequestFullScreen) await elem.mozRequestFullScreen();
+          else if (elem.msRequestFullscreen) await elem.msRequestFullscreen();
+        }
       }
 
       // Engage modern Keyboard Lock API (supported in Chromium browsers) - Bypassed in testing mode
@@ -243,15 +277,16 @@ export function useAntiCheat({
       }
 
       // Reset suspension lock once re-entered
-      const active = !!document.fullscreenElement;
+      const active = checkIsFullscreen();
       setIsFullscreen(active);
       if (active) {
         isSuspendedRef.current = false;
+        setIsBlackoutActive(false);
         setWarningModalOpen(false);
       }
     } catch (err) {
       console.warn('Fullscreen entry rejected or cancelled:', err);
-      setIsFullscreen(false);
+      setIsFullscreen(checkIsFullscreen());
     }
   }, []);
 
@@ -259,15 +294,16 @@ export function useAntiCheat({
     if (!enabled) return;
 
     // Check initial fullscreen status
-    const initialFs = !!document.fullscreenElement;
+    const initialFs = checkIsFullscreen();
     setIsFullscreen(initialFs);
 
     // 1. Fullscreen Change Handler (Bypassed in testing mode)
     const onFullscreenChange = () => {
-      const active = !!document.fullscreenElement;
+      const active = checkIsFullscreen();
       setIsFullscreen(active);
       if (!active) {
         if (!disableStrikesRef.current) {
+          triggerBlackout(1200);
           setWarningModalOpen(true);
           setWarningMessage('Fullscreen presentation mode was exited. Arena is frozen. Re-enter fullscreen to continue.');
           setCountdown(10);
@@ -275,6 +311,7 @@ export function useAntiCheat({
         }
       } else {
         isSuspendedRef.current = false;
+        setIsBlackoutActive(false);
         setWarningModalOpen(false);
       }
     };
@@ -283,6 +320,9 @@ export function useAntiCheat({
     const onVisibilityChange = () => {
       if (disableStrikesRef.current) return;
       if (document.hidden) {
+        triggerBlackout(1500);
+        // Sanitize clipboard immediately
+        try { navigator.clipboard?.writeText?.(''); } catch {}
         setWarningModalOpen(true);
         setWarningMessage('Tab switch or minimization detected. Switching windows or opening external apps is prohibited.');
         setCountdown(10);
@@ -292,10 +332,21 @@ export function useAntiCheat({
 
     const onBlur = () => {
       if (disableStrikesRef.current) return;
+      // Immediate instantaneous blackout veil to render Snipping Tool / external overlays 100% black!
+      triggerBlackout(2000);
+      try { navigator.clipboard?.writeText?.(''); } catch {}
       setWarningModalOpen(true);
-      setWarningMessage('Window lost focus. External overlay tools, screen capture apps, or secondary monitors are prohibited.');
+      setWarningMessage('Window lost focus. External overlay tools, screen capture apps (Snipping Tool), or secondary monitors are prohibited.');
       setCountdown(10);
-      logViolation('tab_blur', 'Window blur event (focus lost to external app/overlay)');
+      logViolation('tab_blur', 'Window blur event (focus lost to external app/overlay/Snipping Tool)');
+    };
+
+    const onFocus = () => {
+      if (disableStrikesRef.current) return;
+      // Sanitize clipboard when returning
+      try { navigator.clipboard?.writeText?.(''); } catch {}
+      const active = checkIsFullscreen();
+      setIsFullscreen(active);
     };
 
     // 3. Mouse Leave Screen Boundary (Warn with HUD banner, no direct strike to avoid accidental edges)
@@ -313,8 +364,26 @@ export function useAntiCheat({
         return;
       }
 
+      // S. TRAP PRINTSCREEN & SCREEN CAPTURE KEYS (keyCode 44, PrintScreen, Snapshot)
+      if (
+        e.key === 'PrintScreen' ||
+        e.code === 'PrintScreen' ||
+        (e as any).keyCode === 44 ||
+        e.key === 'Snapshot' ||
+        (e.ctrlKey && e.key === 'PrintScreen') ||
+        (e.metaKey && e.shiftKey && ['3', '4', 's', 'S'].includes(e.key)) // Mac & Win+Shift+S capture
+      ) {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        triggerBlackout(1200);
+        try { navigator.clipboard?.writeText?.(''); } catch {}
+        showHudWarning('⚠️ Screen capture (PrintScreen / Snipping Tool) is prohibited. Clipboard sanitized.');
+        return false;
+      }
+
       // 0. ABSOLUTE TYPING FREEZE: If NOT in fullscreen, block all keystrokes completely!
-      if (!document.fullscreenElement) {
+      if (!checkIsFullscreen()) {
         e.preventDefault();
         e.stopPropagation();
         e.stopImmediatePropagation();
@@ -351,7 +420,7 @@ export function useAntiCheat({
 
       // D. Trap Devtools & Browser Navigation Shortcuts - Pre-emptive Block
       if (
-        (e.ctrlKey && e.shiftKey && ['I', 'i', 'C', 'c', 'J', 'j', 'K', 'k', 'N', 'n', 'P', 'p', 'Delete', 'Escape'].includes(e.key)) ||
+        (e.ctrlKey && e.shiftKey && ['I', 'i', 'C', 'c', 'J', 'j', 'K', 'k', 'N', 'n', 'P', 'p', 'Delete', 'Escape', 'S', 's'].includes(e.key)) ||
         (e.metaKey && e.altKey && ['I', 'i', 'C', 'c', 'J', 'j', 'K', 'k', 'U', 'u'].includes(e.key)) ||
         (e.ctrlKey && ['u', 'U', 'r', 'R', 'p', 'P', 't', 'T', 'n', 'N', 'w', 'W', 'q', 'Q', 'h', 'H', 'j', 'J', 's', 'S', 'o', 'O', 'g', 'G', 'f', 'F'].includes(e.key)) ||
         (e.altKey && ['ArrowLeft', 'ArrowRight', 'Home', 'F4'].includes(e.key)) ||
@@ -403,7 +472,21 @@ export function useAntiCheat({
 
     const onKeyUp = (e: KeyboardEvent) => {
       if (disableStrikesRef.current) return;
-      if (!document.fullscreenElement || e.key === 'F11' || e.key === 'Escape' || (e.key.startsWith('F') && /^F([1-9]|1[0-2])$/.test(e.key))) {
+      if (
+        e.key === 'PrintScreen' ||
+        e.code === 'PrintScreen' ||
+        (e as any).keyCode === 44 ||
+        e.key === 'Snapshot'
+      ) {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        triggerBlackout(1000);
+        try { navigator.clipboard?.writeText?.(''); } catch {}
+        return;
+      }
+
+      if (!checkIsFullscreen() || e.key === 'F11' || e.key === 'Escape' || (e.key.startsWith('F') && /^F([1-9]|1[0-2])$/.test(e.key))) {
         e.preventDefault();
         e.stopPropagation();
         e.stopImmediatePropagation();
@@ -443,8 +526,12 @@ export function useAntiCheat({
     };
 
     document.addEventListener('fullscreenchange', onFullscreenChange);
+    document.addEventListener('webkitfullscreenchange', onFullscreenChange);
+    document.addEventListener('mozfullscreenchange', onFullscreenChange);
+    document.addEventListener('MSFullscreenChange', onFullscreenChange);
     document.addEventListener('visibilitychange', onVisibilityChange);
     window.addEventListener('blur', onBlur);
+    window.addEventListener('focus', onFocus);
     document.addEventListener('mouseleave', onMouseLeave);
     
     // Drag and Drop Traps
@@ -461,17 +548,21 @@ export function useAntiCheat({
     document.addEventListener('contextmenu', onContextMenu, { capture: true });
     window.addEventListener('resize', checkDevToolsDimensions);
 
-    // Continuous synchronization to guarantee isFullscreen is 100% accurate to document.fullscreenElement
+    // Continuous synchronization to guarantee isFullscreen is 100% accurate across all browsers
     const syncInterval = setInterval(() => {
-      const active = !!document.fullscreenElement;
+      const active = checkIsFullscreen();
       setIsFullscreen(active);
     }, 250);
 
     return () => {
       clearInterval(syncInterval);
       document.removeEventListener('fullscreenchange', onFullscreenChange);
+      document.removeEventListener('webkitfullscreenchange', onFullscreenChange);
+      document.removeEventListener('mozfullscreenchange', onFullscreenChange);
+      document.removeEventListener('MSFullscreenChange', onFullscreenChange);
       document.removeEventListener('visibilitychange', onVisibilityChange);
       window.removeEventListener('blur', onBlur);
+      window.removeEventListener('focus', onFocus);
       document.removeEventListener('mouseleave', onMouseLeave);
       window.removeEventListener('dragover', onDragDrop, { capture: true });
       window.removeEventListener('dragenter', onDragDrop, { capture: true });
@@ -484,8 +575,9 @@ export function useAntiCheat({
       document.removeEventListener('contextmenu', onContextMenu, { capture: true });
       window.removeEventListener('resize', checkDevToolsDimensions);
       if (hudTimerRef.current) clearTimeout(hudTimerRef.current);
+      if (blackoutTimerRef.current) clearTimeout(blackoutTimerRef.current);
     };
-  }, [enabled, disableStrikes, logViolation, showHudWarning]);
+  }, [enabled, disableStrikes, logViolation, showHudWarning, triggerBlackout]);
 
   // Countdown timer when warning modal is active
   useEffect(() => {
@@ -505,9 +597,11 @@ export function useAntiCheat({
     warningMessage,
     countdown,
     hudWarning,
+    isBlackoutActive,
     requestFullscreen,
     dismissWarning: () => {
       isSuspendedRef.current = false;
+      setIsBlackoutActive(false);
       setWarningModalOpen(false);
     },
   };
