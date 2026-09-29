@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Shield, ArrowRight, CheckCircle2, User, Phone, GraduationCap, Monitor, AlertCircle, Clock, Lock, Loader2, Compass } from 'lucide-react';
+import { Shield, ArrowRight, CheckCircle2, User, Phone, GraduationCap, Monitor, AlertCircle, Clock, Lock, Loader2, Compass, Maximize2 } from 'lucide-react';
 import { ContestSession } from '@/types';
 import NauticalCompass from '@/components/NauticalCompass';
 import { searchColleges, CollegeSearchResult } from '@/lib/colleges';
@@ -26,6 +26,17 @@ export default function RegisterPage() {
   const [countdown, setCountdown] = useState('');
   const [serverTimeOffset, setServerTimeOffset] = useState(0);
   const [registeredParticipant, setRegisteredParticipant] = useState<any>(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  // Synchronize fullscreen state
+  useEffect(() => {
+    const handleFsChange = () => {
+      setIsFullscreen(Boolean(document.fullscreenElement));
+    };
+    handleFsChange();
+    document.addEventListener('fullscreenchange', handleFsChange);
+    return () => document.removeEventListener('fullscreenchange', handleFsChange);
+  }, []);
 
   // Wipe out stored participant details completely on mount/reload
   useEffect(() => {
@@ -253,70 +264,57 @@ export default function RegisterPage() {
   if (registeredParticipant && gateStatus !== 'ended' && session?.phase !== 'active' && session?.phase !== 'paused') {
     return (
       <div className="relative flex flex-1 items-center justify-center p-4 sm:p-8">
-        <div className="w-full max-w-2xl rounded-2xl border border-[#a68a56]/40 bg-[#090806]/95 p-8 sm:p-10 backdrop-blur-2xl shadow-2xl shadow-black text-center space-y-7">
+        <div className="w-full max-w-3xl rounded-3xl border border-[#d4af37]/40 bg-[#0c0906]/95 p-8 sm:p-12 backdrop-blur-2xl shadow-[0_0_80px_rgba(0,0,0,0.9)] text-center space-y-8">
           
           <div className="flex flex-col items-center">
-            <NauticalCompass size={96} showRings={true} />
-            <span className="mt-5 inline-block rounded-full bg-[#1c160e] border border-[#d4af37]/50 px-4 py-1.5 font-nautical-mono text-xs font-semibold tracking-widest uppercase text-[#f3d38c]">
+            <NauticalCompass size={104} showRings={true} />
+            <span className="mt-5 inline-block rounded-full bg-[#1c160e] border border-[#d4af37]/60 px-5 py-2 font-nautical-mono text-xs sm:text-sm font-bold tracking-widest uppercase text-[#f3d38c] shadow-lg">
               ✓ REGISTRATION CONFIRMED
             </span>
-            <h1 className="mt-3 font-cinzel text-3xl font-bold text-white tracking-wide">
+            <h1 className="mt-4 font-cinzel text-3xl sm:text-4xl font-black text-white tracking-wide">
               Welcome, {registeredParticipant.name}
             </h1>
-            <p className="mt-2 font-nautical-mono text-sm text-[#ebe4d5]/80">
-              Assigned Seat: <span className="text-[#f3d38c] font-bold">{registeredParticipant.terminalId || 'AUTO-ASSIGNED'}</span>
+            <div className="mt-3 font-nautical-mono text-base sm:text-lg text-[#ebe4d5] leading-relaxed">
+              <span>Assigned Seat: <strong className="text-[#f3d38c] font-black text-lg sm:text-xl">{registeredParticipant.terminalId || 'AUTO-ASSIGNED'}</strong></span>
               {registeredParticipant.college && (
-                <> · College: <span className="text-[#d4af37] font-semibold">{registeredParticipant.college}</span></>
+                <div className="mt-1 text-[#d4af37] font-semibold text-sm sm:text-base">{registeredParticipant.college}</div>
               )}
-            </p>
+            </div>
           </div>
 
           {/* Chronometer Countdown Card */}
-          <div className="rounded-2xl border border-[#d4af37]/40 bg-[#1c160e]/90 p-7 space-y-3 shadow-inner">
-            <div className="flex items-center justify-center gap-2 font-nautical-mono text-sm tracking-wider uppercase text-[#f3d38c]">
+          <div className="rounded-2xl border border-[#d4af37]/50 bg-[#1c160e]/95 p-8 sm:p-10 space-y-4 shadow-inner">
+            <div className="flex items-center justify-center gap-2 font-nautical-mono text-sm sm:text-base font-bold tracking-wider uppercase text-[#f3d38c]">
               <Clock className="h-4 w-4 animate-spin text-[#d4af37]" />
               <span>Contest Starts In</span>
             </div>
-            <div className="font-nautical-mono text-6xl font-black tabular-nums text-[#d4af37] tracking-widest drop-shadow-[0_0_24px_rgba(212,175,55,0.4)]">
+            <div className="font-nautical-mono text-6xl sm:text-7xl md:text-8xl font-black tabular-nums text-[#d4af37] tracking-widest drop-shadow-[0_0_35px_rgba(212,175,55,0.45)] py-2">
               {countdown || '--:--'}
             </div>
-            <p className="text-xs font-nautical-mono text-[#a68a56] leading-relaxed max-w-lg mx-auto">
+            <p className="text-xs sm:text-sm font-nautical-mono text-[#ebe4d5]/90 leading-relaxed max-w-xl mx-auto">
               {session?.auto_start_on_reg_close
                 ? 'Your screen will automatically transition into the Coding Arena when the countdown reaches zero.'
                 : 'Please stand by. The contest administrator will initiate the synchronized contest start shortly.'}
             </p>
           </div>
 
-          {/* Technical Readiness Checklist */}
-          <div className="rounded-xl border border-[#a68a56]/25 bg-[#050504]/80 p-5 text-left font-nautical-mono text-sm space-y-3">
-            <div className="flex items-center justify-between text-[#f3d38c]">
-              <span className="flex items-center gap-2.5"><CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0" /> Fullscreen Presentation Mode</span>
-              <span className="text-xs text-emerald-400 font-semibold tracking-wider uppercase">ARMED</span>
+          {/* Fullscreen Trigger: Only visible when web browser is NOT in fullscreen mode */}
+          {!isFullscreen && (
+            <div className="pt-2">
+              <button
+                onClick={async () => {
+                  try {
+                    if (!document.fullscreenElement) {
+                      await document.documentElement.requestFullscreen();
+                    }
+                  } catch {}
+                }}
+                className="w-full flex items-center justify-center gap-2.5 rounded-xl bg-gradient-to-r from-[#d4af37] via-[#f3d38c] to-[#a68a56] py-4 font-cinzel text-sm sm:text-base font-black tracking-wider text-[#050504] hover:brightness-110 shadow-[0_0_25px_rgba(212,175,55,0.35)] transition-all bouncy-btn"
+              >
+                <Maximize2 className="h-5 w-5 stroke-[2.5]" /> ENTER FULLSCREEN MODE
+              </button>
             </div>
-            <div className="flex items-center justify-between text-[#f3d38c]">
-              <span className="flex items-center gap-2.5"><CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0" /> C, Python &amp; Java Execution Engine</span>
-              <span className="text-xs text-emerald-400 font-semibold tracking-wider uppercase">READY</span>
-            </div>
-            <div className="flex items-center justify-between text-[#f3d38c]">
-              <span className="flex items-center gap-2.5"><CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0" /> Real-time Cloud Auto-Save</span>
-              <span className="text-xs text-emerald-400 font-semibold tracking-wider uppercase">CONNECTED</span>
-            </div>
-          </div>
-
-          <div className="pt-2">
-            <button
-              onClick={async () => {
-                try {
-                  if (!document.fullscreenElement) {
-                    await document.documentElement.requestFullscreen();
-                  }
-                } catch {}
-              }}
-              className="w-full rounded-xl border border-[#a68a56]/40 bg-[#1c160e] py-3.5 font-cinzel text-xs font-bold tracking-wider text-[#f3d38c] hover:bg-[#2a2218] hover:border-[#d4af37] transition-all bouncy-btn"
-            >
-              PRE-TEST FULLSCREEN MODE
-            </button>
-          </div>
+          )}
         </div>
       </div>
     );

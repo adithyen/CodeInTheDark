@@ -1356,9 +1356,9 @@ export default function ArenaPage() {
                   onChange={e => handleLanguageChange(e.target.value as Language)}
                   className="rounded-lg border border-[#a68a56]/30 bg-[#050504] px-3.5 py-1.5 font-nautical-mono text-xs sm:text-sm font-bold text-[#f3d38c] focus:border-[#d4af37] focus:outline-none"
                 >
-                  <option value="python">Python 3</option>
-                  <option value="c">C (GCC 14)</option>
-                  <option value="java">Java 17</option>
+                  <option value="python">PYTHON</option>
+                  <option value="c">C</option>
+                  <option value="java">JAVA</option>
                 </select>
               </div>
 
