@@ -9,7 +9,7 @@ import { motion } from 'framer-motion';
 export function Chapter2Bridge() {
   return (
     <motion.div
-      className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full pointer-events-none z-0 opacity-80"
+      className="w-full h-full pointer-events-none z-0 opacity-85"
       animate={{ y: [0, -1.5, 0, 1, 0] }}
       transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
     >
@@ -451,22 +451,6 @@ export function Chapter2SailingShip() {
 
   return (
     <div className="fixed inset-0 w-full h-full pointer-events-none z-0 overflow-hidden">
-      {/* Dashed Celestial Orbit Path */}
-      <svg
-        className="absolute top-[20vh] right-0 w-[75vw] sm:w-[50vw] lg:w-[42vw] h-[65vh] sm:h-[70vh]"
-        viewBox={isMobile ? '0 0 300 480' : '0 0 500 600'}
-        preserveAspectRatio="xMidYMid meet"
-      >
-        <path
-          d={pathD}
-          fill="transparent"
-          stroke="#8c6f3d"
-          strokeWidth="1.5"
-          strokeDasharray="4 6"
-          className="opacity-25 sm:opacity-35"
-        />
-      </svg>
-
       {/* Ship Motion Container */}
       <div className="absolute top-[20vh] right-0 w-[75vw] sm:w-[50vw] lg:w-[42vw] h-[65vh] sm:h-[70vh]">
         <motion.div
@@ -615,11 +599,11 @@ export default function Chapter2Monolith() {
   return (
     <div className="relative w-full flex flex-col items-center justify-center">
       <div className="relative w-full flex items-center justify-center">
-        {/* Monolith Pillars */}
+        {/* Monolith Pillars (11:11) */}
         <Chapter2Pillars />
 
-        {/* Bridge Horizon Layered Underneath Monolith Base */}
-        <div className="absolute left-1/2 top-[76%] -translate-x-1/2 -translate-y-1/2 w-[125%] h-[120px] pointer-events-none z-10">
+        {/* Bridge Horizon: Positioned gracefully just below 11:11 */}
+        <div className="absolute left-1/2 top-[90%] -translate-x-1/2 -translate-y-1/4 w-[115%] sm:w-[130%] max-w-5xl h-[70px] sm:h-[85px] md:h-[95px] pointer-events-none z-10">
           <Chapter2Bridge />
         </div>
       </div>
