@@ -150,6 +150,7 @@ export interface LeaderboardEntry {
   partialSolved: number;
   strikes: number;
   lastSubmissionTime: number; // earliest firstSubmittedAt for tiebreaking
+  isEvaluating?: boolean;
   perQuestionScores: Record<string, {
     score: number;
     passedRatio: string;
@@ -157,5 +158,6 @@ export interface LeaderboardEntry {
     submittedAt: number;
     firstSubmittedAt?: number; // original first-solve timestamp
     isAutoSubmit?: boolean;
+    evaluationStatus?: string;
   }>;
 }

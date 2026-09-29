@@ -608,7 +608,7 @@ export async function getParticipantSubmissions(participantId: string, sessionId
 
 export async function hasParticipantSubmitted(participantId: string, sessionId?: string): Promise<boolean> {
   const submissions = await getParticipantSubmissions(participantId, sessionId);
-  return submissions.some(s => s.evaluationStatus === 'completed' && !s.isAutoSubmit ? true : s.evaluationStatus === 'completed');
+  return submissions.some(s => s.evaluationStatus === 'completed' || s.evaluationStatus === 'evaluating');
 }
 
 export async function upsertSubmission(sub: Omit<Submission, 'id'> & { sessionId: string }): Promise<Submission> {
@@ -801,7 +801,11 @@ export async function buildLeaderboard(sessionId: string) {
     const entry = entriesMap.get(sub.participantId);
     if (!entry) continue;
 
-    // Use firstSubmittedAt for tiebreaking (who solved it first)
+    const isEvaluating = sub.evaluationStatus === 'evaluating';
+    if (isEvaluating) {
+      entry.isEvaluating = true;
+    }
+
     const firstTs = (sub as any).firstSubmittedAt ?? sub.submittedAt;
 
     entry.perQuestionScores[sub.questionId] = {
@@ -812,6 +816,7 @@ export async function buildLeaderboard(sessionId: string) {
       firstSubmittedAt: firstTs,
       execTimeMs: sub.execTimeMs || 0,
       isAutoSubmit: sub.isAutoSubmit,
+      evaluationStatus: sub.evaluationStatus,
     };
 
     if (sub.testCasesPassed === sub.totalTestCases && sub.totalTestCases > 0) {

@@ -1612,16 +1612,29 @@ export default function AdminPage() {
                       </td>
                       <td className="py-3.5 px-4 uppercase text-[#a68a56] font-semibold">{s.language}</td>
                       <td className="py-3.5 px-4">
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                          <span className={`font-bold text-base ${s.score > 0 ? 'text-[#d4af37]' : 'text-[#a68a56]'}`}>{s.score}</span>
-                          {(s as any).speedBonus > 0 && (
-                            <span className="text-[#f3d38c] text-[11px] font-semibold bg-[#f3d38c]/10 border border-[#f3d38c]/30 rounded px-1.5 py-0.5" title={`Base: ${Math.max(0, s.score - (s as any).speedBonus)} + Speed: ${(s as any).speedBonus}`}>
-                              (+{(s as any).speedBonus} spd)
-                            </span>
-                          )}
-                        </div>
+                        {s.evaluationStatus === 'evaluating' ? (
+                          <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/10 border border-amber-500/30 px-2.5 py-1 text-xs font-semibold text-amber-300 animate-pulse">
+                            <span className="h-1.5 w-1.5 rounded-full bg-amber-400 animate-ping inline-block" />
+                            Evaluating...
+                          </span>
+                        ) : (
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className={`font-bold text-base ${s.score > 0 ? 'text-[#d4af37]' : 'text-[#a68a56]'}`}>{s.score}</span>
+                            {(s as any).speedBonus > 0 && (
+                              <span className="text-[#f3d38c] text-[11px] font-semibold bg-[#f3d38c]/10 border border-[#f3d38c]/30 rounded px-1.5 py-0.5" title={`Base: ${Math.max(0, s.score - (s as any).speedBonus)} + Speed: ${(s as any).speedBonus}`}>
+                                (+{(s as any).speedBonus} spd)
+                              </span>
+                            )}
+                          </div>
+                        )}
                       </td>
-                      <td className="py-3.5 px-4 hidden md:table-cell text-[#ebe4d5]/80 font-medium">{s.testCasesPassed}/{s.totalTestCases}</td>
+                      <td className="py-3.5 px-4 hidden md:table-cell text-[#ebe4d5]/80 font-medium">
+                        {s.evaluationStatus === 'evaluating' ? (
+                          <span className="text-amber-300/80 text-xs animate-pulse font-nautical-mono">In Queue</span>
+                        ) : (
+                          `${s.testCasesPassed}/${s.totalTestCases}`
+                        )}
+                      </td>
 
                       {/* First Submitted */}
                       <td className="py-3.5 px-4 hidden lg:table-cell">

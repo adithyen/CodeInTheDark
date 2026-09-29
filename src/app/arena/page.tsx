@@ -37,6 +37,7 @@ interface LobbyResult {
   lines: number;
   chars: number;
   isAutoSubmit: boolean;
+  evaluationStatus?: 'evaluating' | 'completed' | 'error';
 }
 
 export default function ArenaPage() {
@@ -222,7 +223,7 @@ export default function ArenaPage() {
             localStorage.setItem(`cid_submitted_${participant.id}`, 'true');
             if (data.submissions && data.submissions.length > 0) {
               const restoredResults: LobbyResult[] = data.submissions
-                .filter((s: any) => s.evaluationStatus === 'completed')
+                .filter((s: any) => s.evaluationStatus === 'completed' || s.evaluationStatus === 'evaluating')
                 .map((s: any) => ({
                   questionId: s.questionId,
                   questionTitle: s.questionTitle,
@@ -236,6 +237,7 @@ export default function ArenaPage() {
                   lines: (s.code || '').split('\n').length,
                   chars: (s.code || '').length,
                   isAutoSubmit: s.isAutoSubmit || false,
+                  evaluationStatus: s.evaluationStatus || 'completed',
                 }));
               setLobbyResults(restoredResults);
             }
@@ -720,14 +722,15 @@ export default function ArenaPage() {
           lines: r.lines || 0,
           chars: r.chars || 0,
           isAutoSubmit: autoSubmit,
+          evaluationStatus: r.evaluationStatus || (data.status === 'evaluating' ? 'evaluating' : 'completed'),
         }));
 
         setLobbyResults(results);
         setIsSubmitted(true);
         localStorage.setItem(`cid_submitted_${participant.id}`, 'true');
         setLobbyMessage(autoSubmit
-          ? 'Contest duration expired — all question responses have been auto-submitted and locked for evaluation.'
-          : 'All answers submitted. Results and standings will be presented during the official leaderboard reveal.');
+          ? 'Contest duration expired — all question responses have been permanently sealed. Background evaluation in progress...'
+          : '🏆 Submission Sealed & Secured! Answers locked for evaluation. Standings and rankings will be presented during the official reveal.');
         setShowLobby(true);
       } else {
         const errData = await res.json().catch(() => ({}));
@@ -755,6 +758,66 @@ export default function ArenaPage() {
       executeGlobalSubmit(true);
     }
   }, [isSubmitted, executeGlobalSubmit]);
+
+  // ── Polling for background evaluation in Lobby ─────────────────────────────
+  useEffect(() => {
+    if (!participant || (!showLobby && !isSubmitted)) return;
+
+    const hasPending = lobbyResults.some(r => r.evaluationStatus === 'evaluating');
+    if (!hasPending && lobbyResults.length > 0) return;
+
+    let pollCount = 0;
+    const interval = setInterval(async () => {
+      pollCount++;
+      try {
+        const res = await fetch(`/api/submit?participantId=${participant.id}&sessionId=${sessionId || ''}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.submissions && Array.isArray(data.submissions)) {
+            const mappedResults: LobbyResult[] = data.submissions
+              .filter((s: any) => s.evaluationStatus === 'completed' || s.evaluationStatus === 'evaluating')
+              .map((s: any) => ({
+                questionId: s.questionId,
+                questionTitle: s.questionTitle,
+                language: s.language,
+                submittedAt: s.submittedAt,
+                elapsedMs: s.execTimeMs || 0,
+                testCasesPassed: s.testCasesPassed || 0,
+                totalTestCases: s.totalTestCases || 0,
+                score: Math.max(0, (s.score || 0) - (s.speedBonus || 0)),
+                speedBonus: s.speedBonus || 0,
+                lines: (s.code || '').split('\n').length,
+                chars: (s.code || '').length,
+                isAutoSubmit: s.isAutoSubmit || false,
+                evaluationStatus: s.evaluationStatus || 'completed',
+              }));
+
+            if (mappedResults.length > 0) {
+              setLobbyResults(mappedResults);
+            }
+
+            const stillPending = mappedResults.some(r => r.evaluationStatus === 'evaluating');
+            if (!stillPending && mappedResults.length > 0) {
+              clearInterval(interval);
+            }
+          }
+        }
+
+        // Watchdog trigger if pending after 3 polls (~4.5s)
+        if (pollCount % 3 === 0 && hasPending) {
+          fetch('/api/evaluate-submission', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ participantId: participant.id, sessionId }),
+          }).catch(() => {});
+        }
+      } catch (err) {
+        console.error('Lobby evaluation poll error:', err);
+      }
+    }, 1500);
+
+    return () => clearInterval(interval);
+  }, [participant, showLobby, isSubmitted, lobbyResults, sessionId]);
 
   // ── Keyboard Shortcuts ──────────────────────────────────────────────────────
   useEffect(() => {
@@ -890,26 +953,50 @@ export default function ArenaPage() {
                         </div>
 
                         <div className="text-right shrink-0">
-                          <div className="font-nautical-mono text-2xl sm:text-3xl font-extrabold text-[#d4af37]">
-                            {r.score + r.speedBonus}
-                            <span className="text-sm text-[#a68a56] ml-1.5 font-semibold">pts</span>
-                          </div>
-                          {r.speedBonus > 0 && (
-                            <div className="text-xs text-[#f3d38c] font-semibold font-nautical-mono mt-0.5">+{r.speedBonus} speed bonus</div>
+                          {r.evaluationStatus === 'evaluating' ? (
+                            <div className="flex items-center gap-2 rounded-lg bg-amber-500/10 border border-amber-500/30 px-3 py-1.5 text-amber-300 font-nautical-mono text-xs sm:text-sm font-semibold animate-pulse">
+                              <Loader2 className="h-3.5 w-3.5 animate-spin text-amber-400" />
+                              <span>Evaluating...</span>
+                            </div>
+                          ) : (
+                            <>
+                              <div className="font-nautical-mono text-2xl sm:text-3xl font-extrabold text-[#d4af37]">
+                                {r.score + r.speedBonus}
+                                <span className="text-sm text-[#a68a56] ml-1.5 font-semibold">pts</span>
+                              </div>
+                              {r.speedBonus > 0 && (
+                                <div className="text-xs text-[#f3d38c] font-semibold font-nautical-mono mt-0.5">+{r.speedBonus} speed bonus</div>
+                              )}
+                            </>
                           )}
                         </div>
                       </div>
 
                       {/* Tests bar */}
-                      <div className="space-y-1.5">
-                        <div className="flex justify-between font-nautical-mono text-xs sm:text-sm text-[#a68a56]">
-                          <span className="text-[#ebe4d5] font-medium">{r.testCasesPassed}/{r.totalTestCases} test cases passed</span>
-                          <span className="font-bold text-[#f3d38c]">{Math.round(pct * 100)}%</span>
+                      {r.evaluationStatus === 'evaluating' ? (
+                        <div className="space-y-1.5">
+                          <div className="flex justify-between font-nautical-mono text-xs sm:text-sm text-amber-300">
+                            <span className="flex items-center gap-1.5">
+                              <span className="h-2 w-2 rounded-full bg-amber-400 animate-ping inline-block" />
+                              Evaluating test cases on server...
+                            </span>
+                            <span className="text-amber-300 font-semibold font-nautical-mono">In Progress</span>
+                          </div>
+                          <div className="h-2.5 w-full rounded-full bg-[#1c160e] overflow-hidden relative border border-amber-500/20">
+                            <div className="h-full rounded-full bg-gradient-to-r from-amber-600 via-amber-400 to-amber-600 w-full animate-pulse" />
+                          </div>
                         </div>
-                        <div className="h-2.5 w-full rounded-full bg-[#1c160e] overflow-hidden">
-                          <div className={`h-full rounded-full transition-all duration-700 ${bar}`} style={{ width: `${pct * 100}%` }} />
+                      ) : (
+                        <div className="space-y-1.5">
+                          <div className="flex justify-between font-nautical-mono text-xs sm:text-sm text-[#a68a56]">
+                            <span className="text-[#ebe4d5] font-medium">{r.testCasesPassed}/{r.totalTestCases} test cases passed</span>
+                            <span className="font-bold text-[#f3d38c]">{Math.round(pct * 100)}%</span>
+                          </div>
+                          <div className="h-2.5 w-full rounded-full bg-[#1c160e] overflow-hidden">
+                            <div className={`h-full rounded-full transition-all duration-700 ${bar}`} style={{ width: `${pct * 100}%` }} />
+                          </div>
                         </div>
-                      </div>
+                      )}
                     </div>
                   );
                 })}
@@ -918,11 +1005,22 @@ export default function ArenaPage() {
               {/* Grand Total Footer */}
               <div className="flex items-center justify-between border-t border-[#a68a56]/25 bg-[#140f0a] px-6 sm:px-8 py-5">
                 <span className="font-cinzel text-sm sm:text-base text-[#a68a56]">
-                  Total Test Cases Passed: <strong className="text-lg text-[#ebe4d5] font-nautical-mono ml-1">{grandPassed}/{grandTests}</strong>
+                  {lobbyResults.some(r => r.evaluationStatus === 'evaluating') ? (
+                    <span className="flex items-center gap-2 text-amber-300 font-nautical-mono text-sm animate-pulse">
+                      <Loader2 className="h-4 w-4 animate-spin text-amber-400" />
+                      Evaluating solutions in background...
+                    </span>
+                  ) : (
+                    <>Total Test Cases Passed: <strong className="text-lg text-[#ebe4d5] font-nautical-mono ml-1">{grandPassed}/{grandTests}</strong></>
+                  )}
                 </span>
                 <div className="flex items-center gap-2.5">
                   <span className="font-cinzel text-xs sm:text-sm text-[#a68a56] uppercase tracking-wider font-semibold">Final Score:</span>
-                  <span className="font-nautical-mono text-3xl sm:text-4xl font-black text-[#f3d38c]">{grandScore} pts</span>
+                  {lobbyResults.some(r => r.evaluationStatus === 'evaluating') ? (
+                    <span className="font-nautical-mono text-xl sm:text-2xl font-bold text-amber-400 animate-pulse">Calculating...</span>
+                  ) : (
+                    <span className="font-nautical-mono text-3xl sm:text-4xl font-black text-[#f3d38c]">{grandScore} pts</span>
+                  )}
                 </div>
               </div>
             </div>

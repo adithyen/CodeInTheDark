@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse, after } from 'next/server';
 import {
   getActiveSession,
   getParticipantById,
@@ -11,6 +11,7 @@ import {
 } from '@/lib/db';
 import { executeCode, executeCodeBatch } from '@/lib/executor';
 import { calculateQuestionScore } from '@/lib/scoring';
+import { evaluateParticipantSubmissions } from '@/lib/submissionEvaluator';
 import { Language, Question } from '@/types';
 
 // ─────────────────────────────────────────────────────────────────────
@@ -28,11 +29,13 @@ export async function GET(req: NextRequest) {
     }
 
     const submissions = await getParticipantSubmissions(participantId, sessionId);
-    const isSubmitted = submissions.some(s => s.evaluationStatus === 'completed');
+    const isSubmitted = submissions.some(s => s.evaluationStatus === 'completed' || s.evaluationStatus === 'evaluating');
+    const isEvaluating = submissions.some(s => s.evaluationStatus === 'evaluating');
 
     return NextResponse.json({
       submissions,
       isSubmitted,
+      isEvaluating,
       timestamp: Date.now(),
     });
   } catch (error: any) {
@@ -67,8 +70,26 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Missing participantId' }, { status: 400 });
     }
 
-    // 1. Fetch participant from DB
-    const participant = await getParticipantById(participantId);
+    // 1. Resolve active session ID
+    let targetSessionId = reqSessionId;
+    if (!targetSessionId) {
+      const activeSession = await getActiveSession();
+      targetSessionId = activeSession?.id ?? null;
+    }
+    if (!targetSessionId) {
+      return NextResponse.json({ error: 'No active contest session' }, { status: 403 });
+    }
+
+    const now = Date.now();
+
+    // 2. Fetch participant, session details, already-submitted check, and questions in PARALLEL
+    const [participant, targetSession, alreadySubmitted, questions] = await Promise.all([
+      getParticipantById(participantId),
+      getSessionById(targetSessionId),
+      hasParticipantSubmitted(participantId, targetSessionId),
+      getQuestionsForSession(targetSessionId, false),
+    ]);
+
     if (!participant) {
       return NextResponse.json({ error: 'Participant not found. Please re-register.' }, { status: 404 });
     }
@@ -77,20 +98,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Participant locked out due to anti-cheat strikes' }, { status: 403 });
     }
 
-    // 2. Resolve active session
-    let targetSessionId = reqSessionId;
-    if (!targetSessionId) {
-      const session = await getActiveSession();
-      targetSessionId = session?.id ?? null;
-    }
-    if (!targetSessionId) {
-      return NextResponse.json({ error: 'No active contest session' }, { status: 403 });
-    }
-
-    const now = Date.now();
-
-    // 3. Check if participant has ALREADY submitted the contest
-    const alreadySubmitted = await hasParticipantSubmitted(participantId, targetSessionId);
     if (alreadySubmitted) {
       return NextResponse.json(
         {
@@ -100,6 +107,8 @@ export async function POST(req: NextRequest) {
         { status: 403 }
       );
     }
+
+    const qMap = new Map(questions.map((q) => [q.id, q]));
 
     // ─────────────────────────────────────────────────────────────────
     // BRANCH A: CLOUD AUTO-SAVE DRAFT (Real-time every 3s / debounced)
@@ -116,10 +125,6 @@ export async function POST(req: NextRequest) {
       if (itemsToSave.length === 0) {
         return NextResponse.json({ error: 'No draft items provided' }, { status: 400 });
       }
-
-      // Fetch questions to get titles
-      const questions = await getQuestionsForSession(targetSessionId, false);
-      const qMap = new Map(questions.map(q => [q.id, q]));
 
       // Update participant's last active & current question
       const firstItem = itemsToSave[0];
@@ -176,179 +181,106 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'No question answers provided for submission' }, { status: 400 });
     }
 
-    // Get all questions with hidden test cases for evaluation
-    const questions = await getQuestionsForSession(targetSessionId, true);
-    const qMap = new Map(questions.map(q => [q.id, q]));
+    // ── Method 3: Instant Seal (<150ms) + Asynchronous Background Worker ──
+    // Step 1: Immediately persist all answers into Supabase with evaluation_status: 'evaluating'.
+    // Exact submission and elapsed stopwatch timestamps are permanently sealed.
+    const sealedItems = itemsToSubmit.map((item) => {
+      const question = qMap.get(item.questionId);
+      const totalCount = question?.testCases?.length || 0;
 
-    // Fetch session details for speed bonus calculation
-    const targetSession = await getSessionById(targetSessionId);
+      const questionElapsed = (item as any).elapsedMs || (now - (targetSession?.challenge_starts_at || now));
+      const firstDuration = (item as any).firstDurationMs || questionElapsed;
+      const firstSealedAt = (item as any).firstSealedAt || now;
+      const lastSealedAt = (item as any).lastSealedAt || now;
 
-    // ── Method 2 & Method 1: Parallel Question Evaluation with Batch Test Runs ──
-    const evaluatedResults = await Promise.all(
-      itemsToSubmit.map(async (item) => {
-        const question = qMap.get(item.questionId);
-        if (!question) return null;
+      return {
+        questionId: item.questionId,
+        questionTitle: question?.title || 'Question Submission',
+        language: item.language,
+        code: item.code || '',
+        submittedAt: lastSealedAt,
+        firstSubmittedAt: firstSealedAt,
+        elapsedMs: questionElapsed,
+        firstDurationMs: firstDuration,
+        totalTestCases: totalCount,
+        testCasesPassed: 0,
+        score: 0,
+        speedBonus: 0,
+        lines: (item.code || '').split('\n').length,
+        chars: (item.code || '').length,
+        isAutoSubmit,
+        evaluationStatus: 'evaluating' as const,
+      };
+    });
 
-        const testCases = question.testCases || [];
-        let passedCount = 0;
-        let testCaseDetails: any[] = [];
-
-        // If participant submitted empty code or starter code with no implementation, skip execution
-        const trimmedCode = (item.code || '').trim();
-        const starterTemplate = (question.starterTemplates?.[item.language] || '').trim();
-        const hasMeaningfulCode = trimmedCode.length > 0 && trimmedCode !== starterTemplate;
-
-        if (hasMeaningfulCode && testCases.length > 0) {
-          try {
-            // Method 1: Batch execute all test cases in ONE single runner request (Compile Once, Run Many)
-            const batchResult = await executeCodeBatch(
-              item.language,
-              item.code,
-              testCases.map((tc, idx) => ({ id: tc.id || String(idx), input: tc.input }))
-            );
-
-            testCaseDetails = testCases.map((tc, idx) => {
-              const tcKey = tc.id || String(idx);
-              const res = batchResult.results[tcKey];
-              if (!res) {
-                return {
-                  testCaseId: tc.id,
-                  passed: false,
-                  actualOutput: '[EXECUTION ERROR]',
-                  expectedOutput: tc.isHidden ? '[HIDDEN]' : tc.expectedOutput,
-                  isHidden: tc.isHidden,
-                  error: 'No output returned from execution runner',
-                };
-              }
-
-              const normalizedActual = (res.stdout || '').replace(/\r\n/g, '\n').trim();
-              const normalizedExpected = (tc.expectedOutput || '').replace(/\r\n/g, '\n').trim();
-              const passed = res.isSuccess && normalizedActual === normalizedExpected;
-
-              return {
-                testCaseId: tc.id,
-                passed,
-                actualOutput: tc.isHidden ? '[HIDDEN IN TEST RUNNER]' : normalizedActual,
-                expectedOutput: tc.isHidden ? '[HIDDEN]' : normalizedExpected,
-                isHidden: tc.isHidden,
-                error: res.stderr || undefined,
-              };
-            });
-            passedCount = testCaseDetails.filter((t) => t.passed).length;
-          } catch (err: any) {
-            testCaseDetails = testCases.map((tc) => ({
-              testCaseId: tc.id,
-              passed: false,
-              actualOutput: '[EXECUTION ERROR]',
-              expectedOutput: tc.isHidden ? '[HIDDEN]' : tc.expectedOutput,
-              isHidden: tc.isHidden,
-              error: err.message,
-            }));
-          }
-        } else {
-          // No meaningful code written
-          testCaseDetails = testCases.map((tc) => ({
-            testCaseId: tc.id,
-            passed: false,
-            actualOutput: '[NO CODE SUBMITTED]',
-            expectedOutput: tc.isHidden ? '[HIDDEN]' : tc.expectedOutput,
-            isHidden: tc.isHidden,
-          }));
-        }
-
-        const totalCount = testCases.length;
-
-        // Extract question elapsed durations & sealing timestamps
-        const questionElapsed = (item as any).elapsedMs || (now - (targetSession?.challenge_starts_at || now));
-        const firstDuration = (item as any).firstDurationMs || questionElapsed;
-        const firstSealedAt = (item as any).firstSealedAt || now;
-        const lastSealedAt = (item as any).lastSealedAt || now;
-
-        // Contest total duration (if configured on session)
-        const sessionDurationMs = (targetSession?.challenge_starts_at && targetSession?.challenge_ends_at)
-          ? (targetSession.challenge_ends_at - targetSession.challenge_starts_at)
-          : undefined;
-
-        // Calculate score with dynamic speed vs accuracy metric (SAM)
-        const { baseScore, speedBonus, finalScore } = calculateQuestionScore({
-          points: question.points || 100,
-          testCasesPassed: passedCount,
-          totalTestCases: totalCount,
-          durationMs: firstDuration,
-          sessionDurationMs,
-          totalQuestions: questions.length,
-        });
-
-        await upsertSubmission({
+    // Write all sealed submissions in parallel to Supabase (<100ms)
+    await Promise.all(
+      sealedItems.map((item) =>
+        upsertSubmission({
           sessionId: targetSessionId,
           participantId,
           participantName: participant.name,
           participantRoll: participant.rollNumber,
           questionId: item.questionId,
-          questionTitle: question.title,
+          questionTitle: item.questionTitle,
           language: item.language,
-          code: item.code || '',
-          submittedAt: lastSealedAt,
-          firstSubmittedAt: firstSealedAt,
+          code: item.code,
+          submittedAt: item.submittedAt,
+          firstSubmittedAt: item.firstSubmittedAt,
           isAutoSubmit,
-          evaluationStatus: 'completed',
-          testCasesPassed: passedCount,
-          totalTestCases: totalCount,
-          score: finalScore,
-          speedBonus,
-          testCaseDetails,
-          execTimeMs: questionElapsed,
-          firstExecTimeMs: firstDuration,
-        });
-
-        return {
-          questionId: item.questionId,
-          questionTitle: question.title,
-          language: item.language,
-          submittedAt: lastSealedAt,
-          firstSubmittedAt: firstSealedAt,
-          elapsedMs: questionElapsed,
-          firstDurationMs: firstDuration,
-          testCasesPassed: passedCount,
-          totalTestCases: totalCount,
-          baseScore,
-          speedBonus,
-          totalScore: finalScore,
-          lines: (item.code || '').split('\n').length,
-          chars: (item.code || '').length,
-          isAutoSubmit,
-        };
-      })
+          evaluationStatus: 'evaluating',
+          testCasesPassed: 0,
+          totalTestCases: item.totalTestCases,
+          score: 0,
+          speedBonus: 0,
+          execTimeMs: item.elapsedMs,
+          firstExecTimeMs: item.firstDurationMs,
+        })
+      )
     );
-
-    const results = evaluatedResults.filter(Boolean) as any[];
-    let grandTotalScore = 0;
-    let grandTotalPassed = 0;
-    let grandTotalTests = 0;
-
-    for (const r of results) {
-      grandTotalScore += r.totalScore;
-      grandTotalPassed += r.testCasesPassed;
-      grandTotalTests += r.totalTestCases;
-    }
 
     // Update participant's last active
     await updateParticipant(participantId, {
       lastActiveAt: now,
     });
 
+    // Step 2: Trigger Background Evaluation via Next.js 15/16 after()
+    // Runs asynchronously after the 150ms HTTP response is returned to the client
+    after(async () => {
+      try {
+        await evaluateParticipantSubmissions(
+          participantId,
+          targetSessionId,
+          sealedItems.map((s) => ({
+            questionId: s.questionId,
+            language: s.language,
+            code: s.code,
+            elapsedMs: s.elapsedMs,
+            firstDurationMs: s.firstDurationMs,
+            firstSealedAt: s.firstSubmittedAt,
+            lastSealedAt: s.submittedAt,
+            isAutoSubmit,
+          }))
+        );
+      } catch (bgErr) {
+        console.error('[Submit after()] Background evaluation failed:', bgErr);
+      }
+    });
+
+    // Step 3: Return instant seal response to client in ~150ms!
     return NextResponse.json({
       success: true,
       isSubmitted: true,
+      status: 'evaluating',
       isAutoSubmit,
       submittedAt: now,
       message: isAutoSubmit
-        ? 'Contest duration expired — all question responses have been auto-submitted and locked for evaluation.'
-        : 'Contest submitted successfully! Your solutions have been saved and locked for final scoring.',
-      results,
-      totalScore: grandTotalScore,
-      totalPassed: grandTotalPassed,
-      totalTestCases: grandTotalTests,
+        ? 'Contest duration expired — all question responses have been permanently sealed and locked. Background evaluation in progress...'
+        : '🏆 Submission Sealed & Secured! Answers locked for final evaluation on Admiralty Bridge.',
+      results: sealedItems,
+      totalScore: 0,
+      totalPassed: 0,
+      totalTestCases: sealedItems.reduce((acc, s) => acc + s.totalTestCases, 0),
     });
   } catch (error: any) {
     console.error('Submit API error:', error);
