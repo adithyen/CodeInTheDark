@@ -11,7 +11,7 @@ import {
   Send, RotateCcw, ShieldAlert, ShieldCheck, Terminal, Wifi, WifiOff,
   PanelLeftClose, PanelLeftOpen, ZoomIn, ZoomOut, X,
   Loader2, Lock, ChevronRight, ChevronLeft, ChevronDown, ChevronUp,
-  Bookmark, BookmarkCheck, CheckCircle2, AlertCircle, Eye, FileWarning,
+  Bookmark, CheckCircle2, AlertCircle, Eye, FileWarning,
   ArrowRight, Clock, Code2, Cloud, Check, AlertTriangle, RefreshCw, Compass
 } from 'lucide-react';
 
@@ -76,7 +76,7 @@ export default function ArenaPage() {
   // Network & UI preferences
   const [isOnline, setIsOnline] = useState(true);
   const [isDrawerCollapsed, setIsDrawerCollapsed] = useState(false);
-  const [editorFontSize, setEditorFontSize] = useState(15);
+  const [editorFontSize, setEditorFontSize] = useState(18);
   const [lobbyMessage, setLobbyMessage] = useState('Awaiting contest conclusion...');
 
   const contestStartRef = useRef<number | null>(null);
@@ -133,13 +133,13 @@ export default function ArenaPage() {
     return 'unanswered';
   }, [visitedSet, markedSet, allCodes, allLanguages]);
 
-  // Status configuration styling
+  // Status configuration styling (Brightened, vivid contrast with Purple for Answered+Review)
   const statusConfig: Record<QStatus, { label: string; dotClass: string; borderClass: string; bgClass: string; textClass: string }> = {
-    not_visited:     { label: 'Not Visited',        dotClass: 'bg-[#4a3f35]',   borderClass: 'border-[#4a3f35]/50',   bgClass: 'bg-[#1c160e]/50', textClass: 'text-[#8c7456]' },
-    unanswered:      { label: 'Not Answered',       dotClass: 'bg-orange-500',  borderClass: 'border-orange-500/60',  bgClass: 'bg-orange-500/10', textClass: 'text-orange-400' },
-    answered:        { label: 'Answered',           dotClass: 'bg-emerald-500', borderClass: 'border-emerald-500/60', bgClass: 'bg-emerald-500/10', textClass: 'text-emerald-400' },
-    marked_review:   { label: 'Marked Review',      dotClass: 'bg-amber-400',   borderClass: 'border-amber-400/60',   bgClass: 'bg-amber-400/10', textClass: 'text-amber-400' },
-    answered_marked: { label: 'Answered + Review',  dotClass: 'bg-teal-400',    borderClass: 'border-teal-400/60',    bgClass: 'bg-teal-400/10', textClass: 'text-teal-300' },
+    not_visited:     { label: 'Not Visited',        dotClass: 'bg-[#b8ab99]',   borderClass: 'border-[#736553]/70',   bgClass: 'bg-[#18120b]/70', textClass: 'text-[#ded3c3]' },
+    unanswered:      { label: 'Not Answered',       dotClass: 'bg-[#ff7020]',  borderClass: 'border-orange-500/70',  bgClass: 'bg-orange-500/15', textClass: 'text-orange-400' },
+    answered:        { label: 'Answered',           dotClass: 'bg-[#10b981]', borderClass: 'border-emerald-500/70', bgClass: 'bg-emerald-500/15', textClass: 'text-emerald-300' },
+    marked_review:   { label: 'Marked Review',      dotClass: 'bg-[#fbbf24]',   borderClass: 'border-amber-400/70',   bgClass: 'bg-amber-400/15', textClass: 'text-amber-300' },
+    answered_marked: { label: 'Answered + Review',  dotClass: 'bg-[#c084fc]',  borderClass: 'border-purple-400/70',  bgClass: 'bg-purple-500/15', textClass: 'text-purple-300' },
   };
 
   // ── Anti-Cheat Integration ──────────────────────────────────────────────────
@@ -1236,7 +1236,7 @@ export default function ArenaPage() {
                           <span className={`h-2.5 w-2.5 rounded-full shrink-0 ${cfg.dotClass}`} />
                           <span className={`text-sm font-bold ${isSel ? 'text-[#f3d38c]' : 'text-[#ebe4d5]'}`}>Q{idx + 1}</span>
                         </div>
-                        <span className="text-xs text-[#8c7456] font-semibold shrink-0">{q.points}p</span>
+                        <span className="text-xs text-[#ded3c3] font-semibold shrink-0">{q.points}p</span>
                       </div>
 
                       <div className="flex items-center justify-between w-full mt-2 pt-1.5 border-t border-[#a68a56]/15 text-[11px] sm:text-xs">
@@ -1261,7 +1261,7 @@ export default function ArenaPage() {
               {/* Status Legend Bar */}
               <div className="flex flex-wrap items-center justify-between gap-2 mt-2.5 pt-2.5 border-t border-[#a68a56]/15">
                 {Object.entries(statusConfig).map(([k, v]) => (
-                  <div key={k} className="flex items-center gap-1.5 font-nautical-mono text-xs text-[#a68a56]">
+                  <div key={k} className="flex items-center gap-1.5 font-nautical-mono text-xs text-[#ded3c3]">
                     <span className={`h-2 w-2 rounded-full shrink-0 ${v.dotClass}`} />
                     <span>{v.label}</span>
                   </div>
@@ -1387,18 +1387,6 @@ export default function ArenaPage() {
 
             <div className="flex items-center gap-2.5">
               <button
-                onClick={handleToggleMarkReview}
-                className={`flex items-center gap-1.5 rounded-lg border px-3 py-1.5 font-cinzel text-xs sm:text-sm font-semibold transition-all bouncy-btn ${
-                  isMarked
-                    ? 'border-amber-400/60 bg-amber-400/10 text-amber-400'
-                    : 'border-[#a68a56]/30 bg-[#1c160e]/50 text-[#a68a56] hover:text-[#f3d38c]'
-                }`}
-              >
-                {isMarked ? <BookmarkCheck className="h-4 w-4" /> : <Bookmark className="h-4 w-4" />}
-                <span className="hidden sm:inline">{isMarked ? 'Marked for Review' : 'Mark for Review'}</span>
-              </button>
-
-              <button
                 onClick={handleResetStarter}
                 className="flex items-center gap-1.5 rounded-lg border border-[#a68a56]/30 bg-[#1c160e]/50 px-3 py-1.5 font-nautical-mono text-xs sm:text-sm font-semibold text-[#a68a56] hover:text-[#f3d38c] hover:border-[#d4af37] transition-all bouncy-btn"
                 title="Reset code to default starter template"
@@ -1467,10 +1455,10 @@ export default function ArenaPage() {
 
               <button
                 onClick={handleMarkForReviewAndNext}
-                className="flex items-center gap-1.5 rounded-xl border border-amber-500/40 bg-amber-950/20 px-3.5 py-2 font-cinzel text-xs sm:text-sm font-bold text-amber-300 hover:border-amber-400 hover:bg-amber-950/40 transition-all bouncy-btn"
+                className="flex items-center gap-1.5 rounded-xl border border-amber-500/40 bg-amber-950/20 px-3.5 sm:px-4 py-2 font-cinzel text-xs sm:text-sm font-bold text-amber-300 hover:border-amber-400 hover:bg-amber-950/40 transition-all bouncy-btn"
               >
                 <Bookmark className="h-4 w-4 text-amber-400" />
-                <span>Mark &amp; Next</span>
+                <span>MARK FOR REVIEW</span>
               </button>
 
               <button
@@ -1480,15 +1468,6 @@ export default function ArenaPage() {
                 <Check className="h-4 w-4 stroke-[3]" />
                 <span>{activeQuestionIndex === questions.length - 1 ? 'SAVE & REVIEW' : 'SAVE & NEXT'}</span>
                 <ArrowRight className="h-4 w-4 stroke-[2.5]" />
-              </button>
-
-              <button
-                onClick={() => setActiveQuestionIndex(Math.min(questions.length - 1, activeQuestionIndex + 1))}
-                disabled={activeQuestionIndex >= questions.length - 1}
-                className="flex items-center gap-1 rounded-xl border border-[#a68a56]/30 bg-[#1c160e]/50 px-3.5 py-2 font-cinzel text-xs sm:text-sm font-bold text-[#ebe4d5] hover:border-[#d4af37] disabled:opacity-30 disabled:pointer-events-none transition-all bouncy-btn"
-              >
-                <span>Next</span>
-                <ChevronRight className="h-4 w-4" />
               </button>
             </div>
           </div>
@@ -1522,27 +1501,27 @@ export default function ArenaPage() {
             <div className="grid grid-cols-5 gap-px border-b border-[#a68a56]/20 bg-[#a68a56]/10 text-center">
               <div className="bg-[#090806] py-3.5 px-1">
                 <span className="font-nautical-mono text-2xl font-extrabold text-emerald-400">{summaryAnswered}</span>
-                <p className="font-cinzel text-xs uppercase text-[#a68a56] font-semibold mt-0.5">Answered</p>
+                <p className="font-cinzel text-xs uppercase text-[#ded3c3] font-semibold mt-0.5">Answered</p>
               </div>
               <div className="bg-[#090806] py-3.5 px-1">
-                <span className="font-nautical-mono text-2xl font-extrabold text-teal-300">
+                <span className="font-nautical-mono text-2xl font-extrabold text-purple-300">
                   {previewData.filter(d => d.status === 'answered_marked').length}
                 </span>
-                <p className="font-cinzel text-xs uppercase text-[#a68a56] font-semibold mt-0.5">Ans + Review</p>
+                <p className="font-cinzel text-xs uppercase text-[#ded3c3] font-semibold mt-0.5">Ans + Review</p>
               </div>
               <div className="bg-[#090806] py-3.5 px-1">
                 <span className="font-nautical-mono text-2xl font-extrabold text-amber-400">
                   {previewData.filter(d => d.status === 'marked_review').length}
                 </span>
-                <p className="font-cinzel text-xs uppercase text-[#a68a56] font-semibold mt-0.5">Review Only</p>
+                <p className="font-cinzel text-xs uppercase text-[#ded3c3] font-semibold mt-0.5">Review Only</p>
               </div>
               <div className="bg-[#090806] py-3.5 px-1">
                 <span className="font-nautical-mono text-2xl font-extrabold text-orange-400">{summaryUnanswered}</span>
-                <p className="font-cinzel text-xs uppercase text-[#a68a56] font-semibold mt-0.5">Unanswered</p>
+                <p className="font-cinzel text-xs uppercase text-[#ded3c3] font-semibold mt-0.5">Unanswered</p>
               </div>
               <div className="bg-[#090806] py-3.5 px-1">
-                <span className="font-nautical-mono text-2xl font-extrabold text-[#8c7456]">{summaryNotVisited}</span>
-                <p className="font-cinzel text-xs uppercase text-[#a68a56] font-semibold mt-0.5">Not Visited</p>
+                <span className="font-nautical-mono text-2xl font-extrabold text-[#ded3c3]">{summaryNotVisited}</span>
+                <p className="font-cinzel text-xs uppercase text-[#ded3c3] font-semibold mt-0.5">Not Visited</p>
               </div>
             </div>
 

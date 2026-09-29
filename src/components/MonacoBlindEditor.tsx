@@ -24,7 +24,7 @@ export default function MonacoBlindEditor({
   value,
   onChange,
   disabled = false,
-  fontSize = 15,
+  fontSize = 18,
   allowCopyPaste = false,
 }: MonacoBlindEditorProps) {
   const allowCopyPasteRef = React.useRef(allowCopyPaste);
