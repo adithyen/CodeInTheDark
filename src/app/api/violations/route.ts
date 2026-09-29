@@ -42,8 +42,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Participant not found' }, { status: 404 });
     }
 
-    // Sync strike count — take max of DB value and client-reported value
-    const newStrikes = Math.max(participant.strikes + 1, (currentStrikes ?? 0) + 1);
+    // Sync strike count — strictly increment by 1 (respecting client-synced strike count)
+    const newStrikes = Math.min(3, typeof currentStrikes === 'number' && currentStrikes > 0 ? currentStrikes : participant.strikes + 1);
     const isLockedOut = newStrikes >= 3;
 
     await updateParticipant(participantId, { strikes: newStrikes, isLockedOut });
