@@ -9,7 +9,7 @@ import { motion } from 'framer-motion';
 export function Chapter2Bridge() {
   return (
     <motion.div
-      className="absolute left-1/2 top-1/2 md:top-4/5 -translate-x-1/2 -translate-y-2/8 w-full h-full pointer-events-none z-0 opacity-80"
+      className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full pointer-events-none z-0 opacity-80"
       animate={{ y: [0, -1.5, 0, 1, 0] }}
       transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
     >

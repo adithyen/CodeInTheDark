@@ -70,8 +70,8 @@ export default function HomePage() {
             <Chapter2Monolith />
           </div>
 
-          {/* Chapter 2 Divider Strip */}
-          <div className="mt-7 sm:mt-9 flex items-center justify-center">
+          {/* Chapter 2 Divider Strip (Spaced cleanly below the bridge bottom line) */}
+          <div className="mt-12 sm:mt-16 md:mt-20 flex items-center justify-center">
             <div className="flex items-center gap-3 sm:gap-4">
               <div className="h-[1px] w-8 sm:w-20 bg-gradient-to-r from-transparent via-[#d4af37]/60 to-[#d4af37]" />
               <span className="font-serif text-[11px] sm:text-xs tracking-[0.32em] uppercase text-[#f3d38c] drop-shadow-[0_0_8px_rgba(243,211,140,0.5)]">
