@@ -680,20 +680,20 @@ export default function AdminPage() {
     <div className="flex flex-1 flex-col bg-[#050504]">
       {/* ── Sticky Header ── */}
       <div className="sticky top-0 z-40 border-b border-[#a68a56]/20 bg-[#080604]/95 backdrop-blur-xl">
-        <div className="mx-auto flex w-full max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
+        <div className="mx-auto flex w-full max-w-[1720px] items-center justify-between gap-4 px-4 py-3.5 sm:px-8">
           {/* Logo */}
           <div className="flex items-center gap-3">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#d4af37]/10 border border-[#d4af37]/30">
               <ShieldCheck className="h-4 w-4 text-[#d4af37]" />
             </div>
-            <span className="font-cinzel text-sm font-bold tracking-wider text-[#ebe4d5] hidden sm:inline">CONTEST COMMAND CENTER</span>
+            <span className="font-cinzel text-base font-bold tracking-wider text-[#ebe4d5] hidden sm:inline">CONTEST COMMAND CENTER</span>
           </div>
 
           {/* Session Selector */}
           <div className="relative flex-1 max-w-xs">
             <button
               onClick={() => setSelectorOpen(o => !o)}
-              className="flex w-full items-center justify-between gap-2 rounded-xl border border-[#a68a56]/30 bg-[#050504] px-3 py-2 font-nautical-mono text-xs text-[#ebe4d5] hover:border-[#d4af37] transition-all bouncy-btn"
+              className="flex w-full items-center justify-between gap-2 rounded-xl border border-[#a68a56]/30 bg-[#050504] px-3.5 py-2 font-nautical-mono text-xs sm:text-sm text-[#ebe4d5] hover:border-[#d4af37] transition-all bouncy-btn"
             >
               <div className="flex items-center gap-2 truncate">
                 <span className="truncate">{viewingSession?.label ?? 'No Contest Session'}</span>
@@ -740,21 +740,21 @@ export default function AdminPage() {
           <div className="flex items-center gap-2">
             {currentSession && <PhaseBadge phase={currentSession.phase} />}
             {viewingSession?.disable_strikes && (
-              <span className="hidden sm:inline-flex items-center gap-1 rounded-full border border-emerald-500/40 bg-emerald-950/60 px-2.5 py-0.5 font-nautical-mono text-[10px] text-emerald-300 font-semibold shadow-[0_0_8px_rgba(16,185,129,0.2)]" title="Anti-cheat strikes are disabled for this session (Testing Mode)">
-                <ShieldCheck className="h-3 w-3 text-emerald-400" /> Strikes: ∞ (Test)
+              <span className="hidden sm:inline-flex items-center gap-1.5 rounded-full border border-emerald-500/40 bg-emerald-950/60 px-3 py-1 font-nautical-mono text-xs text-emerald-300 font-semibold shadow-[0_0_8px_rgba(16,185,129,0.2)]" title="Anti-cheat strikes are disabled for this session (Testing Mode)">
+                <ShieldCheck className="h-3.5 w-3.5 text-emerald-400" /> Strikes: ∞ (Test)
               </span>
             )}
             {isLive && (
               <button
                 onClick={() => contestAction('toggleReveal')}
-                className={`flex items-center gap-1.5 rounded-xl border px-3 py-1.5 font-cinzel text-[11px] font-semibold transition-all bouncy-btn ${currentSession?.is_reveal_mode ? 'border-[#d4af37] bg-[#d4af37] text-[#050504] shadow-lg shadow-[#d4af37]/30' : 'border-[#a68a56]/30 bg-[#1c160e]/50 text-[#f3d38c] hover:border-[#d4af37]'}`}
+                className={`flex items-center gap-1.5 rounded-xl border px-3.5 py-1.5 font-cinzel text-xs font-semibold transition-all bouncy-btn ${currentSession?.is_reveal_mode ? 'border-[#d4af37] bg-[#d4af37] text-[#050504] shadow-lg shadow-[#d4af37]/30' : 'border-[#a68a56]/30 bg-[#1c160e]/50 text-[#f3d38c] hover:border-[#d4af37]'}`}
               >
                 <Sparkles className="h-3.5 w-3.5" />
                 {currentSession?.is_reveal_mode ? 'Reveal Active' : 'Stage Reveal'}
               </button>
             )}
-            <button onClick={() => fetchAllData(passkey)} className="rounded-lg border border-[#a68a56]/30 bg-[#1c160e]/50 p-1.5 text-[#a68a56] hover:text-[#f3d38c] hover:border-[#d4af37] bouncy-btn" title="Refresh log">
-              <RefreshCw className="h-3.5 w-3.5" />
+            <button onClick={() => fetchAllData(passkey)} className="rounded-lg border border-[#a68a56]/30 bg-[#1c160e]/50 p-2 text-[#a68a56] hover:text-[#f3d38c] hover:border-[#d4af37] bouncy-btn" title="Refresh log">
+              <RefreshCw className="h-4 w-4" />
             </button>
             <button
               onClick={() => {
@@ -762,7 +762,7 @@ export default function AdminPage() {
                 setIsAuthenticated(false);
                 setPasskey('');
               }}
-              className="flex items-center gap-1.5 rounded-lg border border-red-500/30 bg-red-950/30 px-2.5 py-1.5 font-nautical-mono text-[11px] text-red-400 hover:bg-red-900/40 hover:border-red-400 transition-colors bouncy-btn"
+              className="flex items-center gap-1.5 rounded-lg border border-red-500/30 bg-red-950/30 px-3 py-1.5 font-nautical-mono text-xs text-red-400 hover:bg-red-900/40 hover:border-red-400 transition-colors bouncy-btn"
               title="Disengage Passkey & Logout"
             >
               <LogOut className="h-3.5 w-3.5" />
@@ -772,7 +772,7 @@ export default function AdminPage() {
         </div>
 
         {/* Tabs */}
-        <div className="mx-auto flex w-full max-w-7xl overflow-x-auto border-t border-[#a68a56]/15 px-4 sm:px-6">
+        <div className="mx-auto flex w-full max-w-[1720px] overflow-x-auto border-t border-[#a68a56]/15 px-4 sm:px-8">
           {(([
             { id: 'setup',        icon: Settings,      label: 'Contest Setup',            badge: '' },
             { id: 'registration', icon: Radio,          label: 'Registration Lobby',       badge: '' },
@@ -784,13 +784,13 @@ export default function AdminPage() {
             <button
               key={id}
               onClick={() => setActiveTab(id)}
-              className={`flex shrink-0 items-center gap-1.5 border-b-2 px-3.5 py-2.5 font-cinzel text-xs font-medium transition-all bouncy-btn ${
+              className={`flex shrink-0 items-center gap-2 border-b-2 px-5 py-3 font-cinzel text-xs sm:text-sm font-semibold transition-all bouncy-btn ${
                 activeTab === id
                   ? 'border-[#d4af37] text-[#f3d38c] font-bold shadow-[0_2px_10px_rgba(212,175,55,0.2)]'
                   : 'border-transparent text-[#a68a56] hover:text-[#ebe4d5]'
               }`}
             >
-              <Icon className="h-3.5 w-3.5" />
+              <Icon className="h-4 w-4" />
               <span>{label}</span>
               {badge && <span className="animate-pulse text-[#d4af37]">{badge}</span>}
             </button>
@@ -799,7 +799,7 @@ export default function AdminPage() {
       </div>
 
       {/* ── Tab Content ── */}
-      <div className="mx-auto w-full max-w-7xl flex-1 p-4 sm:p-6 lg:p-8">
+      <div className="mx-auto w-full max-w-[1720px] flex-1 p-4 sm:p-8 xl:p-10">
 
         {/* ═══════════════════════════════════════════════════════════════════
             TAB 1: CHALLENGE SETUP
@@ -1478,72 +1478,77 @@ export default function AdminPage() {
         {/* ═══════════════════════════════════════════════════════════════════
             TAB 4: PARTICIPANTS MONITOR
         ═══════════════════════════════════════════════════════════════════ */}
+        {/* ═══════════════════════════════════════════════════════════════════
+            TAB 4: PARTICIPANTS
+        ═══════════════════════════════════════════════════════════════════ */}
         {activeTab === 'participants' && (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="font-nautical-mono text-sm text-[#ebe4d5]">{participants.length} participants registered · Session: <span className="text-[#f3d38c] font-cinzel font-bold">{viewingSession?.label}</span></div>
-              <button onClick={exportCSV} className="flex items-center gap-1.5 rounded-xl border border-[#a68a56]/30 bg-[#1c160e]/50 px-4 py-2 font-cinzel text-xs font-semibold text-[#ebe4d5] hover:border-[#d4af37] bouncy-btn">
+          <div className="space-y-5">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="font-nautical-mono text-base sm:text-lg text-[#ebe4d5]">
+                <strong className="text-[#f3d38c] font-black">{participants.length}</strong> participants registered · Session: <span className="text-[#f3d38c] font-cinzel font-bold">{viewingSession?.label}</span>
+              </div>
+              <button onClick={exportCSV} className="flex items-center gap-2 rounded-xl border border-[#a68a56]/40 bg-[#1c160e]/80 px-5 py-2.5 font-cinzel text-xs sm:text-sm font-bold text-[#ebe4d5] hover:border-[#d4af37] hover:text-[#f3d38c] shadow-lg transition-all bouncy-btn">
                 <Download className="h-4 w-4 text-[#d4af37]" /> Export Participants CSV
               </button>
             </div>
-            <div className="overflow-hidden rounded-2xl border border-[#a68a56]/25 bg-[#090704] shadow-xl">
+            <div className="overflow-hidden rounded-2xl border border-[#a68a56]/30 bg-[#090704] shadow-2xl">
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="border-b border-[#a68a56]/20 bg-[#140f0a] font-cinzel text-xs text-[#d4af37] uppercase tracking-wider">
-                    <th className="py-3.5 px-4">Participant &amp; College</th>
-                    <th className="py-3.5 px-4 hidden sm:table-cell">Phone (Confidential)</th>
-                    <th className="py-3.5 px-4 hidden sm:table-cell">Seat Number</th>
-                    <th className="py-3.5 px-4 hidden md:table-cell">Language</th>
-                    <th className="py-3.5 px-4">Strikes</th>
-                    <th className="py-3.5 px-4">Status</th>
-                    <th className="py-3.5 px-4 hidden lg:table-cell">Last Activity</th>
-                    <th className="py-3.5 px-4 text-right">Actions</th>
+                  <tr className="border-b border-[#a68a56]/25 bg-[#140f0a] font-cinzel text-xs sm:text-sm text-[#d4af37] uppercase tracking-wider">
+                    <th className="py-4 px-6">Participant &amp; College</th>
+                    <th className="py-4 px-6 hidden sm:table-cell">Phone (Confidential)</th>
+                    <th className="py-4 px-6 hidden sm:table-cell">Seat Number</th>
+                    <th className="py-4 px-6 hidden md:table-cell">Language</th>
+                    <th className="py-4 px-6">Strikes</th>
+                    <th className="py-4 px-6">Status</th>
+                    <th className="py-4 px-6 hidden lg:table-cell">Last Activity</th>
+                    <th className="py-4 px-6 text-right">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[#a68a56]/15 font-nautical-mono text-xs sm:text-sm">
+                <tbody className="divide-y divide-[#a68a56]/20 font-nautical-mono text-sm sm:text-base">
                   {participants.length === 0 ? (
-                    <tr><td colSpan={8} className="py-10 text-center text-[#a68a56] font-cinzel text-sm">No participants registered yet.</td></tr>
+                    <tr><td colSpan={8} className="py-12 text-center text-[#a68a56] font-cinzel text-base">No participants registered yet.</td></tr>
                   ) : participants.map((p) => (
-                    <tr key={p.id} className="hover:bg-[#1c160e]/30">
-                      <td className="py-3.5 px-4">
-                        <div className="font-bold text-[#ebe4d5] font-cinzel text-sm sm:text-base">{p.name}</div>
-                        <div className="text-xs text-[#f3d38c] truncate max-w-xs">{p.college || '—'}</div>
+                    <tr key={p.id} className="hover:bg-[#1c160e]/40 transition-colors">
+                      <td className="py-4 px-6">
+                        <div className="font-bold text-[#ebe4d5] font-cinzel text-base sm:text-lg">{p.name}</div>
+                        <div className="text-xs sm:text-sm text-[#f3d38c] truncate max-w-sm font-sans mt-0.5">{p.college || '—'}</div>
                       </td>
-                      <td className="py-3.5 px-4 hidden sm:table-cell font-mono text-[#ebe4d5]">
-                        {p.phone ? <span className="text-[#f3d38c] font-semibold">{p.phone}</span> : <span className="text-[#a68a56]">—</span>}
+                      <td className="py-4 px-6 hidden sm:table-cell font-mono text-sm text-[#ebe4d5]">
+                        {p.phone ? <span className="text-[#f3d38c] font-bold">{p.phone}</span> : <span className="text-[#a68a56]">—</span>}
                       </td>
-                      <td className="py-3.5 px-4 hidden sm:table-cell text-[#d4af37] font-semibold">{p.terminalId}</td>
-                      <td className="py-3.5 px-4 hidden md:table-cell uppercase text-[#a68a56]">{p.activeLanguage || '—'}</td>
-                      <td className="py-3.5 px-4">
+                      <td className="py-4 px-6 hidden sm:table-cell text-[#d4af37] font-black text-sm sm:text-base">{p.terminalId}</td>
+                      <td className="py-4 px-6 hidden md:table-cell uppercase text-[#f3d38c] font-bold text-xs sm:text-sm">{p.activeLanguage || '—'}</td>
+                      <td className="py-4 px-6">
                         {viewingSession?.disable_strikes ? (
-                          <span className="font-bold text-emerald-400 text-xs inline-flex items-center gap-1" title="Anti-cheat strikes are disabled for this session (Testing Mode)">
-                            <ShieldCheck className="h-3.5 w-3.5 text-emerald-400" /> ∞ (Testing)
+                          <span className="font-bold text-emerald-400 text-xs sm:text-sm inline-flex items-center gap-1.5" title="Anti-cheat strikes are disabled for this session (Testing Mode)">
+                            <ShieldCheck className="h-4 w-4 text-emerald-400" /> ∞ (Testing)
                           </span>
                         ) : (
-                          <span className={`font-bold ${p.strikes >= 3 ? 'text-red-400' : p.strikes > 0 ? 'text-[#d4af37]' : 'text-[#a68a56]'}`}>{p.strikes}/3</span>
+                          <span className={`font-bold text-base ${p.strikes >= 3 ? 'text-red-400' : p.strikes > 0 ? 'text-[#d4af37]' : 'text-[#a68a56]'}`}>{p.strikes}/3</span>
                         )}
                       </td>
-                      <td className="py-3.5 px-4">
-                        <span className={`rounded border px-2.5 py-1 text-xs font-cinzel font-semibold ${p.isLockedOut ? 'border-red-500/40 bg-red-950/60 text-red-300' : 'border-[#d4af37]/40 bg-[#1c160e] text-[#f3d38c]'}`}>
+                      <td className="py-4 px-6">
+                        <span className={`rounded-lg border px-3 py-1 text-xs sm:text-sm font-cinzel font-bold ${p.isLockedOut ? 'border-red-500/40 bg-red-950/60 text-red-300' : 'border-[#d4af37]/40 bg-[#1c160e] text-[#f3d38c]'}`}>
                           {p.isLockedOut ? 'Locked Out' : 'Active'}
                         </span>
                       </td>
-                      <td className="py-3.5 px-4 hidden lg:table-cell text-[#a68a56]">{new Date(p.lastActiveAt).toLocaleTimeString()}</td>
-                      <td className="py-3.5 px-4 text-right">
-                        <div className="flex items-center justify-end gap-1.5">
+                      <td className="py-4 px-6 hidden lg:table-cell text-[#a68a56] text-xs sm:text-sm">{new Date(p.lastActiveAt).toLocaleTimeString()}</td>
+                      <td className="py-4 px-6 text-right">
+                        <div className="flex items-center justify-end gap-2">
                           {p.strikes > 0 && (
-                            <button onClick={() => participantAction(p.id, 'reset_strikes')} className="flex items-center gap-1 rounded-lg border border-[#d4af37]/30 bg-[#1c160e] px-2 py-1 text-xs text-[#f3d38c] hover:border-[#d4af37] bouncy-btn" title="Pardon — reset strikes">
-                              <Undo2 className="h-3 w-3" /> Pardon
+                            <button onClick={() => participantAction(p.id, 'reset_strikes')} className="flex items-center gap-1.5 rounded-lg border border-[#d4af37]/30 bg-[#1c160e] px-2.5 py-1.5 text-xs sm:text-sm font-semibold text-[#f3d38c] hover:border-[#d4af37] bouncy-btn" title="Pardon — reset strikes">
+                              <Undo2 className="h-3.5 w-3.5" /> Pardon
                             </button>
                           )}
-                          <button onClick={() => participantAction(p.id, 'add_strike')} className="flex items-center gap-1 rounded-lg border border-[#a68a56]/30 bg-[#1c160e]/50 px-2 py-1 text-xs text-[#f3d38c] hover:border-[#d4af37] bouncy-btn">
-                            <ShieldAlert className="h-3 w-3 text-[#d4af37]" /> +Strike
+                          <button onClick={() => participantAction(p.id, 'add_strike')} className="flex items-center gap-1.5 rounded-lg border border-[#a68a56]/30 bg-[#1c160e]/50 px-2.5 py-1.5 text-xs sm:text-sm font-semibold text-[#f3d38c] hover:border-[#d4af37] bouncy-btn">
+                            <ShieldAlert className="h-3.5 w-3.5 text-[#d4af37]" /> +Strike
                           </button>
-                          <button onClick={() => participantAction(p.id, 'toggle_lockout')} className={`flex items-center gap-1 rounded-lg border px-2 py-1 text-xs font-cinzel bouncy-btn ${p.isLockedOut ? 'border-[#d4af37]/40 bg-[#1c160e] text-[#f3d38c]' : 'border-red-500/30 bg-red-950/40 text-red-300'}`}>
-                            <Lock className="h-3 w-3" /> {p.isLockedOut ? 'Unlock' : 'Lock'}
+                          <button onClick={() => participantAction(p.id, 'toggle_lockout')} className={`flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs sm:text-sm font-cinzel font-bold bouncy-btn ${p.isLockedOut ? 'border-[#d4af37]/40 bg-[#1c160e] text-[#f3d38c]' : 'border-red-500/30 bg-red-950/40 text-red-300'}`}>
+                            <Lock className="h-3.5 w-3.5" /> {p.isLockedOut ? 'Unlock' : 'Lock'}
                           </button>
-                          <button onClick={() => { if (confirm(`Remove participant ${p.name}?`)) participantAction(p.id, 'delete'); }} className="rounded-lg border border-[#a68a56]/20 bg-[#050504] p-1.5 text-[#a68a56] hover:text-red-400 bouncy-btn" title="Remove participant">
-                            <Trash2 className="h-3.5 w-3.5" />
+                          <button onClick={() => { if (confirm(`Remove participant ${p.name}?`)) participantAction(p.id, 'delete'); }} className="rounded-lg border border-[#a68a56]/20 bg-[#050504] p-2 text-[#a68a56] hover:text-red-400 bouncy-btn" title="Remove participant">
+                            <Trash2 className="h-4 w-4" />
                           </button>
                         </div>
                       </td>
@@ -1553,17 +1558,17 @@ export default function AdminPage() {
               </table>
             </div>
             {violations.length > 0 && (
-              <div className="rounded-2xl border border-red-500/30 bg-[#0f0906] p-5 shadow-xl">
-                <h4 className="font-cinzel text-sm font-bold text-red-400 mb-3 flex items-center gap-2"><AlertTriangle className="h-4 w-4" /> Anti-Cheat Violation Log ({violations.length})</h4>
-                <div className="space-y-2 max-h-48 overflow-y-auto">
+              <div className="rounded-2xl border border-red-500/30 bg-[#0f0906] p-6 shadow-xl">
+                <h4 className="font-cinzel text-base font-bold text-red-400 mb-3 flex items-center gap-2"><AlertTriangle className="h-5 w-5" /> Anti-Cheat Violation Log ({violations.length})</h4>
+                <div className="space-y-2.5 max-h-56 overflow-y-auto">
                   {violations.slice(0, 20).map(v => (
-                    <div key={v.id} className="flex items-center justify-between rounded-lg border border-red-500/20 bg-red-950/20 px-3 py-2 font-nautical-mono text-xs sm:text-sm">
+                    <div key={v.id} className="flex items-center justify-between rounded-xl border border-red-500/20 bg-red-950/20 px-4 py-2.5 font-nautical-mono text-xs sm:text-sm">
                       <div>
                         <span className="font-bold text-red-300">{v.participantName}</span>
-                        <span className="text-[#ebe4d5]/70 ml-2">{v.type}</span>
+                        <span className="text-[#ebe4d5]/80 ml-2">{v.type}</span>
                         {v.details && <span className="text-[#a68a56] ml-2">— {v.details}</span>}
                       </div>
-                      <div className="text-[#a68a56] text-xs">{new Date(v.timestamp).toLocaleTimeString()} · Strike {v.strikeCount}</div>
+                      <div className="text-[#a68a56] text-xs sm:text-sm">{new Date(v.timestamp).toLocaleTimeString()} · Strike {v.strikeCount}</div>
                     </div>
                   ))}
                 </div>
@@ -1576,88 +1581,90 @@ export default function AdminPage() {
             TAB 5: SUBMISSIONS
         ═══════════════════════════════════════════════════════════════════ */}
         {activeTab === 'submissions' && (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="font-nautical-mono text-sm text-[#ebe4d5]">{submissions.length} submissions received · <span className="text-[#d4af37] font-semibold">{submissions.filter(s => s.isAutoSubmit).length} auto-submitted</span></div>
-              <button onClick={exportAuditJSON} className="flex items-center gap-1.5 rounded-xl border border-[#a68a56]/30 bg-[#1c160e]/50 px-4 py-2 font-cinzel text-xs font-semibold text-[#ebe4d5] hover:border-[#d4af37] bouncy-btn">
+          <div className="space-y-5">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="font-nautical-mono text-base sm:text-lg text-[#ebe4d5]">
+                <strong className="text-[#f3d38c] font-black">{submissions.length}</strong> submissions received · <span className="text-[#d4af37] font-semibold">{submissions.filter(s => s.isAutoSubmit).length} auto-submitted</span>
+              </div>
+              <button onClick={exportAuditJSON} className="flex items-center gap-2 rounded-xl border border-[#a68a56]/40 bg-[#1c160e]/80 px-5 py-2.5 font-cinzel text-xs sm:text-sm font-bold text-[#ebe4d5] hover:border-[#d4af37] hover:text-[#f3d38c] shadow-lg transition-all bouncy-btn">
                 <Download className="h-4 w-4 text-[#d4af37]" /> Export Submissions JSON
               </button>
             </div>
-            <div className="overflow-hidden rounded-2xl border border-[#a68a56]/25 bg-[#090704] shadow-xl">
+            <div className="overflow-hidden rounded-2xl border border-[#a68a56]/30 bg-[#090704] shadow-2xl">
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="border-b border-[#a68a56]/20 bg-[#140f0a] font-cinzel text-xs text-[#d4af37] uppercase tracking-wider">
-                    <th className="py-3.5 px-4">Participant</th>
-                    <th className="py-3.5 px-4 hidden sm:table-cell">Problem</th>
-                    <th className="py-3.5 px-4">Language</th>
-                    <th className="py-3.5 px-4">Score</th>
-                    <th className="py-3.5 px-4 hidden md:table-cell">Test Cases</th>
-                    <th className="py-3.5 px-4 hidden lg:table-cell">First Submitted</th>
-                    <th className="py-3.5 px-4 hidden xl:table-cell">Last Submitted</th>
-                    <th className="py-3.5 px-4 text-right">Actions</th>
+                  <tr className="border-b border-[#a68a56]/25 bg-[#140f0a] font-cinzel text-xs sm:text-sm text-[#d4af37] uppercase tracking-wider">
+                    <th className="py-4 px-6">Participant</th>
+                    <th className="py-4 px-6 hidden sm:table-cell">Problem</th>
+                    <th className="py-4 px-6">Language</th>
+                    <th className="py-4 px-6">Score</th>
+                    <th className="py-4 px-6 hidden md:table-cell">Test Cases</th>
+                    <th className="py-4 px-6 hidden lg:table-cell">First Submitted</th>
+                    <th className="py-4 px-6 hidden xl:table-cell">Last Submitted</th>
+                    <th className="py-4 px-6 text-right">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[#a68a56]/15 font-nautical-mono text-xs sm:text-sm">
+                <tbody className="divide-y divide-[#a68a56]/20 font-nautical-mono text-sm sm:text-base">
                   {submissions.length === 0 ? (
-                    <tr><td colSpan={8} className="py-10 text-center text-[#a68a56] font-cinzel text-sm">No submissions received yet.</td></tr>
+                    <tr><td colSpan={8} className="py-12 text-center text-[#a68a56] font-cinzel text-base">No submissions received yet.</td></tr>
                   ) : submissions.map(s => (
-                    <tr key={s.id} className="hover:bg-[#1c160e]/30">
-                      <td className="py-3.5 px-4">
-                        <div className="font-bold text-[#ebe4d5] font-cinzel text-sm sm:text-base">{s.participantName}</div>
-                        <div className="text-xs text-[#a68a56]">{s.participantRoll}</div>
+                    <tr key={s.id} className="hover:bg-[#1c160e]/40 transition-colors">
+                      <td className="py-4 px-6">
+                        <div className="font-bold text-[#ebe4d5] font-cinzel text-base sm:text-lg">{s.participantName}</div>
+                        <div className="text-xs sm:text-sm text-[#a68a56] mt-0.5">{s.participantRoll}</div>
                       </td>
-                      <td className="py-3.5 px-4 hidden sm:table-cell">
-                        <div className="text-[#ebe4d5] font-medium">{s.questionTitle}</div>
-                        {s.isAutoSubmit && <span className="rounded bg-[#1c160e] border border-[#d4af37]/40 px-1.5 py-0.5 text-[10px] text-[#f3d38c] font-cinzel">AUTO</span>}
+                      <td className="py-4 px-6 hidden sm:table-cell">
+                        <div className="text-[#ebe4d5] font-cinzel font-bold text-sm sm:text-base">{s.questionTitle}</div>
+                        {s.isAutoSubmit && <span className="rounded bg-[#1c160e] border border-[#d4af37]/40 px-2 py-0.5 text-xs text-[#f3d38c] font-cinzel font-bold mt-1 inline-block">AUTO</span>}
                       </td>
-                      <td className="py-3.5 px-4 uppercase text-[#a68a56] font-semibold">{s.language}</td>
-                      <td className="py-3.5 px-4">
+                      <td className="py-4 px-6 uppercase text-[#f3d38c] font-bold text-xs sm:text-sm">{s.language}</td>
+                      <td className="py-4 px-6">
                         {s.evaluationStatus === 'evaluating' ? (
-                          <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/10 border border-amber-500/30 px-2.5 py-1 text-xs font-semibold text-amber-300 animate-pulse">
-                            <span className="h-1.5 w-1.5 rounded-full bg-amber-400 animate-ping inline-block" />
+                          <span className="inline-flex items-center gap-2 rounded-full bg-amber-500/10 border border-amber-500/40 px-3 py-1.5 text-xs sm:text-sm font-semibold text-amber-300 animate-pulse">
+                            <span className="h-2 w-2 rounded-full bg-amber-400 animate-ping inline-block" />
                             Evaluating...
                           </span>
                         ) : (
-                          <div className="flex items-center gap-1.5 flex-wrap">
-                            <span className={`font-bold text-base ${s.score > 0 ? 'text-[#d4af37]' : 'text-[#a68a56]'}`}>{s.score}</span>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className={`font-black text-lg sm:text-xl ${s.score > 0 ? 'text-[#d4af37]' : 'text-[#a68a56]'}`}>{s.score}</span>
                             {(s as any).speedBonus > 0 && (
-                              <span className="text-[#f3d38c] text-[11px] font-semibold bg-[#f3d38c]/10 border border-[#f3d38c]/30 rounded px-1.5 py-0.5" title={`Base: ${Math.max(0, s.score - (s as any).speedBonus)} + Speed: ${(s as any).speedBonus}`}>
+                              <span className="text-[#f3d38c] text-xs sm:text-sm font-bold bg-[#f3d38c]/15 border border-[#f3d38c]/40 rounded-md px-2 py-0.5" title={`Base: ${Math.max(0, s.score - (s as any).speedBonus)} + Speed: ${(s as any).speedBonus}`}>
                                 (+{(s as any).speedBonus} spd)
                               </span>
                             )}
                           </div>
                         )}
                       </td>
-                      <td className="py-3.5 px-4 hidden md:table-cell text-[#ebe4d5]/80 font-medium">
+                      <td className="py-4 px-6 hidden md:table-cell text-[#ebe4d5] font-bold text-sm sm:text-base">
                         {s.evaluationStatus === 'evaluating' ? (
-                          <span className="text-amber-300/80 text-xs animate-pulse font-nautical-mono">In Queue</span>
+                          <span className="text-amber-300/80 text-xs sm:text-sm animate-pulse font-nautical-mono">In Queue</span>
                         ) : (
                           `${s.testCasesPassed}/${s.totalTestCases}`
                         )}
                       </td>
 
                       {/* First Submitted */}
-                      <td className="py-3.5 px-4 hidden lg:table-cell">
+                      <td className="py-4 px-6 hidden lg:table-cell">
                         {(() => {
                           const firstTs = (s as any).firstSubmittedAt ?? s.submittedAt;
                           const firstDur = (s as any).firstExecTimeMs || s.execTimeMs;
                           if (!firstTs) return <span className="text-[#6b5535]">—</span>;
                           return (
                             <div>
-                              <div className="text-[#f3d38c] font-bold flex items-center gap-1.5 flex-wrap">
-                                <span>{new Date(firstTs).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</span>
-                                <span className="rounded bg-[#d4af37]/20 border border-[#d4af37]/40 px-1.5 py-0.5 text-[10px] font-bold text-[#f3d38c]">
+                              <div className="text-[#f3d38c] font-bold flex items-center gap-2 flex-wrap">
+                                <span className="text-sm sm:text-base">{new Date(firstTs).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</span>
+                                <span className="rounded-md bg-[#d4af37]/20 border border-[#d4af37]/50 px-2 py-0.5 text-xs font-black text-[#f3d38c]">
                                   {fmtDuration(firstDur)}
                                 </span>
                               </div>
-                              <div className="text-xs text-[#a68a56]">{new Date(firstTs).toLocaleDateString()}</div>
+                              <div className="text-xs sm:text-sm text-[#a68a56] mt-0.5">{new Date(firstTs).toLocaleDateString()}</div>
                             </div>
                           );
                         })()}
                       </td>
 
                       {/* Last Submitted */}
-                      <td className="py-3.5 px-4 hidden xl:table-cell">
+                      <td className="py-4 px-6 hidden xl:table-cell">
                         {(() => {
                           const firstTs = (s as any).firstSubmittedAt ?? s.submittedAt;
                           const lastTs = s.submittedAt ?? (s as any).firstSubmittedAt;
@@ -1668,13 +1675,13 @@ export default function AdminPage() {
                           if (!lastTs) return <span className="text-[#6b5535]">—</span>;
                           return (
                             <div>
-                              <div className={`font-bold flex items-center gap-1.5 flex-wrap ${isUpdated ? 'text-amber-300' : 'text-[#f3d38c]'}`}>
-                                <span>{new Date(lastTs).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</span>
-                                <span className={`rounded px-1.5 py-0.5 text-[10px] font-bold border ${isUpdated ? 'bg-amber-500/20 text-amber-300 border-amber-500/50' : 'bg-[#d4af37]/20 text-[#f3d38c] border-[#d4af37]/40'}`}>
+                              <div className={`font-bold flex items-center gap-2 flex-wrap ${isUpdated ? 'text-amber-300' : 'text-[#f3d38c]'}`}>
+                                <span className="text-sm sm:text-base">{new Date(lastTs).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</span>
+                                <span className={`rounded-md px-2 py-0.5 text-xs font-black border ${isUpdated ? 'bg-amber-500/20 text-amber-300 border-amber-500/50' : 'bg-[#d4af37]/20 text-[#f3d38c] border-[#d4af37]/50'}`}>
                                   {fmtDuration(lastDur)}
                                 </span>
                               </div>
-                              <div className="text-xs text-[#8c7456] flex items-center gap-1">
+                              <div className="text-xs sm:text-sm text-[#8c7456] flex items-center gap-1.5 mt-0.5">
                                 <span>{new Date(lastTs).toLocaleDateString()}</span>
                                 {isUpdated && <span className="text-amber-400 font-bold">(Updated)</span>}
                               </div>
@@ -1682,13 +1689,13 @@ export default function AdminPage() {
                           );
                         })()}
                       </td>
-                      <td className="py-3.5 px-4 text-right">
-                        <div className="flex items-center justify-end gap-1.5">
-                          <button onClick={() => setInspectedSubmission(s)} className="flex items-center gap-1 rounded-lg border border-[#a68a56]/30 bg-[#1c160e]/50 px-2.5 py-1 text-xs text-[#ebe4d5] hover:border-[#d4af37] bouncy-btn">
-                            <Eye className="h-3.5 w-3.5 text-[#d4af37]" /> Inspect
+                      <td className="py-4 px-6 text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <button onClick={() => setInspectedSubmission(s)} className="flex items-center gap-1.5 rounded-xl border border-[#a68a56]/40 bg-[#1c160e]/80 px-3.5 py-1.5 text-xs sm:text-sm font-cinzel font-bold text-[#ebe4d5] hover:border-[#d4af37] hover:text-[#f3d38c] shadow transition-all bouncy-btn">
+                            <Eye className="h-4 w-4 text-[#d4af37]" /> View Code
                           </button>
-                          <button onClick={() => handleRejudge(s.id)} disabled={rejudging === s.id} className="flex items-center gap-1 rounded-lg border border-[#d4af37]/40 bg-[#1c160e] px-2.5 py-1 text-xs text-[#f3d38c] hover:border-[#d4af37] disabled:opacity-50 bouncy-btn">
-                            {rejudging === s.id ? <Loader2 className="h-3.5 w-3.5 animate-spin text-[#d4af37]" /> : <RefreshCw className="h-3.5 w-3.5 text-[#d4af37]" />}
+                          <button onClick={() => handleRejudge(s.id)} disabled={rejudging === s.id} className="flex items-center gap-1.5 rounded-xl border border-[#d4af37]/50 bg-[#1c160e] px-3.5 py-1.5 text-xs sm:text-sm font-cinzel font-bold text-[#f3d38c] hover:border-[#d4af37] disabled:opacity-50 shadow transition-all bouncy-btn">
+                            {rejudging === s.id ? <Loader2 className="h-4 w-4 animate-spin text-[#d4af37]" /> : <RefreshCw className="h-4 w-4 text-[#d4af37]" />}
                             Re-evaluate
                           </button>
                         </div>
@@ -2159,19 +2166,24 @@ export default function AdminPage() {
 
       {/* Code Inspector Modal */}
       {inspectedSubmission && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4 backdrop-blur-md">
-          <div className="w-full max-w-4xl max-h-[90vh] flex flex-col rounded-2xl border border-[#d4af37]/40 bg-[#0c0906] shadow-2xl overflow-hidden">
-            <div className="flex items-center justify-between border-b border-[#a68a56]/20 px-6 py-4">
-              <div>
-                <div className="font-cinzel text-base font-bold text-[#ebe4d5]">{inspectedSubmission.participantName} — {inspectedSubmission.questionTitle}</div>
-                <div className="font-nautical-mono text-xs sm:text-sm text-[#a68a56] mt-0.5 flex flex-wrap gap-3">
-                  <span>{inspectedSubmission.language.toUpperCase()} · Total Score: <strong className="text-[#d4af37]">{inspectedSubmission.score}</strong>
-                    {(inspectedSubmission as any).speedBonus > 0 && <span className="text-[#f3d38c] ml-1">(includes +{(inspectedSubmission as any).speedBonus} speed bonus)</span>}
-                  </span>
-                  <span>{inspectedSubmission.testCasesPassed}/{inspectedSubmission.totalTestCases} test cases passed</span>
-                  {inspectedSubmission.isAutoSubmit && <span className="rounded bg-[#1c160e] border border-[#d4af37]/40 px-1.5 py-0.5 text-[10px] text-[#f3d38c] font-cinzel font-semibold">AUTO-SUBMITTED</span>}
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4 sm:p-6 backdrop-blur-md">
+          <div className="w-full max-w-6xl max-h-[94vh] flex flex-col rounded-2xl border-2 border-[#d4af37]/50 bg-[#0c0906] shadow-[0_0_80px_rgba(0,0,0,0.95)] overflow-hidden">
+            <div className="flex items-center justify-between border-b border-[#a68a56]/25 bg-[#140f0a] px-6 sm:px-8 py-5">
+              <div className="space-y-1.5">
+                <div className="font-cinzel text-lg sm:text-2xl font-black text-[#ebe4d5] tracking-wide">
+                  {inspectedSubmission.participantName} — {inspectedSubmission.questionTitle}
                 </div>
-                <div className="mt-1 font-nautical-mono text-xs text-[#a68a56] flex gap-4 flex-wrap">
+                <div className="font-nautical-mono text-sm sm:text-base text-[#a68a56] flex flex-wrap gap-4 items-center">
+                  <span className="rounded bg-[#d4af37]/20 border border-[#d4af37]/40 px-2.5 py-0.5 font-bold text-[#f3d38c]">
+                    {inspectedSubmission.language.toUpperCase()}
+                  </span>
+                  <span>Total Score: <strong className="text-xl text-[#d4af37] font-black">{inspectedSubmission.score}</strong>
+                    {(inspectedSubmission as any).speedBonus > 0 && <span className="text-[#f3d38c] font-bold ml-1.5">(includes +{(inspectedSubmission as any).speedBonus} speed bonus)</span>}
+                  </span>
+                  <span className="font-semibold text-[#ebe4d5]">{inspectedSubmission.testCasesPassed}/{inspectedSubmission.totalTestCases} test cases passed</span>
+                  {inspectedSubmission.isAutoSubmit && <span className="rounded bg-amber-500/20 border border-amber-500/50 px-2 py-0.5 text-xs text-amber-300 font-cinzel font-bold">AUTO-SUBMITTED</span>}
+                </div>
+                <div className="font-nautical-mono text-xs sm:text-sm text-[#a68a56] flex gap-5 flex-wrap pt-0.5">
                   {(() => {
                     const firstTs = (inspectedSubmission as any).firstSubmittedAt ?? inspectedSubmission.submittedAt;
                     const lastTs = inspectedSubmission.submittedAt ?? (inspectedSubmission as any).firstSubmittedAt;
@@ -2181,15 +2193,15 @@ export default function AdminPage() {
 
                     return (
                       <>
-                        <span>
-                          🕐 First submitted:{' '}
-                          <strong className="text-[#f3d38c]">
+                        <span className="flex items-center gap-1.5">
+                          <span>🕐 First submitted:</span>
+                          <strong className="text-[#f3d38c] font-bold">
                             {new Date(firstTs).toLocaleString()} ({fmtDuration(firstDur)})
                           </strong>
                         </span>
-                        <span>
-                          🔄 Last submitted:{' '}
-                          <strong className={isUpdated ? 'text-amber-300' : 'text-[#f3d38c]'}>
+                        <span className="flex items-center gap-1.5">
+                          <span>🔄 Last submitted:</span>
+                          <strong className={isUpdated ? 'text-amber-300 font-bold' : 'text-[#f3d38c] font-bold'}>
                             {new Date(lastTs).toLocaleString()} ({fmtDuration(lastDur)}){isUpdated ? ' (Updated)' : ''}
                           </strong>
                         </span>
@@ -2198,11 +2210,13 @@ export default function AdminPage() {
                   })()}
                 </div>
               </div>
-              <button onClick={() => setInspectedSubmission(null)} className="text-[#a68a56] hover:text-[#ebe4d5]"><X className="h-5 w-5" /></button>
+              <button onClick={() => setInspectedSubmission(null)} className="p-2 rounded-xl text-[#a68a56] hover:text-[#ebe4d5] hover:bg-white/10 transition-colors">
+                <X className="h-6 w-6" />
+              </button>
             </div>
-            <div className="flex-1 overflow-hidden">
-              <Editor height="60vh" language={inspectedSubmission.language === 'c' ? 'c' : inspectedSubmission.language}
-                value={inspectedSubmission.code} options={{ readOnly: true, minimap: { enabled: false }, fontSize: 14, wordWrap: 'on' }} theme="vs-dark" />
+            <div className="flex-1 overflow-hidden p-2 bg-[#050504]">
+              <Editor height="68vh" language={inspectedSubmission.language === 'c' ? 'c' : inspectedSubmission.language}
+                value={inspectedSubmission.code} options={{ readOnly: true, minimap: { enabled: false }, fontSize: 16, lineHeight: 24, wordWrap: 'on' }} theme="vs-dark" />
             </div>
           </div>
         </div>

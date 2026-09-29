@@ -55,7 +55,7 @@ export default function AntiCheatShield({
       {/* 2. Real-time Prohibited Shortcut Intercept HUD Banner */}
       {hudWarning && (
         <div className="fixed top-5 left-1/2 -translate-x-1/2 z-[100] pointer-events-none animate-in fade-in slide-in-from-top-4 duration-200">
-          <div className="flex items-center gap-2.5 rounded-full border border-amber-500/60 bg-[#1c160e]/95 px-5 py-2.5 font-nautical-mono text-xs font-semibold text-amber-200 shadow-2xl shadow-black backdrop-blur-xl">
+          <div className="flex items-center gap-2.5 rounded-full border border-amber-500/60 bg-[#1c160e]/95 px-6 py-3 font-nautical-mono text-sm font-semibold text-amber-200 shadow-2xl shadow-black backdrop-blur-xl">
             <AlertTriangle className="h-4 w-4 text-[#d4af37] shrink-0 animate-pulse" />
             <span>{hudWarning}</span>
           </div>
@@ -63,7 +63,7 @@ export default function AntiCheatShield({
       )}
 
       {/* 3. Strike 3 Terminal Lockout Screen */}
-      {isLockedOut && (
+      {isLockedOut && !disableStrikes && (
         <div className="fixed inset-0 z-[999] flex items-center justify-center bg-[#050504]/98 p-6 backdrop-blur-3xl select-none">
           <div className="max-w-lg w-full rounded-2xl border border-red-500/60 bg-[#1c160e]/95 p-8 text-center shadow-2xl shadow-red-500/20">
             <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl border border-red-500/40 bg-red-950/40 text-red-400">
@@ -83,8 +83,8 @@ export default function AntiCheatShield({
         </div>
       )}
 
-      {/* 4. Complete Viewport Lockdown Curtain When NOT In Fullscreen */}
-      {!isFullscreen && !isLockedOut && (
+      {/* 4. Complete Viewport Lockdown Curtain When NOT In Fullscreen (Bypassed in Testing Mode) */}
+      {!isFullscreen && !isLockedOut && !disableStrikes && (
         <div className="fixed inset-0 z-[999] flex items-center justify-center bg-[#050504]/98 p-6 backdrop-blur-3xl select-none">
           {strikes > 0 ? (
             /* Warning Screen for Exiting Fullscreen */

@@ -75,13 +75,18 @@ export function useAntiCheat({
     }
   }, [disableStrikes, initialStrikes, initialLockedOut, strikes]);
 
+  // Dedicated self-clearing effect for HUD warning banner (5-7 seconds: 6000ms)
+  useEffect(() => {
+    if (!hudWarning) return;
+    const timer = setTimeout(() => {
+      setHudWarning(null);
+    }, 6000);
+    return () => clearTimeout(timer);
+  }, [hudWarning]);
+
   // Display ephemeral HUD warning banner on blocked keystroke
   const showHudWarning = useCallback((message: string) => {
     setHudWarning(message);
-    if (hudTimerRef.current) clearTimeout(hudTimerRef.current);
-    hudTimerRef.current = setTimeout(() => {
-      setHudWarning(null);
-    }, 2800);
   }, []);
 
   // Synthesize alarm sound using Web Audio API
@@ -127,7 +132,6 @@ export function useAntiCheat({
 
       // ── Testing Mode: Anti-cheat strikes completely bypassed ────────
       if (disableStrikes) {
-        showHudWarning(`🛡️ Anti-Cheat (Testing Mode): ${details} [Strikes Disabled: ∞]`);
         if (onViolation) onViolation(type, details);
         return;
       }
@@ -197,8 +201,8 @@ export function useAntiCheat({
         await document.documentElement.requestFullscreen();
       }
 
-      // Engage modern Keyboard Lock API (supported in Chromium browsers)
-      if ('keyboard' in navigator && (navigator as any).keyboard?.lock) {
+      // Engage modern Keyboard Lock API (supported in Chromium browsers) - Bypassed in testing mode
+      if (!disableStrikesRef.current && 'keyboard' in navigator && (navigator as any).keyboard?.lock) {
         try {
           await (navigator as any).keyboard.lock([
             'Escape',
@@ -234,22 +238,25 @@ export function useAntiCheat({
     // Check initial fullscreen status
     setIsFullscreen(!!document.fullscreenElement);
 
-    // 1. Fullscreen Change Handler
+    // 1. Fullscreen Change Handler (Bypassed in testing mode)
     const onFullscreenChange = () => {
       const active = !!document.fullscreenElement;
       setIsFullscreen(active);
       if (!active) {
-        setWarningModalOpen(true);
-        setWarningMessage('Fullscreen presentation mode was exited. Arena is frozen. Re-enter fullscreen to continue.');
-        setCountdown(10);
-        logViolation('fullscreen_exit', 'Participant exited fullscreen mode');
+        if (!disableStrikesRef.current) {
+          setWarningModalOpen(true);
+          setWarningMessage('Fullscreen presentation mode was exited. Arena is frozen. Re-enter fullscreen to continue.');
+          setCountdown(10);
+          logViolation('fullscreen_exit', 'Participant exited fullscreen mode');
+        }
       } else {
         setWarningModalOpen(false);
       }
     };
 
-    // 2. Visibility & Tab Blur Handler
+    // 2. Visibility & Tab Blur Handler (Bypassed in testing mode to allow Alt+Tab)
     const onVisibilityChange = () => {
+      if (disableStrikesRef.current) return;
       if (document.hidden) {
         setWarningModalOpen(true);
         setWarningMessage('Tab switch or minimization detected. Switching windows is strictly forbidden.');
@@ -259,6 +266,7 @@ export function useAntiCheat({
     };
 
     const onBlur = () => {
+      if (disableStrikesRef.current) return;
       setWarningModalOpen(true);
       setWarningMessage('Window lost focus. External applications or secondary monitors are prohibited.');
       setCountdown(10);
@@ -267,6 +275,7 @@ export function useAntiCheat({
 
     // 3. Mouse Leave Screen Boundary
     const onMouseLeave = (e: MouseEvent) => {
+      if (disableStrikesRef.current) return;
       if (e.clientY <= 0 || e.clientX <= 0 || e.clientX >= window.innerWidth || e.clientY >= window.innerHeight) {
         logViolation('window_leave', 'Cursor left active screen boundary');
       }
@@ -274,6 +283,11 @@ export function useAntiCheat({
 
     // 4. Pre-emptive Keystroke Lockdown in Capture Phase
     const onKeyDown = (e: KeyboardEvent) => {
+      // In Testing Mode (disableStrikes), allow full freedom: F11 fullscreen toggle, Alt+Tab, Escape, shortcuts, etc.
+      if (disableStrikesRef.current) {
+        return;
+      }
+
       // 0. ABSOLUTE TYPING FREEZE: If NOT in fullscreen, block all keystrokes completely!
       if (!document.fullscreenElement) {
         e.preventDefault();
@@ -355,6 +369,7 @@ export function useAntiCheat({
     };
 
     const onKeyUp = (e: KeyboardEvent) => {
+      if (disableStrikesRef.current) return;
       if (!document.fullscreenElement || e.key === 'F11' || e.key === 'Escape' || (e.key.startsWith('F') && /^F([1-9]|1[0-2])$/.test(e.key))) {
         e.preventDefault();
         e.stopPropagation();

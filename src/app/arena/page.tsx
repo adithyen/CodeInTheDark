@@ -1117,30 +1117,30 @@ export default function ArenaPage() {
           </div>
 
           {contest?.disableStrikes ? (
-            <div className="flex items-center gap-1.5 rounded-lg border border-emerald-500/40 bg-emerald-950/40 px-2.5 py-1 font-nautical-mono text-xs text-emerald-300 shadow-[0_0_10px_rgba(16,185,129,0.2)]" title="Anti-Cheat Disabled: Copy-paste allowed & unlimited strikes (Testing Mode)">
-              <ShieldCheck className="h-3.5 w-3.5 text-emerald-400" />
+            <div className="flex items-center gap-2 rounded-xl border border-emerald-500/40 bg-emerald-950/50 px-3 py-1.5 font-nautical-mono text-xs sm:text-sm text-emerald-300 shadow-[0_0_12px_rgba(16,185,129,0.25)]" title="Anti-Cheat Disabled: Copy-paste allowed, F11/Alt+Tab allowed & unlimited strikes (Testing Mode)">
+              <ShieldCheck className="h-4 w-4 text-emerald-400" />
               <span>Anti-Cheat: <strong className="text-emerald-200">Disabled (Testing)</strong></span>
             </div>
           ) : (
-            <div className="flex items-center gap-1.5 rounded-lg border border-[#a68a56]/30 bg-[#1c160e]/70 px-2.5 py-1 font-nautical-mono text-xs text-[#a68a56]">
-              <ShieldAlert className="h-3.5 w-3.5 text-[#d4af37]" />
+            <div className="flex items-center gap-2 rounded-xl border border-[#a68a56]/30 bg-[#1c160e]/80 px-3 py-1.5 font-nautical-mono text-xs sm:text-sm text-[#a68a56]">
+              <ShieldAlert className="h-4 w-4 text-[#d4af37]" />
               <span>Strikes: <strong className={strikes > 0 ? 'text-red-400' : 'text-[#f3d38c]'}>{strikes}/3</strong></span>
             </div>
           )}
 
           {/* Cloud Sync Status Indicator */}
-          <div className="hidden lg:flex items-center gap-1.5 font-nautical-mono text-xs">
+          <div className="hidden lg:flex items-center gap-1.5 font-nautical-mono text-xs sm:text-sm">
             {cloudSyncStatus === 'saving' ? (
-              <span className="flex items-center gap-1 text-[#f3d38c] text-[11px]">
-                <RefreshCw className="h-3 w-3 animate-spin text-[#d4af37]" /> Saving...
+              <span className="flex items-center gap-1.5 text-[#f3d38c]">
+                <RefreshCw className="h-3.5 w-3.5 animate-spin text-[#d4af37]" /> Saving...
               </span>
             ) : cloudSyncStatus === 'offline' ? (
-              <span className="flex items-center gap-1 text-amber-400 text-[11px]">
-                <WifiOff className="h-3 w-3" /> Offline
+              <span className="flex items-center gap-1.5 text-amber-400">
+                <WifiOff className="h-3.5 w-3.5" /> Offline
               </span>
             ) : (
-              <span className="flex items-center gap-1 text-emerald-400/90 text-[11px]">
-                <Cloud className="h-3 w-3 text-emerald-400" /> Synced
+              <span className="flex items-center gap-1.5 text-emerald-400/90 font-medium">
+                <Cloud className="h-3.5 w-3.5 text-emerald-400" /> Synced
               </span>
             )}
           </div>
@@ -1148,31 +1148,31 @@ export default function ArenaPage() {
 
         {/* Center: Centered Participant Identity Badge */}
         <div className="flex-1 flex justify-center items-center px-2 min-w-0">
-          <div className="flex items-center gap-2 rounded-full border border-[#a68a56]/40 bg-[#140f09]/95 px-4 py-1 shadow-inner font-nautical-mono text-xs text-[#f3d38c] max-w-lg truncate">
-            <span className="h-2 w-2 rounded-full bg-[#d4af37] animate-pulse shrink-0" />
-            <span className="font-semibold text-[#ebe4d5] truncate">{participant.name}</span>
+          <div className="flex items-center gap-2.5 rounded-full border border-[#a68a56]/40 bg-[#140f09]/95 px-5 py-1.5 shadow-inner font-nautical-mono text-xs sm:text-sm text-[#f3d38c] max-w-xl truncate">
+            <span className="h-2.5 w-2.5 rounded-full bg-[#d4af37] animate-pulse shrink-0" />
+            <span className="font-bold text-[#ebe4d5] truncate">{participant.name}</span>
             {participant.college && (
               <>
                 <span className="text-[#a68a56]/60">·</span>
-                <span className="text-[#d4af37] truncate max-w-[160px]">{participant.college}</span>
+                <span className="text-[#d4af37] truncate max-w-[200px]">{participant.college}</span>
               </>
             )}
             <span className="text-[#a68a56]/60">·</span>
-            <span className="rounded bg-[#d4af37]/15 border border-[#d4af37]/30 px-1.5 py-0.5 text-[10px] font-bold tracking-wide text-[#f3d38c] shrink-0">
+            <span className="rounded-md bg-[#d4af37]/20 border border-[#d4af37]/40 px-2 py-0.5 text-xs font-bold tracking-wide text-[#f3d38c] shrink-0">
               {participant.terminalId}
             </span>
           </div>
         </div>
 
         {/* Right: Controls & Global Submit Button */}
-        <div className="flex items-center gap-2.5 shrink-0">
-          <div className="hidden sm:flex items-center border border-[#a68a56]/20 rounded-lg bg-[#050504]/60 p-0.5">
-            <button onClick={() => setEditorFontSize(p => Math.max(12, p - 1))} className="p-1 text-[#a68a56] hover:text-[#f3d38c]">
-              <ZoomOut className="h-3.5 w-3.5" />
+        <div className="flex items-center gap-3 shrink-0">
+          <div className="hidden sm:flex items-center border border-[#a68a56]/30 rounded-xl bg-[#050504]/70 p-1">
+            <button onClick={() => setEditorFontSize(p => Math.max(12, p - 1))} className="p-1 text-[#a68a56] hover:text-[#f3d38c]" title="Decrease font size">
+              <ZoomOut className="h-4 w-4" />
             </button>
-            <span className="px-1.5 text-[11px] text-[#ebe4d5] font-nautical-mono">{editorFontSize}px</span>
-            <button onClick={() => setEditorFontSize(p => Math.min(20, p + 1))} className="p-1 text-[#a68a56] hover:text-[#f3d38c]">
-              <ZoomIn className="h-3.5 w-3.5" />
+            <span className="px-2 text-xs sm:text-sm text-[#ebe4d5] font-nautical-mono font-semibold">{editorFontSize}px</span>
+            <button onClick={() => setEditorFontSize(p => Math.min(22, p + 1))} className="p-1 text-[#a68a56] hover:text-[#f3d38c]" title="Increase font size">
+              <ZoomIn className="h-4 w-4" />
             </button>
           </div>
 
@@ -1182,9 +1182,9 @@ export default function ArenaPage() {
           <button
             onClick={() => setShowPreviewModal(true)}
             disabled={submitting || isLockedOut || isContestOver || isSubmitted}
-            className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-[#d4af37] via-[#f3d38c] to-[#a68a56] px-4 py-1.5 font-cinzel text-xs font-bold tracking-wider text-[#050504] shadow-[0_0_20px_rgba(212,175,55,0.25)] transition-all hover:brightness-110 active:scale-95 disabled:opacity-50 bouncy-btn"
+            className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#d4af37] via-[#f3d38c] to-[#a68a56] px-5 py-2 font-cinzel text-xs sm:text-sm font-black tracking-wider text-[#050504] shadow-[0_0_25px_rgba(212,175,55,0.3)] transition-all hover:brightness-110 active:scale-95 disabled:opacity-50 bouncy-btn"
           >
-            {submitting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
+            {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
             <span>SUBMIT CONTEST</span>
           </button>
         </div>
@@ -1195,25 +1195,25 @@ export default function ArenaPage() {
 
         {/* Left: Problem Statement & Question Palette (+50px wider) */}
         {!isDrawerCollapsed && (
-          <div className="w-full lg:w-[495px] xl:w-[540px] shrink-0 flex flex-col min-h-0 border-b lg:border-b-0 lg:border-r border-[#a68a56]/20 bg-[#090806]/95 overflow-hidden">
+          <div className="w-full lg:w-[520px] xl:w-[570px] shrink-0 flex flex-col min-h-0 border-b lg:border-b-0 lg:border-r border-[#a68a56]/20 bg-[#090806]/95 overflow-hidden">
             {/* Header with Title and Collapse Drawer button */}
-            <div className="shrink-0 flex items-center justify-between px-4 py-2.5 border-b border-[#a68a56]/20 bg-[#0c0906]">
-              <div className="flex items-center gap-2">
-                <span className="font-cinzel text-xs sm:text-sm font-bold tracking-wider text-[#d4af37]">PROBLEMS</span>
-                <span className="font-nautical-mono text-xs text-[#8c7456]">({questions.length} Questions)</span>
+            <div className="shrink-0 flex items-center justify-between px-5 py-3 border-b border-[#a68a56]/20 bg-[#0c0906]">
+              <div className="flex items-center gap-2.5">
+                <span className="font-cinzel text-sm sm:text-base font-bold tracking-wider text-[#d4af37]">PROBLEMS</span>
+                <span className="font-nautical-mono text-xs sm:text-sm text-[#a68a56]">({questions.length} Questions)</span>
               </div>
               <button
                 onClick={() => setIsDrawerCollapsed(true)}
                 title="Collapse questions panel"
-                className="hidden lg:flex items-center gap-1 p-1 text-[#a68a56] hover:text-[#f3d38c] rounded hover:bg-[#1c160e]"
+                className="hidden lg:flex items-center gap-1 p-1.5 text-[#a68a56] hover:text-[#f3d38c] rounded-lg hover:bg-[#1c160e]"
               >
                 <PanelLeftClose className="h-4 w-4" />
               </button>
             </div>
 
-            {/* 4x2 Question Grid: displays all 8 questions at once with no scrollbars */}
-            <div className="shrink-0 p-2.5 bg-[#090806] border-b border-[#a68a56]/20">
-              <div className="grid grid-cols-4 gap-1.5">
+            {/* 4x2 Question Grid: displays all questions with generous comfort */}
+            <div className="shrink-0 p-3 bg-[#090806] border-b border-[#a68a56]/20">
+              <div className="grid grid-cols-4 gap-2">
                 {questions.map((q, idx) => {
                   const st = getQStatus(q.id, questions);
                   const cfg = statusConfig[st];
@@ -1225,7 +1225,7 @@ export default function ArenaPage() {
                     <button
                       key={q.id}
                       onClick={() => setActiveQuestionIndex(idx)}
-                      className={`relative flex flex-col justify-between rounded-lg p-2 font-nautical-mono transition-all bouncy-btn border select-none ${
+                      className={`relative flex flex-col justify-between rounded-xl p-2.5 font-nautical-mono transition-all bouncy-btn border select-none ${
                         isSel
                           ? 'border-[#d4af37] bg-[#1c160e] text-[#f3d38c] font-bold shadow-[0_0_14px_rgba(212,175,55,0.35)] ring-1 ring-[#d4af37]/60'
                           : `${cfg.borderClass} ${cfg.bgClass} text-[#a68a56] hover:bg-[#1c160e]/60 hover:text-[#ebe4d5]`
@@ -1233,24 +1233,24 @@ export default function ArenaPage() {
                     >
                       <div className="flex items-center justify-between w-full">
                         <div className="flex items-center gap-1.5 min-w-0">
-                          <span className={`h-2 w-2 rounded-full shrink-0 ${cfg.dotClass}`} />
-                          <span className={`text-xs font-bold ${isSel ? 'text-[#f3d38c]' : 'text-[#ebe4d5]'}`}>Q{idx + 1}</span>
+                          <span className={`h-2.5 w-2.5 rounded-full shrink-0 ${cfg.dotClass}`} />
+                          <span className={`text-sm font-bold ${isSel ? 'text-[#f3d38c]' : 'text-[#ebe4d5]'}`}>Q{idx + 1}</span>
                         </div>
-                        <span className="text-[10px] text-[#8c7456] font-medium shrink-0">{q.points}p</span>
+                        <span className="text-xs text-[#8c7456] font-semibold shrink-0">{q.points}p</span>
                       </div>
 
-                      <div className="flex items-center justify-between w-full mt-1.5 pt-1 border-t border-[#a68a56]/10 text-[9px]">
+                      <div className="flex items-center justify-between w-full mt-2 pt-1.5 border-t border-[#a68a56]/15 text-[11px] sm:text-xs">
                         {isQSealed && qDur ? (
-                          <span className="flex items-center gap-0.5 rounded bg-[#d4af37]/20 border border-[#d4af37]/40 px-1 py-0.2 font-bold text-[#f3d38c] truncate">
+                          <span className="flex items-center gap-1 rounded bg-[#d4af37]/20 border border-[#d4af37]/40 px-1.5 py-0.5 font-bold text-[#f3d38c] truncate">
                             🔒 {fmtDuration(qDur)}
                           </span>
                         ) : (
-                          <span className={`truncate capitalize ${cfg.textClass}`}>
+                          <span className={`truncate capitalize font-semibold ${cfg.textClass}`}>
                             {cfg.label}
                           </span>
                         )}
                         {markedSet.has(q.id) && (
-                          <Bookmark className="h-3 w-3 text-amber-400 fill-amber-400/40 shrink-0 ml-1" />
+                          <Bookmark className="h-3.5 w-3.5 text-amber-400 fill-amber-400/40 shrink-0 ml-1" />
                         )}
                       </div>
                     </button>
@@ -1259,10 +1259,10 @@ export default function ArenaPage() {
               </div>
 
               {/* Status Legend Bar */}
-              <div className="flex flex-wrap items-center justify-between gap-1.5 mt-2 pt-2 border-t border-[#a68a56]/15">
+              <div className="flex flex-wrap items-center justify-between gap-2 mt-2.5 pt-2.5 border-t border-[#a68a56]/15">
                 {Object.entries(statusConfig).map(([k, v]) => (
-                  <div key={k} className="flex items-center gap-1 font-nautical-mono text-[10px] text-[#8c7456]">
-                    <span className={`h-1.5 w-1.5 rounded-full shrink-0 ${v.dotClass}`} />
+                  <div key={k} className="flex items-center gap-1.5 font-nautical-mono text-xs text-[#a68a56]">
+                    <span className={`h-2 w-2 rounded-full shrink-0 ${v.dotClass}`} />
                     <span>{v.label}</span>
                   </div>
                 ))}
@@ -1270,64 +1270,64 @@ export default function ArenaPage() {
             </div>
 
             {/* Problem Details Scroll Area */}
-            <div className="flex-1 min-h-0 overflow-y-auto p-5 space-y-6">
+            <div className="flex-1 min-h-0 overflow-y-auto p-6 space-y-6">
               <div>
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="rounded border border-[#d4af37]/40 bg-[#1c160e] px-2.5 py-0.5 font-cinzel text-xs font-bold text-[#f3d38c]">
+                <div className="flex items-center gap-2.5 flex-wrap">
+                  <span className="rounded-lg border border-[#d4af37]/40 bg-[#1c160e] px-3 py-1 font-cinzel text-xs sm:text-sm font-bold text-[#f3d38c]">
                     {activeQuestion.difficulty}
                   </span>
                   <span className="font-nautical-mono text-xs sm:text-sm font-semibold text-[#f3d38c]">
                     {activeQuestion.category} · {activeQuestion.points} pts
                   </span>
-                  <span className={`ml-auto rounded px-2.5 py-0.5 font-cinzel text-xs font-semibold border ${statusConfig[activeStatus].borderClass} ${statusConfig[activeStatus].textClass}`}>
+                  <span className={`ml-auto rounded-lg px-3 py-1 font-cinzel text-xs sm:text-sm font-semibold border ${statusConfig[activeStatus].borderClass} ${statusConfig[activeStatus].textClass}`}>
                     {statusConfig[activeStatus].label}
                   </span>
                 </div>
-                <h2 className="mt-2.5 font-cinzel text-xl sm:text-2xl font-bold tracking-tight text-[#ebe4d5]">
+                <h2 className="mt-3 font-cinzel text-2xl sm:text-3xl font-black tracking-tight text-[#ebe4d5]">
                   {activeQuestion.title}
                 </h2>
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-2.5">
                 <h3 className="font-cinzel text-xs sm:text-sm font-bold uppercase tracking-wider text-[#d4af37]">Problem Description</h3>
-                <div className="rounded-xl border border-[#a68a56]/20 bg-[#050504]/70 p-4 font-sans text-sm sm:text-base leading-relaxed text-[#f0ece1] whitespace-pre-line">
+                <div className="rounded-2xl border border-[#a68a56]/25 bg-[#050504]/80 p-5 font-sans text-sm sm:text-base leading-relaxed text-[#f0ece1] whitespace-pre-line shadow-inner">
                   {activeQuestion.scenario}
                 </div>
               </div>
 
-              <div className="grid gap-3.5">
-                <div className="rounded-xl border border-[#a68a56]/25 bg-[#050504]/50 p-4">
-                  <h4 className="font-cinzel text-xs font-bold uppercase tracking-wider text-[#f3d38c]">Input Format</h4>
-                  <p className="mt-1.5 font-nautical-mono text-sm text-[#ebe4d5] whitespace-pre-line leading-relaxed">{activeQuestion.inputFormat}</p>
+              <div className="grid gap-4">
+                <div className="rounded-xl border border-[#a68a56]/25 bg-[#050504]/60 p-5">
+                  <h4 className="font-cinzel text-xs sm:text-sm font-bold uppercase tracking-wider text-[#f3d38c]">Input Format</h4>
+                  <p className="mt-2 font-nautical-mono text-sm sm:text-base text-[#ebe4d5] whitespace-pre-line leading-relaxed">{activeQuestion.inputFormat}</p>
                 </div>
-                <div className="rounded-xl border border-[#a68a56]/25 bg-[#050504]/50 p-4">
-                  <h4 className="font-cinzel text-xs font-bold uppercase tracking-wider text-[#f3d38c]">Output Format</h4>
-                  <p className="mt-1.5 font-nautical-mono text-sm text-[#ebe4d5] whitespace-pre-line leading-relaxed">{activeQuestion.outputFormat}</p>
+                <div className="rounded-xl border border-[#a68a56]/25 bg-[#050504]/60 p-5">
+                  <h4 className="font-cinzel text-xs sm:text-sm font-bold uppercase tracking-wider text-[#f3d38c]">Output Format</h4>
+                  <p className="mt-2 font-nautical-mono text-sm sm:text-base text-[#ebe4d5] whitespace-pre-line leading-relaxed">{activeQuestion.outputFormat}</p>
                 </div>
-                <div className="rounded-xl border border-[#a68a56]/25 bg-[#050504]/50 p-4">
-                  <h4 className="font-cinzel text-xs font-bold uppercase tracking-wider text-[#d4af37]">Constraints</h4>
-                  <p className="mt-1.5 font-nautical-mono text-sm text-[#f3d38c] font-medium whitespace-pre-line leading-relaxed">{activeQuestion.constraints}</p>
+                <div className="rounded-xl border border-[#a68a56]/25 bg-[#050504]/60 p-5">
+                  <h4 className="font-cinzel text-xs sm:text-sm font-bold uppercase tracking-wider text-[#d4af37]">Constraints</h4>
+                  <p className="mt-2 font-nautical-mono text-sm sm:text-base text-[#f3d38c] font-semibold whitespace-pre-line leading-relaxed">{activeQuestion.constraints}</p>
                 </div>
               </div>
 
               {/* Sample Test Cases */}
-              <div className="space-y-3.5">
+              <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <h3 className="font-cinzel text-xs sm:text-sm font-bold uppercase tracking-wider text-[#d4af37]">Sample Test Cases</h3>
                   <span className="font-nautical-mono text-xs text-[#a68a56]">Hidden test cases evaluated on submission</span>
                 </div>
                 {activeQuestion.testCases.filter(tc => !tc.isHidden).map((tc, idx) => (
-                  <div key={tc.id} className="rounded-xl border border-[#a68a56]/30 bg-[#0e0b07] p-4 font-nautical-mono text-sm space-y-2.5 select-none">
-                    <div className="text-xs font-cinzel font-bold text-[#f3d38c]">Sample Case {idx + 1}</div>
+                  <div key={tc.id} className="rounded-xl border border-[#a68a56]/30 bg-[#0e0b07] p-4 font-nautical-mono text-sm sm:text-base space-y-3 select-none">
+                    <div className="text-xs sm:text-sm font-cinzel font-bold text-[#f3d38c]">Sample Case {idx + 1}</div>
                     <div>
-                      <span className="text-[#a68a56] text-xs">Input:</span>
-                      <pre className="mt-1 rounded border border-[#a68a56]/20 bg-[#050504] p-2.5 text-sm text-[#f3d38c] overflow-x-auto leading-relaxed">{tc.input}</pre>
+                      <span className="text-[#a68a56] text-xs sm:text-sm">Input:</span>
+                      <pre className="mt-1.5 rounded-lg border border-[#a68a56]/20 bg-[#050504] p-3 text-sm sm:text-base text-[#f3d38c] overflow-x-auto leading-relaxed">{tc.input}</pre>
                     </div>
                     <div>
-                      <span className="text-[#a68a56] text-xs">Expected Output:</span>
-                      <pre className="mt-1 rounded border border-[#a68a56]/20 bg-[#050504] p-2.5 text-sm text-[#d4af37] overflow-x-auto leading-relaxed">{tc.expectedOutput}</pre>
+                      <span className="text-[#a68a56] text-xs sm:text-sm">Expected Output:</span>
+                      <pre className="mt-1.5 rounded-lg border border-[#a68a56]/20 bg-[#050504] p-3 text-sm sm:text-base text-[#d4af37] overflow-x-auto leading-relaxed">{tc.expectedOutput}</pre>
                     </div>
-                    {tc.explanation && <div className="text-xs text-[#a68a56] italic">Note: {tc.explanation}</div>}
+                    {tc.explanation && <div className="text-xs sm:text-sm text-[#a68a56] italic">Note: {tc.explanation}</div>}
                   </div>
                 ))}
               </div>
@@ -1338,23 +1338,23 @@ export default function ArenaPage() {
         {/* Right: Monaco Blind Editor & Action Bar */}
         <div className="flex flex-1 min-h-0 flex-col overflow-hidden bg-[#050504]">
           {/* Editor Toolbar */}
-          <div className="shrink-0 flex flex-wrap items-center justify-between border-b border-[#a68a56]/20 bg-[#0c0906] px-4 py-2 gap-2">
-            <div className="flex items-center gap-3">
+          <div className="shrink-0 flex flex-wrap items-center justify-between border-b border-[#a68a56]/20 bg-[#0c0906] px-5 py-2.5 gap-2 min-h-[50px]">
+            <div className="flex items-center gap-3.5">
               {isDrawerCollapsed && (
                 <button
                   onClick={() => setIsDrawerCollapsed(false)}
-                  className="flex items-center gap-1.5 rounded-lg border border-[#a68a56]/30 bg-[#1c160e]/50 px-2.5 py-1 font-cinzel text-xs text-[#f3d38c] hover:border-[#d4af37]"
+                  className="flex items-center gap-1.5 rounded-lg border border-[#a68a56]/30 bg-[#1c160e]/50 px-3 py-1.5 font-cinzel text-xs sm:text-sm font-semibold text-[#f3d38c] hover:border-[#d4af37]"
                 >
                   <PanelLeftOpen className="h-4 w-4" /><span>Questions</span>
                 </button>
               )}
 
               <div className="flex items-center gap-2">
-                <label className="font-cinzel text-xs font-bold text-[#a68a56]">Language:</label>
+                <label className="font-cinzel text-xs sm:text-sm font-bold text-[#a68a56]">Language:</label>
                 <select
                   value={currentLanguage}
                   onChange={e => handleLanguageChange(e.target.value as Language)}
-                  className="rounded-lg border border-[#a68a56]/30 bg-[#050504] px-3 py-1 font-nautical-mono text-xs font-semibold text-[#f3d38c] focus:border-[#d4af37] focus:outline-none"
+                  className="rounded-lg border border-[#a68a56]/30 bg-[#050504] px-3.5 py-1.5 font-nautical-mono text-xs sm:text-sm font-bold text-[#f3d38c] focus:border-[#d4af37] focus:outline-none"
                 >
                   <option value="python">Python 3</option>
                   <option value="c">C (GCC 14)</option>
@@ -1363,8 +1363,8 @@ export default function ArenaPage() {
               </div>
 
               {/* Live Question Stopwatch */}
-              <div className="flex items-center gap-1.5 rounded-lg border border-[#a68a56]/30 bg-[#1c160e]/70 px-2.5 py-1 font-nautical-mono text-xs shadow-inner">
-                <Clock className="h-3 w-3 text-[#d4af37]" />
+              <div className="flex items-center gap-1.5 rounded-lg border border-[#a68a56]/30 bg-[#1c160e]/70 px-3 py-1.5 font-nautical-mono text-xs sm:text-sm shadow-inner">
+                <Clock className="h-3.5 w-3.5 text-[#d4af37]" />
                 <span className="text-[#a68a56] hidden sm:inline">Q Stopwatch:</span>
                 <span className="text-[#f3d38c] font-bold">{fmtDuration(currentQElapsedMs)}</span>
               </div>
@@ -1372,35 +1372,35 @@ export default function ArenaPage() {
               {/* Sealed Status Indicator Badge */}
               {questionSealed[activeQId] && (
                 currentCode.trim() !== (lastSealedCodes[activeQId] ?? '').trim() ? (
-                  <div className="hidden md:flex items-center gap-1 rounded border border-amber-500/40 bg-amber-950/40 px-2 py-0.5 font-nautical-mono text-[10px] text-amber-300 animate-pulse">
-                    <AlertTriangle className="h-3 w-3 text-amber-400" />
+                  <div className="hidden md:flex items-center gap-1.5 rounded-md border border-amber-500/40 bg-amber-950/40 px-2.5 py-1 font-nautical-mono text-xs text-amber-300 animate-pulse">
+                    <AlertTriangle className="h-3.5 w-3.5 text-amber-400" />
                     <span>Modified (saving updates time)</span>
                   </div>
                 ) : (
-                  <div className="hidden md:flex items-center gap-1 rounded border border-emerald-500/40 bg-emerald-950/40 px-2 py-0.5 font-nautical-mono text-[10px] text-emerald-400">
-                    <Check className="h-3 w-3" />
+                  <div className="hidden md:flex items-center gap-1.5 rounded-md border border-emerald-500/40 bg-emerald-950/40 px-2.5 py-1 font-nautical-mono text-xs text-emerald-400">
+                    <Check className="h-3.5 w-3.5" />
                     <span>Sealed ({fmtDuration(questionDurations[activeQId])})</span>
                   </div>
                 )
               )}
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2.5">
               <button
                 onClick={handleToggleMarkReview}
-                className={`flex items-center gap-1.5 rounded-lg border px-2.5 py-1 font-cinzel text-xs transition-all bouncy-btn ${
+                className={`flex items-center gap-1.5 rounded-lg border px-3 py-1.5 font-cinzel text-xs sm:text-sm font-semibold transition-all bouncy-btn ${
                   isMarked
                     ? 'border-amber-400/60 bg-amber-400/10 text-amber-400'
                     : 'border-[#a68a56]/30 bg-[#1c160e]/50 text-[#a68a56] hover:text-[#f3d38c]'
                 }`}
               >
-                {isMarked ? <BookmarkCheck className="h-3.5 w-3.5" /> : <Bookmark className="h-3.5 w-3.5" />}
+                {isMarked ? <BookmarkCheck className="h-4 w-4" /> : <Bookmark className="h-4 w-4" />}
                 <span className="hidden sm:inline">{isMarked ? 'Marked for Review' : 'Mark for Review'}</span>
               </button>
 
               <button
                 onClick={handleResetStarter}
-                className="flex items-center gap-1.5 rounded-lg border border-[#a68a56]/30 bg-[#1c160e]/50 px-2.5 py-1 font-nautical-mono text-xs text-[#a68a56] hover:text-[#f3d38c] hover:border-[#d4af37] transition-all bouncy-btn"
+                className="flex items-center gap-1.5 rounded-lg border border-[#a68a56]/30 bg-[#1c160e]/50 px-3 py-1.5 font-nautical-mono text-xs sm:text-sm font-semibold text-[#a68a56] hover:text-[#f3d38c] hover:border-[#d4af37] transition-all bouncy-btn"
                 title="Reset code to default starter template"
               >
                 <RotateCcw className="h-3.5 w-3.5" /><span className="hidden sm:inline">Reset</span>
@@ -1410,7 +1410,7 @@ export default function ArenaPage() {
 
           {/* Editor Area */}
           <div className="relative flex-1 min-h-0 p-2 bg-[#050504] overflow-hidden">
-            {!isFullscreen && (
+            {!isFullscreen && !contest?.disableStrikes && (
               <div className="absolute inset-0 z-30 flex items-center justify-center bg-[#050504]/95 backdrop-blur-md select-none">
                 <div className="flex flex-col items-center gap-3 p-6 text-center">
                   <ShieldAlert className="h-8 w-8 animate-pulse text-[#d4af37]" />
@@ -1426,27 +1426,27 @@ export default function ArenaPage() {
               language={currentLanguage}
               value={currentCode}
               onChange={handleCodeChange}
-              disabled={!isFullscreen || isLockedOut || isSubmitted}
+              disabled={(!isFullscreen && !contest?.disableStrikes) || isLockedOut || isSubmitted}
               fontSize={editorFontSize}
               allowCopyPaste={Boolean(contest?.disableStrikes)}
             />
           </div>
 
           {/* ── Exam Bottom Action Bar: Code Stats + Navigation Controls ──────── */}
-          <div className="shrink-0 z-20 flex items-center justify-between border-t border-[#a68a56]/30 bg-[#090806] px-4 py-2 select-none shadow-[0_-4px_20px_rgba(0,0,0,0.5)] min-h-[52px]">
+          <div className="shrink-0 z-20 flex items-center justify-between border-t border-[#a68a56]/30 bg-[#090806] px-6 py-2.5 select-none shadow-[0_-4px_20px_rgba(0,0,0,0.5)] min-h-[58px]">
             {/* Left: Code Stats & Cloud Save Status */}
-            <div className="flex items-center gap-2 font-nautical-mono text-[11px] text-[#a68a56] min-w-0 truncate">
-              <span className="flex items-center gap-1 text-[#ebe4d5] shrink-0">
-                <Code2 className="h-3 w-3 text-[#d4af37]" />
+            <div className="flex items-center gap-2.5 font-nautical-mono text-xs sm:text-sm text-[#ebe4d5] min-w-0 truncate">
+              <span className="flex items-center gap-1.5 text-[#ebe4d5] font-semibold shrink-0">
+                <Code2 className="h-4 w-4 text-[#d4af37]" />
                 {currentCode.split('\n').length} lines
               </span>
-              <span className="shrink-0">·</span>
-              <span className="shrink-0">{currentCode.length} chars</span>
-              <span className="shrink-0 hidden md:inline">·</span>
+              <span className="shrink-0 text-[#a68a56]">·</span>
+              <span className="shrink-0 text-[#ebe4d5]">{currentCode.length} chars</span>
+              <span className="shrink-0 hidden md:inline text-[#a68a56]">·</span>
               <span className="hidden md:inline text-[#8c7456] truncate">{lastSavedTimeStr}</span>
               {questionSealed[activeQId] && questionDurations[activeQId] && (
                 <>
-                  <span className="shrink-0 hidden lg:inline">·</span>
+                  <span className="shrink-0 hidden lg:inline text-[#a68a56]">·</span>
                   <span className="text-emerald-400 font-bold hidden lg:inline shrink-0">
                     Sealed: {fmtDuration(questionDurations[activeQId])}
                   </span>
@@ -1455,27 +1455,27 @@ export default function ArenaPage() {
             </div>
 
             {/* Right: Question Navigation & Save Actions - strictly pinned right */}
-            <div className="ml-auto shrink-0 flex items-center gap-1.5 sm:gap-2">
+            <div className="ml-auto shrink-0 flex items-center gap-2 sm:gap-3">
               <button
                 onClick={() => setActiveQuestionIndex(Math.max(0, activeQuestionIndex - 1))}
                 disabled={activeQuestionIndex === 0}
-                className="flex items-center gap-1 rounded-xl border border-[#a68a56]/30 bg-[#1c160e]/50 px-3 py-1.5 font-cinzel text-xs text-[#ebe4d5] hover:border-[#d4af37] disabled:opacity-30 disabled:pointer-events-none transition-all bouncy-btn"
+                className="flex items-center gap-1 rounded-xl border border-[#a68a56]/30 bg-[#1c160e]/50 px-3.5 py-2 font-cinzel text-xs sm:text-sm font-bold text-[#ebe4d5] hover:border-[#d4af37] disabled:opacity-30 disabled:pointer-events-none transition-all bouncy-btn"
               >
-                <ChevronLeft className="h-3.5 w-3.5" />
+                <ChevronLeft className="h-4 w-4" />
                 <span>Prev</span>
               </button>
 
               <button
                 onClick={handleMarkForReviewAndNext}
-                className="flex items-center gap-1.5 rounded-xl border border-amber-500/40 bg-amber-950/20 px-3 py-1.5 font-cinzel text-xs text-amber-300 hover:border-amber-400 hover:bg-amber-950/40 transition-all bouncy-btn"
+                className="flex items-center gap-1.5 rounded-xl border border-amber-500/40 bg-amber-950/20 px-3.5 py-2 font-cinzel text-xs sm:text-sm font-bold text-amber-300 hover:border-amber-400 hover:bg-amber-950/40 transition-all bouncy-btn"
               >
-                <Bookmark className="h-3.5 w-3.5 text-amber-400" />
+                <Bookmark className="h-4 w-4 text-amber-400" />
                 <span>Mark &amp; Next</span>
               </button>
 
               <button
                 onClick={handleSaveAndNext}
-                className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#d4af37] via-[#f3d38c] to-[#d4af37] px-4 sm:px-5 py-1.5 sm:py-2 font-cinzel text-xs font-black text-[#050504] shadow-[0_0_20px_rgba(212,175,55,0.35)] hover:brightness-110 active:scale-95 transition-all bouncy-btn"
+                className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#d4af37] via-[#f3d38c] to-[#d4af37] px-5 sm:px-7 py-2 sm:py-2.5 font-cinzel text-xs sm:text-sm font-black text-[#050504] shadow-[0_0_20px_rgba(212,175,55,0.35)] hover:brightness-110 active:scale-95 transition-all bouncy-btn"
               >
                 <Check className="h-4 w-4 stroke-[3]" />
                 <span>{activeQuestionIndex === questions.length - 1 ? 'SAVE & REVIEW' : 'SAVE & NEXT'}</span>
@@ -1485,10 +1485,10 @@ export default function ArenaPage() {
               <button
                 onClick={() => setActiveQuestionIndex(Math.min(questions.length - 1, activeQuestionIndex + 1))}
                 disabled={activeQuestionIndex >= questions.length - 1}
-                className="flex items-center gap-1 rounded-xl border border-[#a68a56]/30 bg-[#1c160e]/50 px-3 py-1.5 font-cinzel text-xs text-[#ebe4d5] hover:border-[#d4af37] disabled:opacity-30 disabled:pointer-events-none transition-all bouncy-btn"
+                className="flex items-center gap-1 rounded-xl border border-[#a68a56]/30 bg-[#1c160e]/50 px-3.5 py-2 font-cinzel text-xs sm:text-sm font-bold text-[#ebe4d5] hover:border-[#d4af37] disabled:opacity-30 disabled:pointer-events-none transition-all bouncy-btn"
               >
                 <span>Next</span>
-                <ChevronRight className="h-3.5 w-3.5" />
+                <ChevronRight className="h-4 w-4" />
               </button>
             </div>
           </div>
