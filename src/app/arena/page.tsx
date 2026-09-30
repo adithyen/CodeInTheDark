@@ -143,7 +143,7 @@ export default function ArenaPage() {
   };
 
   // ── Anti-Cheat Integration ──────────────────────────────────────────────────
-  const { isFullscreen, strikes, isLockedOut, warningModalOpen, warningMessage, hudWarning, isBlackoutActive, requestFullscreen } =
+  const { isFullscreen, strikes, isLockedOut, warningModalOpen, warningMessage, hudWarning, showHudWarning, isBlackoutActive, dismissBlackout, requestFullscreen } =
     useAntiCheat({
       participantId: participant?.id || '',
       participantName: participant?.name || 'Participant',
@@ -1073,6 +1073,7 @@ export default function ArenaPage() {
         isBlackoutActive={isBlackoutActive}
         disableStrikes={Boolean(contest?.disableStrikes)}
         onRequestFullscreen={requestFullscreen}
+        onDismissBlackout={dismissBlackout}
       />
 
       {/* ── Auto-Submit Imminent Overlay ────────────────────────────────────── */}
@@ -1418,6 +1419,18 @@ export default function ArenaPage() {
               disabled={(!isFullscreen && !contest?.disableStrikes) || isLockedOut || isSubmitted}
               fontSize={editorFontSize}
               allowCopyPaste={Boolean(contest?.disableStrikes)}
+              onProhibitedKey={(keyName) => {
+                if (keyName === 'PrintScreen') {
+                  try { navigator.clipboard?.writeText?.(''); } catch {}
+                  showHudWarning('⚠️ Screen capture (PrintScreen / Snipping Tool) is prohibited. Clipboard sanitized.');
+                } else if (keyName.includes('F11')) {
+                  showHudWarning('⚠️ F11 Fullscreen toggle is disabled. Fullscreen mode is enforced.');
+                } else if (keyName.includes('Escape')) {
+                  showHudWarning('⚠️ Escape key is disabled. Fullscreen presentation mode is enforced.');
+                } else {
+                  showHudWarning(`⚠️ ${keyName} is prohibited in the Arena.`);
+                }
+              }}
             />
           </div>
 

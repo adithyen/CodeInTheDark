@@ -17,6 +17,7 @@ interface AntiCheatShieldProps {
   isBlackoutActive?: boolean;
   disableStrikes?: boolean;
   onRequestFullscreen: () => void;
+  onDismissBlackout?: () => void;
 }
 
 export default function AntiCheatShield({
@@ -32,17 +33,35 @@ export default function AntiCheatShield({
   isBlackoutActive = false,
   disableStrikes = false,
   onRequestFullscreen,
+  onDismissBlackout,
 }: AntiCheatShieldProps) {
   return (
     <>
-      {/* 0. Instant Anti-Screen Capture / Snipping Tool Blackout Shield */}
-      {isBlackoutActive && !disableStrikes && (
-        <div className="fixed inset-0 z-[10000] bg-black flex items-center justify-center select-none pointer-events-none">
-          <div className="flex flex-col items-center gap-2 text-center p-4">
-            <ShieldAlert className="h-10 w-10 text-[#d4af37] animate-pulse" />
-            <span className="font-cinzel text-base font-bold tracking-widest text-[#f3d38c]">
+      {/* 0. Instant Anti-Screen Capture / Snipping Tool Blackout Shield (Only when in Fullscreen, never blocks recovery) */}
+      {isBlackoutActive && isFullscreen && !disableStrikes && (
+        <div
+          onClick={onDismissBlackout}
+          className="fixed inset-0 z-[10000] bg-black/98 flex flex-col items-center justify-center select-none cursor-pointer transition-opacity duration-300 animate-in fade-in"
+          style={{ animationDuration: '200ms' }}
+        >
+          <div className="flex flex-col items-center gap-3 text-center p-6 max-w-sm">
+            <ShieldAlert className="h-12 w-12 text-[#d4af37] animate-pulse" />
+            <span className="font-cinzel text-lg font-bold tracking-widest text-[#f3d38c]">
               SCREEN CAPTURE SANITIZED
             </span>
+            <span className="font-nautical-mono text-xs text-[#a68a56]">
+              Screen capture prohibited. Clipboard sanitized.
+            </span>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                if (onDismissBlackout) onDismissBlackout();
+              }}
+              className="mt-3 inline-flex items-center gap-2 rounded-lg border border-[#d4af37]/60 bg-[#1c160e] px-4 py-2 font-cinzel text-xs font-bold text-[#f3d38c] hover:bg-[#d4af37] hover:text-black transition-all cursor-pointer shadow-lg shadow-black"
+            >
+              RETURN TO EXAM
+            </button>
           </div>
         </div>
       )}
@@ -78,7 +97,7 @@ export default function AntiCheatShield({
 
       {/* 3. Strike 3 Terminal Lockout Screen */}
       {isLockedOut && !disableStrikes && (
-        <div className="fixed inset-0 z-[999] flex items-center justify-center bg-[#050504]/98 p-6 backdrop-blur-3xl select-none">
+        <div className="fixed inset-0 z-[10005] flex items-center justify-center bg-[#050504]/98 p-6 backdrop-blur-3xl select-none">
           <div className="max-w-lg w-full rounded-2xl border border-red-500/60 bg-[#1c160e]/95 p-8 text-center shadow-2xl shadow-red-500/20">
             <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl border border-red-500/40 bg-red-950/40 text-red-400">
               <Lock className="h-8 w-8" />
@@ -99,7 +118,7 @@ export default function AntiCheatShield({
 
       {/* 4. Complete Viewport Lockdown Curtain When NOT In Fullscreen (Bypassed in Testing Mode) */}
       {!isFullscreen && !isLockedOut && !disableStrikes && (
-        <div className="fixed inset-0 z-[999] flex items-center justify-center bg-[#050504]/98 p-6 backdrop-blur-3xl select-none">
+        <div className="fixed inset-0 z-[10002] flex items-center justify-center bg-[#050504]/98 p-6 backdrop-blur-3xl select-none">
           {strikes > 0 ? (
             /* Warning Screen for Exiting Fullscreen */
             <div className="max-w-lg w-full rounded-2xl border border-amber-500/60 bg-[#1c160e] p-8 text-center shadow-2xl shadow-amber-500/20">

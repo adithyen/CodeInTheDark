@@ -11,6 +11,7 @@ interface MonacoBlindEditorProps {
   disabled?: boolean;
   fontSize?: number;
   allowCopyPaste?: boolean;
+  onProhibitedKey?: (keyName: string) => void;
 }
 
 const MONACO_LANG_MAP: Record<Language, string> = {
@@ -26,8 +27,10 @@ export default function MonacoBlindEditor({
   disabled = false,
   fontSize = 18,
   allowCopyPaste = false,
+  onProhibitedKey,
 }: MonacoBlindEditorProps) {
   const allowCopyPasteRef = React.useRef(allowCopyPaste);
+  const onProhibitedKeyRef = React.useRef(onProhibitedKey);
   const editorRef = React.useRef<any>(null);
 
   React.useEffect(() => {
@@ -38,6 +41,10 @@ export default function MonacoBlindEditor({
       });
     }
   }, [allowCopyPaste]);
+
+  React.useEffect(() => {
+    onProhibitedKeyRef.current = onProhibitedKey;
+  }, [onProhibitedKey]);
 
   const handleEditorDidMount: OnMount = (editor, monaco) => {
     editorRef.current = editor;
@@ -66,24 +73,108 @@ export default function MonacoBlindEditor({
 
     monaco.editor.setTheme('cyberpunk-dark');
 
-    // Block paste commands inside Monaco only if allowCopyPaste is false
+    // Register strict command overrides inside Monaco to prevent browser action bubbling
+    if (!allowCopyPasteRef.current) {
+      editor.addCommand(monaco.KeyCode.F11, () => {
+        onProhibitedKeyRef.current?.('F11 Fullscreen toggle');
+      });
+      editor.addCommand(monaco.KeyCode.Escape, () => {
+        onProhibitedKeyRef.current?.('Escape key');
+      });
+      for (let f = 1; f <= 12; f++) {
+        const keyCode = (monaco.KeyCode as any)[`F${f}`];
+        if (keyCode) {
+          editor.addCommand(keyCode, () => {
+            onProhibitedKeyRef.current?.(`F${f}`);
+          });
+        }
+      }
+    }
+
+    // Comprehensive keydown interceptor inside Monaco's event pipeline
     editor.onKeyDown((e) => {
       if (allowCopyPasteRef.current) return;
 
-      // Ctrl+V or Cmd+V
+      const rawKey = e.browserEvent?.key || '';
+      const rawCode = e.browserEvent?.code || '';
+      const rawKeyCode = (e.browserEvent as any)?.keyCode;
+
+      // 1. Trap PrintScreen / Screen Capture key attempts
+      if (
+        rawKey === 'PrintScreen' ||
+        rawCode === 'PrintScreen' ||
+        rawKeyCode === 44 ||
+        rawKey === 'Snapshot' ||
+        (e.ctrlKey && rawKey === 'PrintScreen') ||
+        (e.metaKey && e.shiftKey && ['3', '4', 's', 'S'].includes(rawKey))
+      ) {
+        e.preventDefault();
+        e.stopPropagation();
+        onProhibitedKeyRef.current?.('PrintScreen');
+        return;
+      }
+
+      // 2. Trap F11 (Fullscreen toggle)
+      if (e.keyCode === monaco.KeyCode.F11 || rawKey === 'F11' || rawCode === 'F11' || rawKeyCode === 122) {
+        e.preventDefault();
+        e.stopPropagation();
+        onProhibitedKeyRef.current?.('F11 Fullscreen toggle');
+        return;
+      }
+
+      // 3. Trap Escape
+      if (e.keyCode === monaco.KeyCode.Escape || rawKey === 'Escape' || rawCode === 'Escape') {
+        e.preventDefault();
+        e.stopPropagation();
+        onProhibitedKeyRef.current?.('Escape key');
+        return;
+      }
+
+      // 4. Trap all Function keys F1 - F12
+      if (
+        (e.keyCode >= monaco.KeyCode.F1 && e.keyCode <= monaco.KeyCode.F12) ||
+        (rawKey.startsWith('F') && /^F([1-9]|1[0-2])$/.test(rawKey))
+      ) {
+        e.preventDefault();
+        e.stopPropagation();
+        onProhibitedKeyRef.current?.(rawKey || 'Function key');
+        return;
+      }
+
+      // 5. Block Clipboard Shortcuts inside Monaco (Ctrl+C, Ctrl+V, Ctrl+X)
       if ((e.ctrlKey || e.metaKey) && e.keyCode === monaco.KeyCode.KeyV) {
         e.preventDefault();
         e.stopPropagation();
+        onProhibitedKeyRef.current?.('Ctrl+V (Paste)');
+        return;
       }
-      // Ctrl+C or Cmd+C
       if ((e.ctrlKey || e.metaKey) && e.keyCode === monaco.KeyCode.KeyC) {
         e.preventDefault();
         e.stopPropagation();
+        onProhibitedKeyRef.current?.('Ctrl+C (Copy)');
+        return;
       }
-      // Ctrl+X or Cmd+X
       if ((e.ctrlKey || e.metaKey) && e.keyCode === monaco.KeyCode.KeyX) {
         e.preventDefault();
         e.stopPropagation();
+        onProhibitedKeyRef.current?.('Ctrl+X (Cut)');
+        return;
+      }
+
+      // 6. Block Devtools & Source shortcuts (Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+Shift+C, Ctrl+U)
+      if (
+        (e.ctrlKey && e.shiftKey && ['I', 'i', 'J', 'j', 'C', 'c', 'K', 'k'].includes(rawKey)) ||
+        (e.ctrlKey && ['u', 'U', 's', 'S', 'p', 'P'].includes(rawKey))
+      ) {
+        // Let Ctrl+S pass if needed, but prevent default browser save
+        if (e.ctrlKey && (rawKey === 's' || rawKey === 'S')) {
+          e.preventDefault();
+          return;
+        }
+        e.preventDefault();
+        e.stopPropagation();
+        onProhibitedKeyRef.current?.(`Ctrl+${rawKey}`);
+        return;
       }
     });
   };

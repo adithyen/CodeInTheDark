@@ -225,13 +225,25 @@ export function useAntiCheat({
     [enabled, disableStrikes, isLockedOut, maxStrikes, participantId, participantName, rollNumber, terminalId, triggerAlarmSound, onViolation, onStrikeUpdate]
   );
 
-  // Flash instantaneous blackout veil (e.g. on PrintScreen or blur)
-  const triggerBlackout = useCallback((durationMs = 900) => {
+  // Flash instantaneous blackout veil exclusively on screen capture keys (e.g. PrintScreen)
+  const triggerBlackout = useCallback((durationMs = 350) => {
+    // Only engage if in fullscreen mode so recovery modal is never blocked
+    if (!checkIsFullscreen()) return;
     setIsBlackoutActive(true);
     if (blackoutTimerRef.current) clearTimeout(blackoutTimerRef.current);
     blackoutTimerRef.current = setTimeout(() => {
       setIsBlackoutActive(false);
+      blackoutTimerRef.current = null;
     }, durationMs);
+  }, []);
+
+  // Emergency manual dismissal for blackout veil
+  const dismissBlackout = useCallback(() => {
+    setIsBlackoutActive(false);
+    if (blackoutTimerRef.current) {
+      clearTimeout(blackoutTimerRef.current);
+      blackoutTimerRef.current = null;
+    }
   }, []);
 
   // Request Fullscreen & Engage Chrome Keyboard Lock API with vendor-prefixed fallbacks
@@ -302,10 +314,11 @@ export function useAntiCheat({
       const active = checkIsFullscreen();
       setIsFullscreen(active);
       if (!active) {
+        // Guarantee blackout is OFF so the recovery screen with button is 100% visible
+        setIsBlackoutActive(false);
         if (!disableStrikesRef.current) {
-          triggerBlackout(1200);
           setWarningModalOpen(true);
-          setWarningMessage('Fullscreen presentation mode was exited. Arena is frozen. Re-enter fullscreen to continue.');
+          setWarningMessage('Fullscreen presentation mode was exited. Arena is frozen. Click below to return to fullscreen.');
           setCountdown(10);
           logViolation('fullscreen_exit', 'Participant exited fullscreen mode');
         }
@@ -320,7 +333,7 @@ export function useAntiCheat({
     const onVisibilityChange = () => {
       if (disableStrikesRef.current) return;
       if (document.hidden) {
-        triggerBlackout(1500);
+        setIsBlackoutActive(false);
         // Sanitize clipboard immediately
         try { navigator.clipboard?.writeText?.(''); } catch {}
         setWarningModalOpen(true);
@@ -332,11 +345,10 @@ export function useAntiCheat({
 
     const onBlur = () => {
       if (disableStrikesRef.current) return;
-      // Immediate instantaneous blackout veil to render Snipping Tool / external overlays 100% black!
-      triggerBlackout(2000);
+      setIsBlackoutActive(false);
       try { navigator.clipboard?.writeText?.(''); } catch {}
       setWarningModalOpen(true);
-      setWarningMessage('Window lost focus. External overlay tools, screen capture apps (Snipping Tool), or secondary monitors are prohibited.');
+      setWarningMessage('Window lost focus. External overlay tools or secondary monitors are prohibited.');
       setCountdown(10);
       logViolation('tab_blur', 'Window blur event (focus lost to external app/overlay/Snipping Tool)');
     };
@@ -376,7 +388,7 @@ export function useAntiCheat({
         e.preventDefault();
         e.stopPropagation();
         e.stopImmediatePropagation();
-        triggerBlackout(1200);
+        triggerBlackout(350);
         try { navigator.clipboard?.writeText?.(''); } catch {}
         showHudWarning('⚠️ Screen capture (PrintScreen / Snipping Tool) is prohibited. Clipboard sanitized.');
         return false;
@@ -392,29 +404,32 @@ export function useAntiCheat({
       }
 
       // A. Trap F11 (Browser Fullscreen Toggle) - Warning only, NO STRIKE
-      if (e.key === 'F11' || e.code === 'F11') {
+      if (e.key === 'F11' || e.code === 'F11' || (e as any).keyCode === 122) {
         e.preventDefault();
         e.stopPropagation();
         e.stopImmediatePropagation();
-        showHudWarning('⚠️ F11 Fullscreen toggle is disabled. Presentation mode is locked.');
+        showHudWarning('⚠️ F11 Fullscreen toggle is disabled. Fullscreen mode is enforced.');
         return false;
       }
 
       // B. Trap Escape Key - Warning only, NO STRIKE
-      if (e.key === 'Escape' || e.code === 'Escape') {
+      if (e.key === 'Escape' || e.code === 'Escape' || (e as any).keyCode === 27) {
         e.preventDefault();
         e.stopPropagation();
         e.stopImmediatePropagation();
-        showHudWarning('⚠️ Escape key is disabled. Presentation mode is locked.');
+        showHudWarning('⚠️ Escape key is disabled. Fullscreen presentation mode is enforced.');
         return false;
       }
 
       // C. Trap All Function Keys F1 - F12 - Warning only, NO STRIKE!
-      if (e.key.startsWith('F') && /^F([1-9]|1[0-2])$/.test(e.key)) {
+      if (
+        (e.key.startsWith('F') && /^F([1-9]|1[0-2])$/.test(e.key)) ||
+        ((e as any).keyCode >= 112 && (e as any).keyCode <= 123)
+      ) {
         e.preventDefault();
         e.stopPropagation();
         e.stopImmediatePropagation();
-        showHudWarning(`⚠️ Function key ${e.key} is disabled in the Arena.`);
+        showHudWarning(`⚠️ Function key ${e.key || 'F-key'} is disabled in the Arena.`);
         return false;
       }
 
@@ -481,12 +496,18 @@ export function useAntiCheat({
         e.preventDefault();
         e.stopPropagation();
         e.stopImmediatePropagation();
-        triggerBlackout(1000);
+        triggerBlackout(350);
         try { navigator.clipboard?.writeText?.(''); } catch {}
         return;
       }
 
-      if (!checkIsFullscreen() || e.key === 'F11' || e.key === 'Escape' || (e.key.startsWith('F') && /^F([1-9]|1[0-2])$/.test(e.key))) {
+      if (
+        !checkIsFullscreen() ||
+        e.key === 'F11' || e.code === 'F11' || (e as any).keyCode === 122 ||
+        e.key === 'Escape' || (e as any).keyCode === 27 ||
+        (e.key.startsWith('F') && /^F([1-9]|1[0-2])$/.test(e.key)) ||
+        ((e as any).keyCode >= 112 && (e as any).keyCode <= 123)
+      ) {
         e.preventDefault();
         e.stopPropagation();
         e.stopImmediatePropagation();
@@ -597,7 +618,9 @@ export function useAntiCheat({
     warningMessage,
     countdown,
     hudWarning,
+    showHudWarning,
     isBlackoutActive,
+    dismissBlackout,
     requestFullscreen,
     dismissWarning: () => {
       isSuspendedRef.current = false;
