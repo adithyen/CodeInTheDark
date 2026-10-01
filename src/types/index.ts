@@ -143,7 +143,6 @@ export interface LeaderboardEntry {
   participantId: string;
   name: string;
   college?: string;
-  phone?: string;
   rollNumber: string;
   terminalId: string;
   totalScore: number;

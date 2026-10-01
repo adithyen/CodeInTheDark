@@ -795,7 +795,6 @@ export async function buildLeaderboard(sessionId: string) {
       college: p.college || '',
       rollNumber: p.rollNumber || '',
       terminalId: p.terminalId,
-      phone: p.phone || '',
       totalScore: 0,
       questionsSolved: 0,
       partialSolved: 0,
