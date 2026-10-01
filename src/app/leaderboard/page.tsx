@@ -591,25 +591,11 @@ export default function LeaderboardPage() {
                                       {entry.questionsSolved} Solved
                                       {entry.partialSolved > 0 ? ` · ${entry.partialSolved} Partial` : ''}
                                     </span>
-                                    {Boolean(entry.strikes && entry.strikes > 0) && (
-                                      <span className="inline-flex items-center gap-1.5 rounded-md border border-red-500/30 bg-red-950/40 px-2.5 py-1 text-red-300 font-semibold">
-                                        <ShieldAlert className="h-3.5 w-3.5 text-red-400" />
-                                        {entry.strikes} / 3 Strikes
-                                      </span>
-                                    )}
                                   </div>
 
-                                  {/* Score Math & Penalty Transparency */}
+                                  {/* Official Score Display */}
                                   <div className="flex items-center gap-2 text-xs sm:text-sm font-nautical-mono">
-                                    <span className="text-[#ebe4d5]">
-                                      Problem Points: <strong className="text-emerald-400">{entry.rawScore ?? entry.totalScore} pts</strong>
-                                    </span>
-                                    {Boolean(entry.strikePenalty && entry.strikePenalty > 0) && (
-                                      <span className="text-red-400 font-bold">
-                                        - {entry.strikePenalty} pts ({entry.strikes} × 20pt Strike Penalty)
-                                      </span>
-                                    )}
-                                    <span className="text-[#a68a56]">═</span>
+                                    <span className="text-[#a68a56]">Official Score:</span>
                                     <span className="text-[#d4af37] font-black text-sm sm:text-base">
                                       {entry.totalScore} PTS Total
                                     </span>

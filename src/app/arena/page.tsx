@@ -884,6 +884,9 @@ export default function ArenaPage() {
     const grandScore = lobbyResults.reduce((s, l) => s + l.score + l.speedBonus, 0);
     const grandPassed = lobbyResults.reduce((s, l) => s + l.testCasesPassed, 0);
     const grandTests = lobbyResults.reduce((s, l) => s + l.totalTestCases, 0);
+    const participantStrikes = strikes ?? participant?.strikes ?? 0;
+    const strikePenalty = participantStrikes * 20;
+    const finalScore = Math.max(0, grandScore - strikePenalty);
 
     return (
       <div className="relative flex flex-1 flex-col overflow-y-auto bg-[#050504] items-center justify-start py-8 px-4 sm:px-8">
@@ -1008,24 +1011,33 @@ export default function ArenaPage() {
                 })}
               </div>
 
-              {/* Grand Total Footer */}
-              <div className="flex items-center justify-between border-t border-[#a68a56]/25 bg-[#140f0a] px-6 sm:px-8 py-5">
-                <span className="font-cinzel text-sm sm:text-base text-[#a68a56]">
-                  {lobbyResults.some(r => r.evaluationStatus === 'evaluating') ? (
-                    <span className="flex items-center gap-2 text-amber-300 font-nautical-mono text-sm animate-pulse">
-                      <Loader2 className="h-4 w-4 animate-spin text-amber-400" />
-                      Evaluating solutions in background...
-                    </span>
-                  ) : (
-                    <>Total Test Cases Passed: <strong className="text-lg text-[#ebe4d5] font-nautical-mono ml-1">{grandPassed}/{grandTests}</strong></>
+              {/* Grand Total & Score Calculation Footer */}
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between border-t border-[#a68a56]/25 bg-[#140f0a] px-6 sm:px-8 py-5 gap-3">
+                <div className="space-y-1">
+                  <span className="font-cinzel text-sm sm:text-base text-[#a68a56]">
+                    {lobbyResults.some(r => r.evaluationStatus === 'evaluating') ? (
+                      <span className="flex items-center gap-2 text-amber-300 font-nautical-mono text-sm animate-pulse">
+                        <Loader2 className="h-4 w-4 animate-spin text-amber-400" />
+                        Evaluating solutions in background...
+                      </span>
+                    ) : (
+                      <>Total Test Cases Passed: <strong className="text-lg text-[#ebe4d5] font-nautical-mono ml-1">{grandPassed}/{grandTests}</strong></>
+                    )}
+                  </span>
+                  {participantStrikes > 0 && !lobbyResults.some(r => r.evaluationStatus === 'evaluating') && (
+                    <div className="flex items-center gap-2 font-nautical-mono text-xs sm:text-sm text-[#a68a56]">
+                      <span>Problem Points: <strong className="text-[#ebe4d5]">{grandScore} pts</strong></span>
+                      <span className="text-red-400 font-semibold">- {strikePenalty} pts ({participantStrikes} Anti-Cheat Strike{participantStrikes > 1 ? 's' : ''} &times; 20pts)</span>
+                    </div>
                   )}
-                </span>
-                <div className="flex items-center gap-2.5">
+                </div>
+
+                <div className="flex items-center gap-2.5 sm:text-right">
                   <span className="font-cinzel text-xs sm:text-sm text-[#a68a56] uppercase tracking-wider font-semibold">Final Score:</span>
                   {lobbyResults.some(r => r.evaluationStatus === 'evaluating') ? (
                     <span className="font-nautical-mono text-xl sm:text-2xl font-bold text-amber-400 animate-pulse">Calculating...</span>
                   ) : (
-                    <span className="font-nautical-mono text-3xl sm:text-4xl font-black text-[#f3d38c]">{grandScore} pts</span>
+                    <span className="font-nautical-mono text-3xl sm:text-4xl font-black text-[#f3d38c]">{finalScore} pts</span>
                   )}
                 </div>
               </div>
