@@ -1614,7 +1614,12 @@ export default function AdminPage() {
                         <div className="text-xs sm:text-sm text-[#a68a56] mt-0.5">{s.participantRoll}</div>
                       </td>
                       <td className="py-4 px-6 hidden sm:table-cell">
-                        <div className="text-[#ebe4d5] font-cinzel font-bold text-sm sm:text-base">{s.questionTitle}</div>
+                        <div className="text-[#ebe4d5] font-cinzel font-bold text-sm sm:text-base">
+                          {(() => {
+                            const qIdx = questions.findIndex(q => q.id === s.questionId);
+                            return qIdx !== -1 ? `Q${qIdx + 1}. ${s.questionTitle}` : s.questionTitle;
+                          })()}
+                        </div>
                         {s.isAutoSubmit && <span className="rounded bg-[#1c160e] border border-[#d4af37]/40 px-2 py-0.5 text-xs text-[#f3d38c] font-cinzel font-bold mt-1 inline-block">AUTO</span>}
                       </td>
                       <td className="py-4 px-6 uppercase text-[#f3d38c] font-bold text-xs sm:text-sm">{s.language}</td>

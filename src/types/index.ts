@@ -156,6 +156,8 @@ export interface LeaderboardEntry {
   lastSubmissionTime: number; // earliest firstSubmittedAt for tiebreaking
   isEvaluating?: boolean;
   perQuestionScores: Record<string, {
+    questionId?: string;
+    questionNumber?: number;
     score: number;
     questionTitle?: string;
     passedRatio: string;

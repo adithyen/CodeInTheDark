@@ -774,10 +774,18 @@ export async function insertViolation(v: {
 // ─────────────────────────────────────────────────────────────────────
 
 export async function buildLeaderboard(sessionId: string) {
-  const [participants, submissions] = await Promise.all([
+  const [participants, submissions, contestQuestions] = await Promise.all([
     getParticipantsForSession(sessionId),
     getSubmissionsForSession(sessionId),
+    getQuestionsForSession(sessionId, false),
   ]);
+
+  const qOrderMap = new Map<string, number>();
+  const qTitleMap = new Map<string, string>();
+  contestQuestions.forEach((q, idx) => {
+    qOrderMap.set(q.id, idx + 1);
+    qTitleMap.set(q.id, q.title);
+  });
 
   const entriesMap = new Map<string, any>();
   for (const p of participants) {
@@ -808,10 +816,14 @@ export async function buildLeaderboard(sessionId: string) {
     }
 
     const firstTs = (sub as any).firstSubmittedAt ?? sub.submittedAt;
+    const qNum = qOrderMap.get(sub.questionId) || 0;
+    const qTitle = sub.questionTitle || qTitleMap.get(sub.questionId) || '';
 
     entry.perQuestionScores[sub.questionId] = {
+      questionId: sub.questionId,
+      questionNumber: qNum,
       score: sub.score,
-      questionTitle: sub.questionTitle || '',
+      questionTitle: qTitle,
       passedRatio: `${sub.testCasesPassed}/${sub.totalTestCases}`,
       language: sub.language,
       submittedAt: sub.submittedAt,

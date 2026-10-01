@@ -111,6 +111,19 @@ export default function ArenaPage() {
     return `${mins}m ${secs.toString().padStart(2, '0')}s`;
   };
 
+  // Sort lobby evaluation results strictly by canonical question order
+  const sortResultsByContestQuestions = useCallback((results: LobbyResult[], qs: Question[]): LobbyResult[] => {
+    if (!qs || qs.length === 0) return results;
+    const qOrderMap = new Map<string, number>();
+    qs.forEach((q, idx) => qOrderMap.set(q.id, idx));
+
+    return [...results].sort((a, b) => {
+      const idxA = qOrderMap.has(a.questionId) ? qOrderMap.get(a.questionId)! : 9999;
+      const idxB = qOrderMap.has(b.questionId) ? qOrderMap.get(b.questionId)! : 9999;
+      return idxA - idxB;
+    });
+  }, []);
+
   // ── 5-State Status Helper ───────────────────────────────────────────────────
   const getQStatus = useCallback((qId: string, qs: Question[]): QStatus => {
     const q = qs.find(x => x.id === qId);
@@ -233,7 +246,7 @@ export default function ArenaPage() {
                   isAutoSubmit: s.isAutoSubmit || false,
                   evaluationStatus: s.evaluationStatus || 'completed',
                 }));
-              setLobbyResults(restoredResults);
+              setLobbyResults(sortResultsByContestQuestions(restoredResults, questions));
             }
             return;
           }
@@ -714,7 +727,7 @@ export default function ArenaPage() {
           evaluationStatus: r.evaluationStatus || (data.status === 'evaluating' ? 'evaluating' : 'completed'),
         }));
 
-        setLobbyResults(results);
+        setLobbyResults(sortResultsByContestQuestions(results, questions));
         setIsSubmitted(true);
         localStorage.setItem(`cid_submitted_${participant.id}`, 'true');
         setLobbyMessage(autoSubmit
@@ -737,7 +750,7 @@ export default function ArenaPage() {
       setSubmitting(false);
       setAutoSubmitBanner(false);
     }
-  }, [participant, isSubmitted, submitting, questions, allCodes, allLanguages, sessionId, questionDurations, firstVisitedAt, questionSealed, contest?.startTime]);
+  }, [participant, isSubmitted, submitting, questions, allCodes, allLanguages, sessionId, questionDurations, firstVisitedAt, questionSealed, contest?.startTime, sortResultsByContestQuestions]);
 
   // ── Timer Expiry Auto-Submit ────────────────────────────────────────────────
   const handleTimerExpired = useCallback(() => {
@@ -782,7 +795,7 @@ export default function ArenaPage() {
               }));
 
             if (mappedResults.length > 0) {
-              setLobbyResults(mappedResults);
+              setLobbyResults(sortResultsByContestQuestions(mappedResults, questions));
             }
 
             const stillPending = mappedResults.some(r => r.evaluationStatus === 'evaluating');
@@ -916,6 +929,10 @@ export default function ArenaPage() {
 
               <div className="divide-y divide-[#a68a56]/15 max-h-[50vh] overflow-y-auto">
                 {lobbyResults.map((r, idx) => {
+                  const canonicalQIdx = questions.findIndex(q => q.id === r.questionId);
+                  const qNumStr = canonicalQIdx !== -1 ? `Q${canonicalQIdx + 1}.` : `Q${idx + 1}.`;
+                  const canonicalQuestion = questions.find(q => q.id === r.questionId);
+                  const displayTitle = r.questionTitle || canonicalQuestion?.title || 'Question';
                   const pct = r.totalTestCases > 0 ? r.testCasesPassed / r.totalTestCases : 0;
                   const bar = pct === 1 ? 'bg-emerald-500' : pct > 0.5 ? 'bg-[#d4af37]' : 'bg-red-500/70';
                   const elapsed = r.elapsedMs > 0 ? `${Math.floor(r.elapsedMs / 60000)}m ${Math.floor((r.elapsedMs % 60000) / 1000)}s` : '—';
@@ -925,8 +942,8 @@ export default function ArenaPage() {
                       <div className="flex items-start justify-between gap-4">
                         <div className="space-y-1">
                           <div className="flex items-center gap-2.5 flex-wrap">
-                            <span className="font-nautical-mono text-sm font-bold text-[#d4af37]">Q{idx + 1}.</span>
-                            <span className="font-cinzel text-base sm:text-lg font-bold text-[#ebe4d5]">{r.questionTitle}</span>
+                            <span className="font-nautical-mono text-sm font-bold text-[#d4af37]">{qNumStr}</span>
+                            <span className="font-cinzel text-base sm:text-lg font-bold text-[#ebe4d5]">{displayTitle}</span>
                             {r.isAutoSubmit && (
                               <span className="rounded bg-amber-500/20 px-2 py-0.5 font-nautical-mono text-xs text-amber-300 border border-amber-500/30">
                                 AUTO-SUBMIT

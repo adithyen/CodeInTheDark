@@ -623,23 +623,26 @@ export default function LeaderboardPage() {
                                   </h4>
                                   {entry.perQuestionScores && Object.keys(entry.perQuestionScores).length > 0 ? (
                                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
-                                      {Object.entries(entry.perQuestionScores).map(([qId, qData]: [string, any], qIdx) => (
-                                        <div key={qId} className="rounded-lg border border-[#a68a56]/20 bg-[#140f0a] p-3 text-xs">
-                                          <div className="flex items-center justify-between mb-1.5">
-                                            <span className="font-cinzel font-bold text-[#f3d38c] truncate">
-                                              {qData.questionTitle || `Question ${qIdx + 1}`}
-                                            </span>
-                                            <span className={`font-black ${qData.score > 0 ? 'text-emerald-400' : 'text-[#a68a56]'}`}>
-                                              {qData.score} PTS
-                                            </span>
+                                      {Object.entries(entry.perQuestionScores)
+                                        .sort(([, a]: any, [, b]: any) => (a.questionNumber || 0) - (b.questionNumber || 0))
+                                        .map(([qId, qData]: [string, any], qIdx) => (
+                                          <div key={qId} className="rounded-lg border border-[#a68a56]/20 bg-[#140f0a] p-3 text-xs">
+                                            <div className="flex items-center justify-between mb-1.5">
+                                              <span className="font-cinzel font-bold text-[#f3d38c] truncate">
+                                                {qData.questionNumber ? `Q${qData.questionNumber}. ` : `Q${qIdx + 1}. `}
+                                                {qData.questionTitle || `Question`}
+                                              </span>
+                                              <span className={`font-black ${qData.score > 0 ? 'text-emerald-400' : 'text-[#a68a56]'}`}>
+                                                {qData.score} PTS
+                                              </span>
+                                            </div>
+                                            <div className="flex items-center justify-between text-[11px] text-[#a68a56] font-nautical-mono">
+                                              <span className="uppercase font-semibold text-[#d4af37]">{qData.language}</span>
+                                              <span className="text-[#ebe4d5]">{qData.passedRatio} Passed</span>
+                                              {qData.execTimeMs ? <span>{fmtDuration(qData.execTimeMs)}</span> : null}
+                                            </div>
                                           </div>
-                                          <div className="flex items-center justify-between text-[11px] text-[#a68a56] font-nautical-mono">
-                                            <span className="uppercase font-semibold text-[#d4af37]">{qData.language}</span>
-                                            <span className="text-[#ebe4d5]">{qData.passedRatio} Passed</span>
-                                            {qData.execTimeMs ? <span>{fmtDuration(qData.execTimeMs)}</span> : null}
-                                          </div>
-                                        </div>
-                                      ))}
+                                        ))}
                                     </div>
                                   ) : (
                                     <p className="text-xs text-[#a68a56] italic">No question submissions recorded yet.</p>
