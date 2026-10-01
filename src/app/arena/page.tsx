@@ -100,14 +100,8 @@ export default function ArenaPage() {
   const [questionFirstDurations, setQuestionFirstDurations] = useState<Record<string, number>>({});
   const [currentQElapsedMs, setCurrentQElapsedMs] = useState(0);
 
-  // Re-save warning confirmation modal state
-  const [showResaveModal, setShowResaveModal] = useState(false);
-  const [pendingResaveInfo, setPendingResaveInfo] = useState<{
-    qId: string;
-    qTitle: string;
-    oldDurationMs: number;
-    newDurationMs: number;
-  } | null>(null);
+  // Internal sandbox clipboard state
+  const [internalClipboard, setInternalClipboard] = useState<string>('');
 
   const fmtDuration = (ms: number): string => {
     if (!ms || ms <= 0) return '0s';
@@ -582,7 +576,20 @@ export default function ArenaPage() {
     }
   }, [participant, contest?.startTime, firstVisitedAt, allCodes, allLanguages, saveDraftToCloud, activeQuestionIndex, questions.length]);
 
-  // Save & Next Button
+  // Listen for text selection copies inside exam arena to populate internal sandbox clipboard
+  useEffect(() => {
+    const handleGlobalCopy = () => {
+      const selection = window.getSelection()?.toString() || '';
+      if (selection && selection.length > 0) {
+        setInternalClipboard(selection);
+        showHudWarning('📋 Copied text to exam clipboard');
+      }
+    };
+    document.addEventListener('copy', handleGlobalCopy);
+    return () => document.removeEventListener('copy', handleGlobalCopy);
+  }, [showHudWarning]);
+
+  // Save & Next Button (Instant save & duration update without modal delays)
   const handleSaveAndNext = () => {
     if (!participant || !activeQId) return;
 
@@ -600,32 +607,14 @@ export default function ArenaPage() {
       return;
     }
 
-    // Case 2: Already sealed, and code WAS modified -> Prompt warning modal!
+    // Case 2: Already sealed, and code WAS modified -> Instant update duration to current contest elapsed time
     if (isAlreadySealed && codeChanged) {
-      const contestStart = contestStartRef.current || contest?.startTime || Date.now();
-      const newDurationMs = Math.max(1000, Date.now() - contestStart);
-      const oldDurationMs = questionDurations[activeQId] || 0;
-
-      setPendingResaveInfo({
-        qId: activeQId,
-        qTitle: activeQuestion?.title || `Question ${activeQuestionIndex + 1}`,
-        oldDurationMs,
-        newDurationMs,
-      });
-      setShowResaveModal(true);
+      saveQuestionWithDuration(activeQId, true);
       return;
     }
 
     // Case 3: First time saving this question:
     saveQuestionWithDuration(activeQId, false);
-  };
-
-  // Confirm Resave Handler (Modal)
-  const confirmResave = () => {
-    if (!pendingResaveInfo) return;
-    saveQuestionWithDuration(pendingResaveInfo.qId, true);
-    setShowResaveModal(false);
-    setPendingResaveInfo(null);
   };
 
   // Mark for Review & Next Button
@@ -1419,6 +1408,8 @@ export default function ArenaPage() {
               disabled={(!isFullscreen && !contest?.disableStrikes) || isLockedOut || isSubmitted}
               fontSize={editorFontSize}
               allowCopyPaste={Boolean(contest?.disableStrikes)}
+              internalClipboard={internalClipboard}
+              onCopyInternal={(text) => setInternalClipboard(text)}
               onProhibitedKey={(keyName) => {
                 if (keyName === 'PrintScreen') {
                   try { navigator.clipboard?.writeText?.(''); } catch {}
@@ -1469,10 +1460,14 @@ export default function ArenaPage() {
 
               <button
                 onClick={handleMarkForReviewAndNext}
-                className="flex items-center gap-1.5 rounded-xl border border-amber-500/40 bg-amber-950/20 px-3.5 sm:px-4 py-2 font-cinzel text-xs sm:text-sm font-bold text-amber-300 hover:border-amber-400 hover:bg-amber-950/40 transition-all bouncy-btn"
+                className={`flex items-center gap-1.5 rounded-xl border px-3.5 sm:px-4 py-2 font-cinzel text-xs sm:text-sm font-bold transition-all bouncy-btn ${
+                  markedSet.has(activeQId)
+                    ? 'border-amber-400 bg-amber-500/30 text-amber-200 hover:bg-amber-500/40 shadow-[0_0_12px_rgba(245,158,11,0.3)]'
+                    : 'border-amber-500/40 bg-amber-950/20 text-amber-300 hover:border-amber-400 hover:bg-amber-950/40'
+                }`}
               >
-                <Bookmark className="h-4 w-4 text-amber-400" />
-                <span>MARK FOR REVIEW</span>
+                <Bookmark className={`h-4 w-4 ${markedSet.has(activeQId) ? 'text-amber-300 fill-amber-400' : 'text-amber-400'}`} />
+                <span>{markedSet.has(activeQId) ? 'UNMARK REVIEW' : 'MARK FOR REVIEW'}</span>
               </button>
 
               <button
@@ -1652,52 +1647,6 @@ export default function ArenaPage() {
                   Lock In &amp; Submit All Questions
                 </button>
               </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ── Re-Save Confirmation Modal ────────────────────────────────────────── */}
-      {showResaveModal && pendingResaveInfo && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4 backdrop-blur-md">
-          <div className="w-full max-w-lg rounded-2xl border border-amber-500/60 bg-[#120c07] p-6 sm:p-7 shadow-[0_0_50px_rgba(245,158,11,0.25)] space-y-4">
-            <div className="flex items-center gap-3 text-amber-400">
-              <AlertTriangle className="h-6 w-6 shrink-0" />
-              <h3 className="font-cinzel text-lg sm:text-xl font-bold text-[#f3d38c]">Update Saved Solution?</h3>
-            </div>
-            <p className="font-sans text-xs sm:text-sm text-[#ebe4d5]/90 leading-relaxed">
-              You previously saved <strong className="text-[#f3d38c]">{pendingResaveInfo.qTitle}</strong> with a recorded time of <strong className="text-emerald-400 font-nautical-mono">{fmtDuration(pendingResaveInfo.oldDurationMs)}</strong>.
-            </p>
-            <div className="rounded-xl border border-amber-500/30 bg-[#1c140a] p-4 text-xs sm:text-sm font-nautical-mono text-[#f3d38c] space-y-2">
-              <div className="flex justify-between items-center pb-2 border-b border-amber-500/20">
-                <span className="text-[#a68a56]">Previous Saved Time:</span>
-                <span className="text-emerald-400 font-bold">{fmtDuration(pendingResaveInfo.oldDurationMs)}</span>
-              </div>
-              <div className="flex justify-between items-center text-amber-300 font-bold">
-                <span>New Recorded Time (Contest Elapsed):</span>
-                <span className="text-[#f3d38c] text-sm sm:text-base">{fmtDuration(pendingResaveInfo.newDurationMs)}</span>
-              </div>
-            </div>
-            <p className="font-nautical-mono text-xs text-[#a68a56] leading-relaxed">
-              Modifying and saving your solution will update your official recorded duration to the total elapsed contest time (<strong className="text-amber-300">{fmtDuration(pendingResaveInfo.newDurationMs)}</strong>), which is used for scoring and tie-breaking.
-            </p>
-            <div className="flex items-center justify-end gap-3 pt-2">
-              <button
-                onClick={() => {
-                  setShowResaveModal(false);
-                  setPendingResaveInfo(null);
-                }}
-                className="rounded-xl border border-[#a68a56]/30 px-5 py-2.5 font-cinzel text-xs text-[#ebe4d5] hover:bg-white/5 transition-all bouncy-btn"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={confirmResave}
-                className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-[#d4af37] px-5 py-2.5 font-cinzel text-xs sm:text-sm font-bold text-[#050504] shadow-[0_0_15px_rgba(212,175,55,0.3)] hover:brightness-110 active:scale-95 transition-all bouncy-btn"
-              >
-                <Check className="h-4 w-4" />
-                Update &amp; Save Solution
-              </button>
             </div>
           </div>
         </div>

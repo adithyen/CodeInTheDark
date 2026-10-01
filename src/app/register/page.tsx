@@ -175,11 +175,7 @@ export default function RegisterPage() {
 
       const data = await res.json();
       if (!res.ok) {
-        if (res.status === 409) {
-          setError('This phone number is already registered for this session.');
-        } else {
-          setError(data.error || 'Registration failed');
-        }
+        setError(data.error || 'Registration failed');
         setLoading(false);
         return;
       }

@@ -143,9 +143,13 @@ export interface LeaderboardEntry {
   participantId: string;
   name: string;
   college?: string;
+  phone?: string;
   rollNumber: string;
   terminalId: string;
   totalScore: number;
+  rawScore?: number;
+  strikePenalty?: number;
+  totalDurationMs?: number;
   questionsSolved: number;
   partialSolved: number;
   strikes: number;
@@ -153,10 +157,12 @@ export interface LeaderboardEntry {
   isEvaluating?: boolean;
   perQuestionScores: Record<string, {
     score: number;
+    questionTitle?: string;
     passedRatio: string;
     language: Language;
     submittedAt: number;
     firstSubmittedAt?: number; // original first-solve timestamp
+    execTimeMs?: number;
     isAutoSubmit?: boolean;
     evaluationStatus?: string;
   }>;

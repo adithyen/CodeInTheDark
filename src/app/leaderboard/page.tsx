@@ -10,7 +10,14 @@ import {
   RotateCcw,
   Crown,
   Megaphone,
-  GraduationCap
+  GraduationCap,
+  ChevronDown,
+  ChevronUp,
+  Monitor,
+  Code2,
+  CheckCircle2,
+  ShieldAlert,
+  Info
 } from 'lucide-react';
 import { LeaderboardEntry, ContestState } from '@/types';
 
@@ -85,6 +92,15 @@ export default function LeaderboardPage() {
   const [contestPhase, setContestPhase] = useState<string>('setup');
   const [lastUpdated, setLastUpdated] = useState<string>('');
   const [loading, setLoading] = useState(true);
+  const [expandedParticipantId, setExpandedParticipantId] = useState<string | null>(null);
+
+  const fmtDuration = (ms: number): string => {
+    if (!ms || ms <= 0) return '0s';
+    const mins = Math.floor(ms / 60000);
+    const secs = Math.floor((ms % 60000) / 1000);
+    if (mins === 0) return `${secs}s`;
+    return `${mins}m ${secs.toString().padStart(2, '0')}s`;
+  };
 
   // Audio alert state
   const [hasBuzzed, setHasBuzzed] = useState(false);
@@ -493,56 +509,147 @@ export default function LeaderboardPage() {
                       );
                     }
 
+                    const isExpanded = expandedParticipantId === entry.participantId;
+
                     return (
-                      <tr
-                        key={entry.participantId}
-                        className={`transition-colors hover:bg-[#1c160e]/40 animate-fade-in ${
-                          idx === 0
-                            ? 'bg-[#d4af37]/[0.08]'
-                            : idx === 1
-                            ? 'bg-[#a68a56]/[0.06]'
-                            : idx === 2
-                            ? 'bg-[#8c6738]/[0.06]'
-                            : ''
-                        }`}
-                      >
-                        {/* Rank */}
-                        <td className="py-4 px-6 font-bold">
-                          <span
-                            className={`inline-flex h-9 w-9 items-center justify-center rounded-xl text-xs font-cinzel ${
-                              idx === 0
-                                ? 'bg-[#d4af37] text-[#050504] font-black shadow-md shadow-[#d4af37]/30'
-                                : idx === 1
-                                ? 'bg-[#a68a56] text-[#050504] font-bold'
-                                : idx === 2
-                                ? 'bg-[#8c6738] text-[#ebe4d5] font-bold'
-                                : 'text-[#a68a56] bg-[#1c160e]/60 border border-[#a68a56]/20'
-                            }`}
-                          >
-                            #{idx + 1}
-                          </span>
-                        </td>
+                      <React.Fragment key={entry.participantId}>
+                        <tr
+                          onClick={() => setExpandedParticipantId(prev => prev === entry.participantId ? null : entry.participantId)}
+                          className={`transition-colors hover:bg-[#1c160e]/60 cursor-pointer select-none animate-fade-in ${
+                            isExpanded
+                              ? 'bg-[#1c160e]/80 border-b-0'
+                              : idx === 0
+                              ? 'bg-[#d4af37]/[0.08]'
+                              : idx === 1
+                              ? 'bg-[#a68a56]/[0.06]'
+                              : idx === 2
+                              ? 'bg-[#8c6738]/[0.06]'
+                              : ''
+                          }`}
+                        >
+                          {/* Rank */}
+                          <td className="py-4 px-6 font-bold">
+                            <span
+                              className={`inline-flex h-9 w-9 items-center justify-center rounded-xl text-xs font-cinzel ${
+                                idx === 0
+                                  ? 'bg-[#d4af37] text-[#050504] font-black shadow-md shadow-[#d4af37]/30'
+                                  : idx === 1
+                                  ? 'bg-[#a68a56] text-[#050504] font-bold'
+                                  : idx === 2
+                                  ? 'bg-[#8c6738] text-[#ebe4d5] font-bold'
+                                  : 'text-[#a68a56] bg-[#1c160e]/60 border border-[#a68a56]/20'
+                              }`}
+                            >
+                              #{idx + 1}
+                            </span>
+                          </td>
 
-                        {/* Participant (Name & College) */}
-                        <td className="py-4 px-6">
-                          <div className="font-bold text-base text-[#ebe4d5] flex items-center gap-2 font-cinzel">
-                            <span>{entry.name}</span>
-                            {idx === 0 && <Crown className="h-4 w-4 text-[#d4af37] inline" />}
-                          </div>
-                          <div className="text-xs sm:text-sm text-[#f3d38c] font-nautical-mono flex items-center gap-1.5 mt-0.5">
-                            <GraduationCap className="h-4 w-4 text-[#a68a56] shrink-0" />
-                            <span>{entry.college || 'KTU Engineering College'}</span>
-                          </div>
-                        </td>
+                          {/* Participant (Name & College) */}
+                          <td className="py-4 px-6">
+                            <div className="font-bold text-base text-[#ebe4d5] flex items-center gap-2 font-cinzel">
+                              <span>{entry.name}</span>
+                              {idx === 0 && <Crown className="h-4 w-4 text-[#d4af37] inline" />}
+                            </div>
+                            <div className="text-xs sm:text-sm text-[#f3d38c] font-nautical-mono flex items-center gap-1.5 mt-0.5">
+                              <GraduationCap className="h-4 w-4 text-[#a68a56] shrink-0" />
+                              <span>{entry.college || 'KTU Engineering College'}</span>
+                            </div>
+                          </td>
 
-                        {/* Total Score */}
-                        <td className="py-4 px-6 text-right">
-                          <span className={`text-2xl font-black ${idx === 0 ? 'text-[#d4af37]' : 'text-[#f3d38c]'}`}>
-                            {entry.totalScore}
-                          </span>
-                          <span className="text-xs text-[#a68a56] ml-1.5 font-cinzel font-semibold">PTS</span>
-                        </td>
-                      </tr>
+                          {/* Total Score + Expand Chevron */}
+                          <td className="py-4 px-6 text-right">
+                            <div className="inline-flex items-center gap-2.5 justify-end">
+                              <div className="text-right">
+                                <span className={`text-2xl font-black ${idx === 0 ? 'text-[#d4af37]' : 'text-[#f3d38c]'}`}>
+                                  {entry.totalScore}
+                                </span>
+                                <span className="text-xs text-[#a68a56] ml-1.5 font-cinzel font-semibold">PTS</span>
+                              </div>
+                              <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${isExpanded ? 'rotate-180 text-[#d4af37]' : 'text-[#a68a56]'}`} />
+                            </div>
+                          </td>
+                        </tr>
+
+                        {/* Detailed Drill-Down Drawer (Visible when expanded) */}
+                        {isExpanded && (
+                          <tr className="bg-[#100c08]/95 border-b border-[#a68a56]/25 animate-in fade-in duration-200">
+                            <td colSpan={3} className="p-4 sm:p-6">
+                              <div className="rounded-xl border border-[#a68a56]/30 bg-[#070503] p-4 sm:p-5 space-y-4 shadow-inner">
+                                {/* Header Badges & Identity */}
+                                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#a68a56]/20 pb-3.5">
+                                  <div className="flex flex-wrap items-center gap-2 text-xs sm:text-sm">
+                                    <span className="inline-flex items-center gap-1.5 rounded-md border border-[#a68a56]/30 bg-[#1c160e] px-2.5 py-1 text-[#f3d38c] font-bold">
+                                      <Monitor className="h-3.5 w-3.5 text-[#d4af37]" />
+                                      {entry.terminalId || 'Seat Node'}
+                                    </span>
+                                    <span className="inline-flex items-center gap-1.5 rounded-md border border-[#a68a56]/30 bg-[#1c160e] px-2.5 py-1 text-[#ebe4d5]">
+                                      <Clock className="h-3.5 w-3.5 text-[#d4af37]" />
+                                      {fmtDuration(entry.totalDurationMs || 0)} Total Time
+                                    </span>
+                                    <span className="inline-flex items-center gap-1.5 rounded-md border border-emerald-500/30 bg-emerald-950/40 px-2.5 py-1 text-emerald-300 font-semibold">
+                                      <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
+                                      {entry.questionsSolved} Solved
+                                      {entry.partialSolved > 0 ? ` · ${entry.partialSolved} Partial` : ''}
+                                    </span>
+                                    {Boolean(entry.strikes && entry.strikes > 0) && (
+                                      <span className="inline-flex items-center gap-1.5 rounded-md border border-red-500/30 bg-red-950/40 px-2.5 py-1 text-red-300 font-semibold">
+                                        <ShieldAlert className="h-3.5 w-3.5 text-red-400" />
+                                        {entry.strikes} / 3 Strikes
+                                      </span>
+                                    )}
+                                  </div>
+
+                                  {/* Score Math & Penalty Transparency */}
+                                  <div className="flex items-center gap-2 text-xs sm:text-sm font-nautical-mono">
+                                    <span className="text-[#ebe4d5]">
+                                      Problem Points: <strong className="text-emerald-400">{entry.rawScore ?? entry.totalScore} pts</strong>
+                                    </span>
+                                    {Boolean(entry.strikePenalty && entry.strikePenalty > 0) && (
+                                      <span className="text-red-400 font-bold">
+                                        - {entry.strikePenalty} pts ({entry.strikes} × 20pt Strike Penalty)
+                                      </span>
+                                    )}
+                                    <span className="text-[#a68a56]">═</span>
+                                    <span className="text-[#d4af37] font-black text-sm sm:text-base">
+                                      {entry.totalScore} PTS Total
+                                    </span>
+                                  </div>
+                                </div>
+
+                                {/* Per-Question Breakdown Grid */}
+                                <div>
+                                  <h4 className="font-cinzel text-xs font-bold text-[#a68a56] uppercase tracking-wider mb-2.5">
+                                    Problem Submissions &amp; Evaluation Metrics
+                                  </h4>
+                                  {entry.perQuestionScores && Object.keys(entry.perQuestionScores).length > 0 ? (
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
+                                      {Object.entries(entry.perQuestionScores).map(([qId, qData]: [string, any], qIdx) => (
+                                        <div key={qId} className="rounded-lg border border-[#a68a56]/20 bg-[#140f0a] p-3 text-xs">
+                                          <div className="flex items-center justify-between mb-1.5">
+                                            <span className="font-cinzel font-bold text-[#f3d38c] truncate">
+                                              {qData.questionTitle || `Question ${qIdx + 1}`}
+                                            </span>
+                                            <span className={`font-black ${qData.score > 0 ? 'text-emerald-400' : 'text-[#a68a56]'}`}>
+                                              {qData.score} PTS
+                                            </span>
+                                          </div>
+                                          <div className="flex items-center justify-between text-[11px] text-[#a68a56] font-nautical-mono">
+                                            <span className="uppercase font-semibold text-[#d4af37]">{qData.language}</span>
+                                            <span className="text-[#ebe4d5]">{qData.passedRatio} Passed</span>
+                                            {qData.execTimeMs ? <span>{fmtDuration(qData.execTimeMs)}</span> : null}
+                                          </div>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  ) : (
+                                    <p className="text-xs text-[#a68a56] italic">No question submissions recorded yet.</p>
+                                  )}
+                                </div>
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                      </React.Fragment>
                     );
                   })
                 )}

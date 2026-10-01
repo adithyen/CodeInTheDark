@@ -7,6 +7,7 @@ import {
   updateParticipant,
   deleteParticipant,
   getParticipantById,
+  getParticipantByPhone,
 } from '@/lib/db';
 
 import { isAdmin } from '@/lib/adminAuth';
@@ -35,12 +36,13 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  let cleanPhone = '';
   try {
     const body = await req.json();
     const { name, phone, college, rollNumber, terminalId, sessionId: reqSessionId } = body;
 
     const cleanName = (name || '').trim();
-    const cleanPhone = (phone || '').trim();
+    cleanPhone = (phone || '').trim();
     const cleanCollege = (college || '').trim();
     const cleanTerminal = (terminalId || '').trim();
     const cleanRoll = (rollNumber || cleanPhone).trim().toUpperCase();
@@ -90,7 +92,7 @@ export async function POST(req: NextRequest) {
       }, { status: 403 });
     }
 
-    // 5. Register or update participant
+    // 5. Register or retrieve participant
     const participant = await upsertParticipant(session.id, {
       name: cleanName,
       phone: cleanPhone,
@@ -104,15 +106,41 @@ export async function POST(req: NextRequest) {
       participant: {
         id: participant.id,
         name: participant.name,
+        phone: participant.phone,
         college: participant.college,
         terminalId: participant.terminalId,
         registeredAt: participant.registeredAt,
+        strikes: participant.strikes || 0,
+        isLockedOut: participant.isLockedOut || false,
       },
+      isResumed: Boolean(isAlreadyRegistered),
       sessionPhase: session.phase,
     });
   } catch (error: any) {
     if (error.message?.includes('unique') || error.code === '23505') {
-      return NextResponse.json({ error: 'Phone number already registered for this session.' }, { status: 409 });
+      try {
+        const fallbackSession = await getActiveSession();
+        if (fallbackSession && cleanPhone) {
+          const existingP = await getParticipantByPhone(fallbackSession.id, cleanPhone);
+          if (existingP) {
+            return NextResponse.json({
+              success: true,
+              participant: {
+                id: existingP.id,
+                name: existingP.name,
+                phone: existingP.phone,
+                college: existingP.college,
+                terminalId: existingP.terminalId,
+                registeredAt: existingP.registeredAt,
+                strikes: existingP.strikes || 0,
+                isLockedOut: existingP.isLockedOut || false,
+              },
+              isResumed: true,
+              sessionPhase: fallbackSession.phase,
+            });
+          }
+        }
+      } catch {}
     }
     return NextResponse.json({ error: error.message }, { status: 500 });
   }

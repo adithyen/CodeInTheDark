@@ -11,6 +11,8 @@ interface MonacoBlindEditorProps {
   disabled?: boolean;
   fontSize?: number;
   allowCopyPaste?: boolean;
+  internalClipboard?: string;
+  onCopyInternal?: (text: string) => void;
   onProhibitedKey?: (keyName: string) => void;
 }
 
@@ -27,9 +29,13 @@ export default function MonacoBlindEditor({
   disabled = false,
   fontSize = 18,
   allowCopyPaste = false,
+  internalClipboard = '',
+  onCopyInternal,
   onProhibitedKey,
 }: MonacoBlindEditorProps) {
   const allowCopyPasteRef = React.useRef(allowCopyPaste);
+  const internalClipboardRef = React.useRef(internalClipboard);
+  const onCopyInternalRef = React.useRef(onCopyInternal);
   const onProhibitedKeyRef = React.useRef(onProhibitedKey);
   const editorRef = React.useRef<any>(null);
 
@@ -41,6 +47,14 @@ export default function MonacoBlindEditor({
       });
     }
   }, [allowCopyPaste]);
+
+  React.useEffect(() => {
+    internalClipboardRef.current = internalClipboard;
+  }, [internalClipboard]);
+
+  React.useEffect(() => {
+    onCopyInternalRef.current = onCopyInternal;
+  }, [onCopyInternal]);
 
   React.useEffect(() => {
     onProhibitedKeyRef.current = onProhibitedKey;
@@ -141,23 +155,45 @@ export default function MonacoBlindEditor({
         return;
       }
 
-      // 5. Block Clipboard Shortcuts inside Monaco (Ctrl+C, Ctrl+V, Ctrl+X)
+      // 5. Handle Controlled Internal Exam Sandbox Clipboard (Ctrl+C, Ctrl+V, Ctrl+X)
+      if ((e.ctrlKey || e.metaKey) && e.keyCode === monaco.KeyCode.KeyC) {
+        const selection = editor.getSelection();
+        if (selection) {
+          const selectedText = editor.getModel()?.getValueInRange(selection) || '';
+          if (selectedText) {
+            onCopyInternalRef.current?.(selectedText);
+            onProhibitedKeyRef.current?.('📋 Copied code to exam clipboard');
+          }
+        }
+        return; // Allow native copy for clipboard sync
+      }
+      if ((e.ctrlKey || e.metaKey) && e.keyCode === monaco.KeyCode.KeyX) {
+        const selection = editor.getSelection();
+        if (selection) {
+          const selectedText = editor.getModel()?.getValueInRange(selection) || '';
+          if (selectedText) {
+            onCopyInternalRef.current?.(selectedText);
+            onProhibitedKeyRef.current?.('📋 Cut code to exam clipboard');
+          }
+        }
+        return; // Allow native cut for clipboard sync
+      }
       if ((e.ctrlKey || e.metaKey) && e.keyCode === monaco.KeyCode.KeyV) {
         e.preventDefault();
         e.stopPropagation();
-        onProhibitedKeyRef.current?.('Ctrl+V (Paste)');
-        return;
-      }
-      if ((e.ctrlKey || e.metaKey) && e.keyCode === monaco.KeyCode.KeyC) {
-        e.preventDefault();
-        e.stopPropagation();
-        onProhibitedKeyRef.current?.('Ctrl+C (Copy)');
-        return;
-      }
-      if ((e.ctrlKey || e.metaKey) && e.keyCode === monaco.KeyCode.KeyX) {
-        e.preventDefault();
-        e.stopPropagation();
-        onProhibitedKeyRef.current?.('Ctrl+X (Cut)');
+
+        const textToPaste = internalClipboardRef.current;
+        if (textToPaste && textToPaste.length > 0) {
+          const selection = editor.getSelection();
+          if (selection) {
+            editor.executeEdits('internal-paste', [
+              { range: selection, text: textToPaste, forceMoveMarkers: true },
+            ]);
+            onProhibitedKeyRef.current?.('📋 Pasted from exam clipboard');
+          }
+        } else {
+          onProhibitedKeyRef.current?.('⚠️ External paste blocked. You can only paste text copied from within this exam.');
+        }
         return;
       }
 

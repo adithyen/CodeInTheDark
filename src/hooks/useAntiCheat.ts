@@ -458,13 +458,12 @@ export function useAntiCheat({
         return false;
       }
 
-      // E. Trap Clipboard Shortcuts (Ctrl+C, Ctrl+V, Ctrl+X, Ctrl+A) - Allowed when disableStrikes is true
-      if (!disableStrikesRef.current && (e.ctrlKey || e.metaKey) && ['c', 'C', 'v', 'V', 'x', 'X'].includes(e.key)) {
-        e.preventDefault();
-        e.stopPropagation();
-        e.stopImmediatePropagation();
-        showHudWarning(`⚠️ Clipboard shortcut (Ctrl+${e.key.toUpperCase()}) is disabled.`);
-        return false;
+      // E. Internal Clipboard Handling (Ctrl+C, Ctrl+X allowed to copy within arena; Ctrl+V routed through sandbox clipboard)
+      if (!disableStrikesRef.current && (e.ctrlKey || e.metaKey)) {
+        if (['c', 'C', 'x', 'X'].includes(e.key)) {
+          // Allow internal selection copy to sandbox clipboard
+          return;
+        }
       }
 
       // F. Keystroke velocity anomaly detection (detect macro burst insertion) - Bypassed in testing mode
@@ -514,11 +513,16 @@ export function useAntiCheat({
       }
     };
 
-    // 5. Native Clipboard Event Traps (Allowed when disableStrikes is true)
+    // 5. Native Clipboard Event Traps (Permit copy/cut for internal clipboard, block raw external paste)
     const onClipboard = (e: ClipboardEvent) => {
       if (disableStrikesRef.current) return;
-      e.preventDefault();
-      showHudWarning(`⚠️ Clipboard ${e.type} operation is prohibited.`);
+      if (e.type === 'copy' || e.type === 'cut') {
+        // Permit copying within arena to populate internal sandbox clipboard
+        return;
+      }
+      if (e.type === 'paste') {
+        e.preventDefault();
+      }
     };
 
     // 6. Context Menu Trap (Allowed when disableStrikes is true)

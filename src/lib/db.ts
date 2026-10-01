@@ -787,6 +787,7 @@ export async function buildLeaderboard(sessionId: string) {
       college: p.college || '',
       rollNumber: p.rollNumber || '',
       terminalId: p.terminalId,
+      phone: p.phone || '',
       totalScore: 0,
       questionsSolved: 0,
       partialSolved: 0,
@@ -810,6 +811,7 @@ export async function buildLeaderboard(sessionId: string) {
 
     entry.perQuestionScores[sub.questionId] = {
       score: sub.score,
+      questionTitle: sub.questionTitle || '',
       passedRatio: `${sub.testCasesPassed}/${sub.totalTestCases}`,
       language: sub.language,
       submittedAt: sub.submittedAt,
@@ -833,17 +835,21 @@ export async function buildLeaderboard(sessionId: string) {
 
   const entries = Array.from(entriesMap.values()).map((entry) => {
     const questionScoreSum = Object.values(entry.perQuestionScores).reduce(
-      (acc: number, qs: any) => acc + qs.score,
+      (acc: number, qs: any) => acc + (qs.score || 0),
       0
     );
     const totalDurationMs = Object.values(entry.perQuestionScores).reduce(
       (acc: number, qs: any) => acc + (qs.execTimeMs || 0),
       0
     );
-    const penalty = entry.strikes * 50;
+    // Anti-cheat strike penalty: 20 points per strike
+    const penalty = entry.strikes * 20;
+    const rawScore = questionScoreSum as number;
     return {
       ...entry,
-      totalScore: Math.max(0, (questionScoreSum as number) - penalty),
+      rawScore,
+      strikePenalty: penalty,
+      totalScore: Math.max(0, rawScore - penalty),
       totalDurationMs,
     };
   });
